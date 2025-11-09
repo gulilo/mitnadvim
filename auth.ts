@@ -2,21 +2,8 @@ import NextAuth from "next-auth";
 import { authConfig } from "./auth.config";
 import Credentials from "next-auth/providers/credentials";
 import { z } from 'zod';
-import { sql } from "./app/lib/data";
 import bcrypt from "bcrypt";
-import { DbUser } from "./app/lib/definitions";
-import NeonAdapter from "@auth/neon-adapter";
-import { Pool } from "@neondatabase/serverless";
-
-async function getUser(email: string): Promise<DbUser | undefined> {
-    try {
-      const user = await sql`SELECT * FROM "user" WHERE email = ${email}`;
-      return user[0] as DbUser;
-    } catch (error) {
-      console.error('Failed to fetch user:', error);
-      throw new Error('Failed to fetch user.');
-    }
-}
+import {getUserByEmail, getUserGroupById} from "./app/(user)/data/user"
 
 export const {auth, handlers, signIn, signOut} = NextAuth({
     ...authConfig,
@@ -25,7 +12,7 @@ export const {auth, handlers, signIn, signOut} = NextAuth({
             const parsedCredentials = z.object({ email: z.email(), password: z.string() }).safeParse(credentials);
             if (parsedCredentials.success) {
                 const { email, password } = parsedCredentials.data;
-                const user = await getUser(email)
+                const user = await getUserByEmail(email)
                 if (!user) return null;
                 const passwordsMatch = await bcrypt.compare(password, user.password_hash);
                 console.log('Authenticated user:', user);
@@ -38,5 +25,21 @@ export const {auth, handlers, signIn, signOut} = NextAuth({
             return null;
         }
     })], 
+    callbacks: {
+        async session({session}) {
+            const user = await getUserByEmail(session.user.email)
+            if(!user) return session;
+            const userGroup = await getUserGroupById(user.user_group_id)
+            if(!userGroup) return session
+
+            return {
+                ...session,
+                user: {
+                    ...session.user,
+                    userGroup : userGroup.name, 
+                }
+            }
+        }
+    }
 
 });

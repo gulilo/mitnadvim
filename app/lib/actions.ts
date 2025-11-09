@@ -1,4 +1,5 @@
 "use server";
+
 import { signIn } from "@/auth";
 import { AuthError } from 'next-auth';
 import {sql} from "./data";
@@ -32,10 +33,11 @@ export async function registerUser(formData: FormData) {
     const data = {
       displayName: formData.get("displayName"),
       email: formData.get("email"),
-      password: formData.get("password")
+      password: formData.get("password"),
+      userGroupId: formData.get("userGroupId")
     }
 
-    if (typeof data.displayName !== 'string' || typeof data.email !== 'string' || typeof data.password !== 'string') {
+    if (typeof data.displayName !== 'string' || typeof data.email !== 'string' || typeof data.password !== 'string' || typeof data.userGroupId !== 'string') {
       throw new Error('Invalid form data');
     }
 
@@ -48,15 +50,15 @@ export async function registerUser(formData: FormData) {
     const hash = await bcrypt.hash(data.password, 12);
 
     const rows = await sql`
-      INSERT INTO "user" (display_name, email, password_hash, created_by)
-      VALUES (${data.displayName}, ${data.email}, ${hash}, '00000000-0000-0000-0000-000000000001')
+      INSERT INTO "user" (name, email, password_hash, user_group_id, created_by)
+      VALUES (${data.displayName}, ${data.email}, ${hash}, ${data.userGroupId}, '00000000-0000-0000-0000-000000000001')
       RETURNING id
     `;
 
-    // Redirect to login page after successful registration
-    redirect('/login');
   } catch (error) {
     console.error('Registration error:', error);
     throw new Error(error instanceof Error ? error.message : 'Registration failed');
   }
+
+  redirect('/');
 }
