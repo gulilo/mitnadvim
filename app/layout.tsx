@@ -1,17 +1,7 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Header from "./components/layout/header";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import RtlProvider from "@/components/providers/rtl-provider";
 
 export const metadata: Metadata = {
   title: "MDA Mitnavim Dan",
@@ -24,12 +14,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="he" dir="rtl">
       <body>
-        <Header />
-        <div className="h-screen bg-gray-200 border-1 rounded-lg m-6 pt-10">
-        {children}
-        </div>
+        <RtlProvider>
+          {/* <Header /> */}
+          <div className="h-screen bg-gray-200 border-1 rounded-lg m-6 ">
+            {children}
+          </div>
+        </RtlProvider>
       </body>
     </html>
   );

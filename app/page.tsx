@@ -1,21 +1,34 @@
 import Image from "next/image";
 import { auth } from "@/auth";
+import { Menu } from "lucide-react";
+import NotificationPanel from "./(home)/components/notificationPanel";
+import ShiftPanel from "./(home)/components/shiftPanel";
 
 export default async function Home() {
   const session = await auth();
+  const userName = session?.user?.name ?? "אבישג";
+
   return (
-    <div className="flex flex-col items-center justify-top ">
-      <div className="relative w-100 h-70 mb-20 rounded-lg md:w-170 md:h-120">
-        <Image src={"/MDA-Dan-Logo.png"} fill alt="home "></Image>
+    <main
+      className="flex flex-col min-h-screen justify-center
+    w-full max-w-[430px] rounded-2xl border border-[#d2d2d2] bg-white px-4 py-6 shadow-md"
+    >
+      <div className="mx-auto relative h-[120px] w-[200px]">
+        <Image
+          src="/MDA-Dan-Logo.png"
+          alt="מגן דוד אדום - מרחב דן"
+          fill
+          className="object-contain"
+          priority
+        />
       </div>
-      <h1 className="text-lg md:text-2xl">welcome to mda mitnavim dan site.</h1>
-      {session?.user ? (
-        <h1 className="text-2xl md:text-4xl">welcome {session.user.name} 
-        {session?.user?.userGroup === "Admin" ? (" admin") : (" no admin")}
-        </h1>
-      ) : (
-        <h1 className="text-2xl md:text-4xl"> please log-in</h1>
-      )}
-    </div>
+
+      <div className="mt-2 text-center">
+        <p className="text-xl font-bold text-[#111]">{`בוקר טוב, ${userName}`}</p>
+      </div>
+
+      <NotificationPanel />
+      {/* <ShiftPanel /> */}
+    </main>
   );
 }
