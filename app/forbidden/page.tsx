@@ -31,7 +31,7 @@ export default async function Forbidden({ }: Props) {
         <h2 className="text-xl font-semibold text-gray-900 mb-2">Forbidden</h2>
 
         <p className="text-gray-600 mb-6">
-          You don't have permission to access this resource. This page is
+          You dont have permission to access this resource. This page is
           restricted to administrators only.
         </p>
       </div>

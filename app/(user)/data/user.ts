@@ -1,10 +1,10 @@
 import { sql } from "../../lib/data";
-import { DbUser, DbUserGroup } from "./definitions";
+import { DbAccount, DbUserGroup } from "./definitions";
 
-export async function getUserByEmail(email: string): Promise<DbUser | undefined> {
+export async function getUserByEmail(email: string): Promise<DbAccount | undefined> {
     try {
-      const user = await sql`SELECT * FROM "user" WHERE email = ${email}`;
-      return user[0] as DbUser;
+      const user = await sql`SELECT * FROM account WHERE email = ${email}`;
+      return user[0] as DbAccount;
     } catch (error) {
       console.error('Failed to fetch user:', error);
       throw new Error('Failed to fetch user.');

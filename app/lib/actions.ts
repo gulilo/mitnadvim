@@ -42,7 +42,7 @@ export async function registerUser(formData: FormData) {
     }
 
     // Check if user already exists
-    const existingUser = await sql`SELECT id FROM "user" WHERE email = ${data.email}`;
+    const existingUser = await sql`SELECT id FROM account WHERE email = ${data.email}`;
     if (existingUser.length > 0) {
       throw new Error('User with this email already exists');
     }
@@ -50,7 +50,7 @@ export async function registerUser(formData: FormData) {
     const hash = await bcrypt.hash(data.password, 12);
 
     const rows = await sql`
-      INSERT INTO "user" (name, email, password_hash, user_group_id, created_by)
+      INSERT INTO account (name, email, password_hash, user_group_id, created_by)
       VALUES (${data.displayName}, ${data.email}, ${hash}, ${data.userGroupId}, '00000000-0000-0000-0000-000000000001')
       RETURNING id
     `;
