@@ -68,12 +68,11 @@ export default function NotificationPanel() {
 
         <ScrollArea className="h-[355px] space-y-3">
           {notifications.map((notification, index) => (
-            <div>
+            <div key={notification.id}>
               <NotificationCard
                 header={notification.title}
                 date={notification.timestamp}
                 text={notification.message}
-                key={notification.id}
               >
                 <p className="text-sm font-bold">{notification.title}</p>
                 <p className="mt-1 text-[10px] text-[#666]">
