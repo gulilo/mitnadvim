@@ -121,4 +121,29 @@
   body {
     @apply bg-background text-foreground;
   }
+  h1 {
+    @apply text-lg font-bold font-sans;
+  }
+  h2 {
+    @apply text-base font-bold font-sans;
+  }
+  h3 {
+    @apply text-sm font-semibold font-sans;
+  }
+  h4 {
+    @apply text-sm font-medium font-sans;
+  } 
+  h5 {
+    @apply text-xs font-bold font-sans;
+  }
+  h6 {
+    @apply text-base font-normal font-sans;
+  }
+  p {
+    @apply text-xs font-normal font-sans;
+  }
+  /* Make scrollbar always visible */
+  [data-slot="scroll-area-scrollbar"] {
+    opacity: 1 !important;
+  }
 }

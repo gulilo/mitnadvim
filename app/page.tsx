@@ -1,17 +1,22 @@
 import Image from "next/image";
 import { auth } from "@/auth";
-import { Menu } from "lucide-react";
-import NotificationPanel from "./(home)/components/notificationPanel";
-import ShiftPanel from "./(home)/components/shiftPanel";
+import { redirect } from "next/navigation";
+
+import NotificationPanel from "./components/home/notificationPanel";
+import ShiftPanel from "./components/home/shiftPanel";
+import Greeting from "./components/home/greetings";
 
 export default async function Home() {
   const session = await auth();
-  const userName = session?.user?.name ?? "אבישג";
+  const userName = session?.user?.name;
+  if (!userName) {
+    redirect("./login");
+  }
 
   return (
     <main
-      className="flex flex-col min-h-screen justify-center
-    w-full max-w-[430px] rounded-2xl border border-[#d2d2d2] bg-white px-4 py-6 shadow-md"
+      className="flex flex-col justify-center mx-auto
+    w-full max-w-[430px] border border-[#d2d2d2] bg-white px-4 py-6 shadow-md"
     >
       <div className="mx-auto relative h-[120px] w-[200px]">
         <Image
@@ -23,9 +28,7 @@ export default async function Home() {
         />
       </div>
 
-      <div className="mt-2 text-center">
-        <p className="text-xl font-bold text-[#111]">{`בוקר טוב, ${userName}`}</p>
-      </div>
+      <Greeting userName={userName} />
 
       <NotificationPanel />
       {/* <ShiftPanel /> */}

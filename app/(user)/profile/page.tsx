@@ -6,11 +6,9 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "@/app/components/ui/card";
 
 export default async function profile({}) {
-    
-
   return (
     <Card>
       <CardHeader>

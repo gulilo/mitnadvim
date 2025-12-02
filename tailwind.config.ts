@@ -9,7 +9,11 @@ const config: Config = {
     "./lib/**/*.{ts,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        sans: ["var(--font-sans)"],
+      },
+    },
   },
   plugins: [
     plugin(({ addBase }) => {
