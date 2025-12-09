@@ -1,0 +1,183 @@
+account {
+  id string pk
+  displayName string
+  passwordHash string
+  userGroupId string fk nullable
+
+  createdAt timestamp
+  updatedAt timestamp nullable
+  createdBy string fk
+  updatedBy string fk nullable
+}
+
+userInfo {
+  id string pk
+  accountId string fk 
+  firstName string
+  lastName string
+  image string nullable
+  address string
+  email string
+  phone string
+}
+
+userInfo.accountId -> account.id
+
+team {
+  id string pk
+  name string
+  managerid string fk nullable
+  createdAt timestamp
+  updatedAt timestamp nullable
+  createdBy string fk
+  updatedBy string fk nullable
+}
+
+userTeam {
+  id string pk
+  userid string fk
+  teamid string fk
+  createdAt timestamp
+  updatedAt timestamp nullable
+  createdBy string fk
+  updatedBy string fk nullable
+}
+
+team.managerid -> account.id
+userTeam.userid -> account.id
+userTeam.teamid -> team.id
+
+userGroup {
+  id string pk
+  name string 
+  createdAt timestamp
+  updatedAt timestamp nullable
+  createdBy string fk
+  updatedBy string fk nullable
+}
+
+permissions {
+  id string pk
+  name string
+  createdAt timestamp
+  updatedAt timestamp nullable
+  createdBy string fk
+  updatedBy string fk nullable
+}
+
+userGroupPermission {
+  id string pk
+  userGroupId string fk
+  permissionId string fk
+  createdAt timestamp
+  updatedAt timestamp nullable
+  createdBy string fk
+  updatedBy string fk nullable
+}
+
+userGroupPermission.userGroupId -> userGroup.id
+userGroupPermission.permissionId -> permissions.id
+
+account.userGroupId -> userGroup.id
+
+area {
+  id string pk
+  name string
+  createdAt timestamp
+  updatedAt timestamp nullable
+  createdBy string fk
+  updatedBy string fk nullable
+}
+
+launchPoint {
+  id string pk
+  areaid string fk
+  name string
+  createdAt timestamp
+  updatedAt timestamp nullable
+  createdBy string fk
+  updatedBy string fk nullable
+}
+
+schedule {
+  id string pk
+  areaid string fk
+  createdAt timestamp
+  updatedAt timestamp nullable
+  createdBy string fk
+  updatedBy string fk nullable
+}
+
+schedule.areaid -> area.id
+
+shift {
+  id string pk
+  scheduleid string fk
+  driverid string fk nullable
+  launchPointsid string fk
+  startDate timestamp
+  endDate timestamp
+  slots integer
+  createdAt timestamp
+  updatedAt timestamp nullable
+  createdBy string fk
+  updatedBy string fk nullable
+}
+
+shift.scheduleid -> schedule.id
+shift.driverid -> account.id
+shift.launchPointsid -> launchPoint.id
+
+
+shiftRegister {
+  id string pk
+  shiftid string fk
+  userid string fk
+  status enum('pending', 'confirmed', 'cancelled')
+  createdAt timestamp
+  updatedAt timestamp nullable
+  createdBy string fk
+  updatedBy string fk nullable
+}
+
+shiftRegister.shiftid -> shift.id
+shiftRegister.userid -> account.id
+
+notification {
+  id string pk
+  user string fk
+  title string
+  message string
+  date timestamp
+  read boolean
+  createdAt timestamp
+  createdBy string fk
+}
+
+notification.user -> account.id
+
+// Audit field foreign key relationships
+account.createdBy -> account.id
+account.updatedBy -> account.id
+team.createdBy -> account.id
+team.updatedBy -> account.id
+userTeam.createdBy -> account.id
+userTeam.updatedBy -> account.id
+userGroup.createdBy -> account.id
+userGroup.updatedBy -> account.id
+permissions.createdBy -> account.id
+permissions.updatedBy -> account.id
+userGroupPermission.createdBy -> account.id
+userGroupPermission.updatedBy -> account.id
+area.createdBy -> account.id
+area.updatedBy -> account.id
+launchPoint.createdBy -> account.id
+launchPoint.updatedBy -> account.id
+schedule.createdBy -> account.id
+schedule.updatedBy -> account.id
+shift.createdBy -> account.id
+shift.updatedBy -> account.id
+shiftRegister.createdBy -> account.id
+shiftRegister.updatedBy -> account.id
+notification.createdBy -> account.id
+

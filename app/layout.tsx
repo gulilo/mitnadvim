@@ -23,8 +23,8 @@ export default function RootLayout({
     <html lang="he" dir="rtl" className={notoSansHebrew.variable}>
       <body>
         <RtlProvider>
-          <Header />
-          <div className="h-screen bg-gray-200 border-1 rounded-lg m-6 ">
+          {/* <Header /> */}
+        <div>  {/* <div className="h-screen bg-gray-200 border-1 rounded-lg m-6 "> */}
             {children}
           </div>
         </RtlProvider>
