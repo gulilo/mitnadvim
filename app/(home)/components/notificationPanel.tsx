@@ -1,4 +1,3 @@
-import { ChevronDown, Trash2 } from "lucide-react";
 import NotificationCard from "./NotificationCard";
 import { Separator } from "@/app/components/ui/separator";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
@@ -82,7 +81,7 @@ export default async function NotificationPanel() {
         <div className="flex items-center justify-between"></div>
 
         <ScrollArea className="h-[355px] space-y-3">
-          {notifications.map((notification, index) => {
+          {notifications.map((notification) => {
             const formattedDate = formatTimestamp(notification.timestamp);
             return (
               <div key={notification.id}>

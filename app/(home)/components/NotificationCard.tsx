@@ -11,6 +11,7 @@ import { Button } from "@/app/components/ui/button";
 
 import { cn } from "@/app/lib/utils";
 import type { ReactNode } from "react";
+import Image from "next/image";
 
 type NotificationCardProps = {
   header: ReactNode;
@@ -42,7 +43,7 @@ export default function NotificationCard({
         <CardAction>
           <div className="flex flex-row w-full">
             <Button className="justify-end" variant="ghost" size="icon">
-              <img src="./icon_delete.svg" alt="delete" />
+              <Image src="./icon_delete.svg" alt="delete" width={20} height={20} />
             </Button>
           </div>
         </CardAction>

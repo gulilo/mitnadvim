@@ -49,7 +49,7 @@ export async function registerUser(formData: FormData) {
 
     const hash = await bcrypt.hash(data.password, 12);
 
-    const rows = await sql`
+    await sql`
       INSERT INTO account (name, email, password_hash, user_group_id, created_by)
       VALUES (${data.displayName}, ${data.email}, ${hash}, ${data.userGroupId}, '00000000-0000-0000-0000-000000000001')
       RETURNING id
