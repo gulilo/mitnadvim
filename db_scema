@@ -1,8 +1,9 @@
-account {
+account [color:blue] {
   id string pk
   displayName string
+  email string
+  phone string
   passwordHash string
-  userGroupId string fk nullable
 
   createdAt timestamp
   updatedAt timestamp nullable
@@ -10,44 +11,45 @@ account {
   updatedBy string fk nullable
 }
 
-userInfo {
+userInfo [color:blue] {
   id string pk
   accountId string fk 
   firstName string
   lastName string
-  image string nullable
+  imageUrl string nullable
   address string
-  email string
-  phone string
-}
+  areaid string fk
+  role string
 
-userInfo.accountId -> account.id
-
-team {
-  id string pk
-  name string
-  managerid string fk nullable
   createdAt timestamp
   updatedAt timestamp nullable
   createdBy string fk
   updatedBy string fk nullable
 }
 
-userTeam {
+userInfo.accountId - account.id
+userInfo.areaid - area.id
+
+emergencyContacts [color:blue]{
   id string pk
   userid string fk
-  teamid string fk
+  name string
+  reletionship string
+  phone string
+  email string
+  address string
+
   createdAt timestamp
   updatedAt timestamp nullable
   createdBy string fk
   updatedBy string fk nullable
 }
 
-team.managerid -> account.id
-userTeam.userid -> account.id
-userTeam.teamid -> team.id
+emergencyContacts.userid > userInfo.id
 
-userGroup {
+
+
+tag [color:green]{
   id string pk
   name string 
   createdAt timestamp
@@ -56,7 +58,7 @@ userGroup {
   updatedBy string fk nullable
 }
 
-permissions {
+permissions [color:green]{
   id string pk
   name string
   createdAt timestamp
@@ -65,9 +67,9 @@ permissions {
   updatedBy string fk nullable
 }
 
-userGroupPermission {
+tagPermission [color:green]{
   id string pk
-  userGroupId string fk
+  tagId string fk
   permissionId string fk
   createdAt timestamp
   updatedAt timestamp nullable
@@ -75,109 +77,107 @@ userGroupPermission {
   updatedBy string fk nullable
 }
 
-userGroupPermission.userGroupId -> userGroup.id
-userGroupPermission.permissionId -> permissions.id
+tagPermission.tagId > tag.id
+tagPermission.permissions > permissions.id
 
-account.userGroupId -> userGroup.id
+accountTag [color:green] {
+  id string pk
+  accountId string fk
+  tagId string fk
+  createdAt timestamp
+  updatedAt timestamp nullable
+  createdBy string fk
+  updatedBy string fk nullable
+}
 
-area {
+accountTag.accountId > account.id
+accountTag.tagId > tag.id
+
+
+
+
+area [color:red]{
   id string pk
   name string
+
   createdAt timestamp
   updatedAt timestamp nullable
   createdBy string fk
   updatedBy string fk nullable
 }
 
-launchPoint {
+launchPoint [color:red]{
   id string pk
   areaid string fk
-  name string
+  name sting
+
   createdAt timestamp
   updatedAt timestamp nullable
   createdBy string fk
   updatedBy string fk nullable
 }
 
-schedule {
+launchPoint.areaid > area.id
+
+ambulance [color:red] {
   id string pk
-  areaid string fk
+  number string
+  atan boolean
+
   createdAt timestamp
   updatedAt timestamp nullable
   createdBy string fk
   updatedBy string fk nullable
 }
 
-schedule.areaid -> area.id
-
-shift {
+shift [color: yellow] {
   id string pk
-  scheduleid string fk
-  driverid string fk nullable
   launchPointsid string fk
-  startDate timestamp
-  endDate timestamp
-  slots integer
+  ambulanceId string fk
+  driverid stirng fk
+  date date
+  startTime timestamp
+  endTime timestamp
+  adultOnly boolean
+
   createdAt timestamp
   updatedAt timestamp nullable
   createdBy string fk
   updatedBy string fk nullable
 }
 
-shift.scheduleid -> schedule.id
-shift.driverid -> account.id
-shift.launchPointsid -> launchPoint.id
+shift.driverid - account.id
+shift.launchPointsid < launchPoint.id
+shift.ambulanceId > ambulance.id
 
-
-shiftRegister {
+shiftSlot [color: yellow] {
   id string pk
   shiftid string fk
   userid string fk
-  status enum('pending', 'confirmed', 'cancelled')
+  status enam 
+
   createdAt timestamp
   updatedAt timestamp nullable
   createdBy string fk
   updatedBy string fk nullable
 }
 
-shiftRegister.shiftid -> shift.id
-shiftRegister.userid -> account.id
+shiftSlot.shiftid < shift.id
+shiftSlot.userid  > account.id
 
-notification {
+notification [color:blue] {
   id string pk
-  user string fk
+  userid string fk
   title string
   message string
   date timestamp
   read boolean
+
   createdAt timestamp
+  updatedAt timestamp nullable
   createdBy string fk
+  updatedBy string fk nullable
 }
 
-notification.user -> account.id
-
-// Audit field foreign key relationships
-account.createdBy -> account.id
-account.updatedBy -> account.id
-team.createdBy -> account.id
-team.updatedBy -> account.id
-userTeam.createdBy -> account.id
-userTeam.updatedBy -> account.id
-userGroup.createdBy -> account.id
-userGroup.updatedBy -> account.id
-permissions.createdBy -> account.id
-permissions.updatedBy -> account.id
-userGroupPermission.createdBy -> account.id
-userGroupPermission.updatedBy -> account.id
-area.createdBy -> account.id
-area.updatedBy -> account.id
-launchPoint.createdBy -> account.id
-launchPoint.updatedBy -> account.id
-schedule.createdBy -> account.id
-schedule.updatedBy -> account.id
-shift.createdBy -> account.id
-shift.updatedBy -> account.id
-shiftRegister.createdBy -> account.id
-shiftRegister.updatedBy -> account.id
-notification.createdBy -> account.id
+notification.userid > account.id
 

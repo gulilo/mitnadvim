@@ -9,44 +9,34 @@ CREATE TYPE shift_status AS ENUM ('pending', 'confirmed', 'cancelled');
 
 -- Create tables in dependency order (referenced tables first)
 
--- 1. User Group table (referenced by user)
-CREATE TABLE user_group (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    name VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE,
-    created_by UUID NOT NULL,
-    updated_by UUID
-);
-
--- 2. Account table (referenced by many other tables)
+-- 1. Account table (referenced by many other tables)
+-- Note: created_by and updated_by reference account itself, so we'll need to handle this carefully
 CREATE TABLE account (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     display_name VARCHAR(255) NOT NULL,
-    password_hash TEXT,
     email VARCHAR(255) UNIQUE NOT NULL,
-    user_group_id UUID,
+    phone VARCHAR(50),
+    password_hash TEXT,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE,
     created_by UUID NOT NULL,
     updated_by UUID,
     
     -- Foreign key constraints
-    CONSTRAINT fk_user_group FOREIGN KEY (user_group_id) REFERENCES user_group(id),
-    CONSTRAINT fk_user_created_by FOREIGN KEY (created_by) REFERENCES account(id) ON DELETE CASCADE,
-    CONSTRAINT fk_user_updated_by FOREIGN KEY (updated_by) REFERENCES account(id) ON DELETE CASCADE
+    CONSTRAINT fk_account_created_by FOREIGN KEY (created_by) REFERENCES account(id) ON DELETE CASCADE,
+    CONSTRAINT fk_account_updated_by FOREIGN KEY (updated_by) REFERENCES account(id) ON DELETE CASCADE
 );
 
--- 3. User Info table (additional account details)
+-- 2. User Info table (additional account details)
 CREATE TABLE user_info (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     account_id UUID NOT NULL,
     first_name VARCHAR(255) NOT NULL,
     last_name VARCHAR(255) NOT NULL,
-    image TEXT,
+    image_url TEXT,
     address TEXT,
-    email VARCHAR(255),
-    phone VARCHAR(50),
+    area_id UUID NOT NULL,
+    role VARCHAR(255) NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE,
     created_by UUID NOT NULL,
@@ -54,8 +44,29 @@ CREATE TABLE user_info (
     
     -- Foreign key constraints
     CONSTRAINT fk_user_info_account FOREIGN KEY (account_id) REFERENCES account(id) ON DELETE CASCADE,
+    CONSTRAINT fk_user_info_area FOREIGN KEY (area_id) REFERENCES area(id) ON DELETE CASCADE,
     CONSTRAINT fk_user_info_created_by FOREIGN KEY (created_by) REFERENCES account(id) ON DELETE CASCADE,
     CONSTRAINT fk_user_info_updated_by FOREIGN KEY (updated_by) REFERENCES account(id) ON DELETE CASCADE
+);
+
+-- 3. Emergency Contacts table
+CREATE TABLE emergency_contacts (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    relationship VARCHAR(255) NOT NULL,
+    phone VARCHAR(50) NOT NULL,
+    email VARCHAR(255),
+    address TEXT,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE,
+    created_by UUID NOT NULL,
+    updated_by UUID,
+    
+    -- Foreign key constraints
+    CONSTRAINT fk_emergency_contacts_user FOREIGN KEY (user_id) REFERENCES user_info(id) ON DELETE CASCADE,
+    CONSTRAINT fk_emergency_contacts_created_by FOREIGN KEY (created_by) REFERENCES account(id) ON DELETE CASCADE,
+    CONSTRAINT fk_emergency_contacts_updated_by FOREIGN KEY (updated_by) REFERENCES account(id) ON DELETE CASCADE
 );
 
 -- 4. Permissions table
@@ -72,46 +83,24 @@ CREATE TABLE permissions (
     CONSTRAINT fk_permissions_updated_by FOREIGN KEY (updated_by) REFERENCES account(id) ON DELETE CASCADE
 );
 
--- 5. Team table
-CREATE TABLE team (
+-- 5. Tag table
+CREATE TABLE tag (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(255) NOT NULL,
-    manager_id UUID,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE,
     created_by UUID NOT NULL,
     updated_by UUID,
     
     -- Foreign key constraints
-    CONSTRAINT fk_team_manager FOREIGN KEY (manager_id) REFERENCES account(id) ON DELETE CASCADE,
-    CONSTRAINT fk_team_created_by FOREIGN KEY (created_by) REFERENCES account(id) ON DELETE CASCADE,
-    CONSTRAINT fk_team_updated_by FOREIGN KEY (updated_by) REFERENCES account(id) ON DELETE CASCADE
+    CONSTRAINT fk_tag_created_by FOREIGN KEY (created_by) REFERENCES account(id) ON DELETE CASCADE,
+    CONSTRAINT fk_tag_updated_by FOREIGN KEY (updated_by) REFERENCES account(id) ON DELETE CASCADE
 );
 
--- 6. User Team junction table (many-to-many relationship)
-CREATE TABLE user_team (
+-- 6. Tag Permission junction table
+CREATE TABLE tag_permission (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id UUID NOT NULL,
-    team_id UUID NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE,
-    created_by UUID NOT NULL,
-    updated_by UUID,
-    
-    -- Foreign key constraints
-    CONSTRAINT fk_user_team_user FOREIGN KEY (user_id) REFERENCES account(id) ON DELETE CASCADE,
-    CONSTRAINT fk_user_team_team FOREIGN KEY (team_id) REFERENCES team(id) ON DELETE CASCADE,
-    CONSTRAINT fk_user_team_created_by FOREIGN KEY (created_by) REFERENCES account(id) ON DELETE CASCADE,
-    CONSTRAINT fk_user_team_updated_by FOREIGN KEY (updated_by) REFERENCES account(id) ON DELETE CASCADE,
-    
-    -- Unique constraint to prevent duplicate user-team relationships
-    CONSTRAINT uk_user_team UNIQUE (user_id, team_id)
-);
-
--- 7. User Group Permission junction table
-CREATE TABLE user_group_permission (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_group_id UUID NOT NULL,
+    tag_id UUID NOT NULL,
     permission_id UUID NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE,
@@ -119,13 +108,33 @@ CREATE TABLE user_group_permission (
     updated_by UUID,
     
     -- Foreign key constraints
-    CONSTRAINT fk_ugp_user_group FOREIGN KEY (user_group_id) REFERENCES user_group(id) ON DELETE CASCADE,
-    CONSTRAINT fk_ugp_permission FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE,
-    CONSTRAINT fk_ugp_created_by FOREIGN KEY (created_by) REFERENCES account(id) ON DELETE CASCADE,
-    CONSTRAINT fk_ugp_updated_by FOREIGN KEY (updated_by) REFERENCES account(id) ON DELETE CASCADE,
+    CONSTRAINT fk_tag_permission_tag FOREIGN KEY (tag_id) REFERENCES tag(id) ON DELETE CASCADE,
+    CONSTRAINT fk_tag_permission_permission FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE,
+    CONSTRAINT fk_tag_permission_created_by FOREIGN KEY (created_by) REFERENCES account(id) ON DELETE CASCADE,
+    CONSTRAINT fk_tag_permission_updated_by FOREIGN KEY (updated_by) REFERENCES account(id) ON DELETE CASCADE,
     
-    -- Unique constraint to prevent duplicate group-permission relationships
-    CONSTRAINT uk_user_group_permission UNIQUE (user_group_id, permission_id)
+    -- Unique constraint to prevent duplicate tag-permission relationships
+    CONSTRAINT uk_tag_permission UNIQUE (tag_id, permission_id)
+);
+
+-- 7. Account Tag junction table
+CREATE TABLE account_tag (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    account_id UUID NOT NULL,
+    tag_id UUID NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE,
+    created_by UUID NOT NULL,
+    updated_by UUID,
+    
+    -- Foreign key constraints
+    CONSTRAINT fk_account_tag_account FOREIGN KEY (account_id) REFERENCES account(id) ON DELETE CASCADE,
+    CONSTRAINT fk_account_tag_tag FOREIGN KEY (tag_id) REFERENCES tag(id) ON DELETE CASCADE,
+    CONSTRAINT fk_account_tag_created_by FOREIGN KEY (created_by) REFERENCES account(id) ON DELETE CASCADE,
+    CONSTRAINT fk_account_tag_updated_by FOREIGN KEY (updated_by) REFERENCES account(id) ON DELETE CASCADE,
+    
+    -- Unique constraint to prevent duplicate account-tag relationships
+    CONSTRAINT uk_account_tag UNIQUE (account_id, tag_id)
 );
 
 -- 8. Area table
@@ -158,50 +167,49 @@ CREATE TABLE launch_point (
     CONSTRAINT fk_launch_point_updated_by FOREIGN KEY (updated_by) REFERENCES account(id) ON DELETE CASCADE
 );
 
--- 10. Schedule table
-CREATE TABLE schedule (
+-- 10. Ambulance table
+CREATE TABLE ambulance (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    area_id UUID NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    description TEXT,
+    number VARCHAR(255) NOT NULL,
+    atan BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE,
     created_by UUID NOT NULL,
     updated_by UUID,
     
     -- Foreign key constraints
-    CONSTRAINT fk_schedule_area FOREIGN KEY (area_id) REFERENCES area(id) ON DELETE CASCADE,
-    CONSTRAINT fk_schedule_created_by FOREIGN KEY (created_by) REFERENCES account(id) ON DELETE CASCADE,
-    CONSTRAINT fk_schedule_updated_by FOREIGN KEY (updated_by) REFERENCES account(id) ON DELETE CASCADE
+    CONSTRAINT fk_ambulance_created_by FOREIGN KEY (created_by) REFERENCES account(id) ON DELETE CASCADE,
+    CONSTRAINT fk_ambulance_updated_by FOREIGN KEY (updated_by) REFERENCES account(id) ON DELETE CASCADE
 );
 
 -- 11. Shift table
 CREATE TABLE shift (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    schedule_id UUID NOT NULL,
-    driver_id UUID,
     launch_point_id UUID NOT NULL,
-    start_date TIMESTAMP WITH TIME ZONE NOT NULL,
-    end_date TIMESTAMP WITH TIME ZONE NOT NULL,
-    slots INTEGER NOT NULL CHECK (slots > 0),
+    ambulance_id UUID NOT NULL,
+    driver_id UUID,
+    date DATE NOT NULL,
+    start_time TIMESTAMP WITH TIME ZONE NOT NULL,
+    end_time TIMESTAMP WITH TIME ZONE NOT NULL,
+    adult_only BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE,
     created_by UUID NOT NULL,
     updated_by UUID,
     
     -- Foreign key constraints
-    CONSTRAINT fk_shift_schedule FOREIGN KEY (schedule_id) REFERENCES schedule(id) ON DELETE CASCADE,
-    CONSTRAINT fk_shift_driver FOREIGN KEY (driver_id) REFERENCES account(id) ON DELETE CASCADE,
     CONSTRAINT fk_shift_launch_point FOREIGN KEY (launch_point_id) REFERENCES launch_point(id) ON DELETE CASCADE,
+    CONSTRAINT fk_shift_ambulance FOREIGN KEY (ambulance_id) REFERENCES ambulance(id) ON DELETE CASCADE,
+    CONSTRAINT fk_shift_driver FOREIGN KEY (driver_id) REFERENCES account(id) ON DELETE CASCADE,
     CONSTRAINT fk_shift_created_by FOREIGN KEY (created_by) REFERENCES account(id) ON DELETE CASCADE,
     CONSTRAINT fk_shift_updated_by FOREIGN KEY (updated_by) REFERENCES account(id) ON DELETE CASCADE,
     
-    -- Check constraint to ensure end_date is after start_date
-    CONSTRAINT chk_shift_dates CHECK (end_date > start_date)
+    -- Check constraint to ensure end_time is after start_time
+    CONSTRAINT chk_shift_times CHECK (end_time > start_time)
 );
 
--- 12. Shift Register table
-CREATE TABLE shift_register (
+-- 12. Shift Slot table
+CREATE TABLE shift_slot (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     shift_id UUID NOT NULL,
     user_id UUID NOT NULL,
@@ -212,13 +220,13 @@ CREATE TABLE shift_register (
     updated_by UUID,
     
     -- Foreign key constraints
-    CONSTRAINT fk_shift_register_shift FOREIGN KEY (shift_id) REFERENCES shift(id) ON DELETE CASCADE,
-    CONSTRAINT fk_shift_register_user FOREIGN KEY (user_id) REFERENCES account(id) ON DELETE CASCADE,
-    CONSTRAINT fk_shift_register_created_by FOREIGN KEY (created_by) REFERENCES account(id) ON DELETE CASCADE,
-    CONSTRAINT fk_shift_register_updated_by FOREIGN KEY (updated_by) REFERENCES account(id) ON DELETE CASCADE,
+    CONSTRAINT fk_shift_slot_shift FOREIGN KEY (shift_id) REFERENCES shift(id) ON DELETE CASCADE,
+    CONSTRAINT fk_shift_slot_user FOREIGN KEY (user_id) REFERENCES account(id) ON DELETE CASCADE,
+    CONSTRAINT fk_shift_slot_created_by FOREIGN KEY (created_by) REFERENCES account(id) ON DELETE CASCADE,
+    CONSTRAINT fk_shift_slot_updated_by FOREIGN KEY (updated_by) REFERENCES account(id) ON DELETE CASCADE,
     
-    -- Unique constraint to prevent duplicate shift registrations
-    CONSTRAINT uk_shift_register UNIQUE (shift_id, user_id)
+    -- Unique constraint to prevent duplicate shift slot registrations
+    CONSTRAINT uk_shift_slot UNIQUE (shift_id, user_id)
 );
 
 -- 13. Notification table
@@ -230,27 +238,33 @@ CREATE TABLE notification (
     date TIMESTAMP WITH TIME ZONE NOT NULL,
     read BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE,
     created_by UUID NOT NULL,
+    updated_by UUID,
     
     -- Foreign key constraints
     CONSTRAINT fk_notification_user FOREIGN KEY (user_id) REFERENCES account(id) ON DELETE CASCADE,
-    CONSTRAINT fk_notification_created_by FOREIGN KEY (created_by) REFERENCES account(id) ON DELETE CASCADE
+    CONSTRAINT fk_notification_created_by FOREIGN KEY (created_by) REFERENCES account(id) ON DELETE CASCADE,
+    CONSTRAINT fk_notification_updated_by FOREIGN KEY (updated_by) REFERENCES account(id) ON DELETE CASCADE
 );
 
 -- Create indexes for better performance
 CREATE INDEX idx_account_email ON account(email);
 CREATE INDEX idx_account_display_name ON account(display_name);
-CREATE INDEX idx_account_user_group_id ON account(user_group_id);
 CREATE INDEX idx_user_info_account_id ON user_info(account_id);
-CREATE INDEX idx_team_manager_id ON team(manager_id);
-CREATE INDEX idx_user_team_user_id ON user_team(user_id);
-CREATE INDEX idx_user_team_team_id ON user_team(team_id);
-CREATE INDEX idx_shift_schedule_id ON shift(schedule_id);
-CREATE INDEX idx_shift_driver_id ON shift(driver_id);
+CREATE INDEX idx_user_info_area_id ON user_info(area_id);
+CREATE INDEX idx_emergency_contacts_user_id ON emergency_contacts(user_id);
+CREATE INDEX idx_tag_permission_tag_id ON tag_permission(tag_id);
+CREATE INDEX idx_tag_permission_permission_id ON tag_permission(permission_id);
+CREATE INDEX idx_account_tag_account_id ON account_tag(account_id);
+CREATE INDEX idx_account_tag_tag_id ON account_tag(tag_id);
+CREATE INDEX idx_launch_point_area_id ON launch_point(area_id);
 CREATE INDEX idx_shift_launch_point_id ON shift(launch_point_id);
-CREATE INDEX idx_shift_register_shift_id ON shift_register(shift_id);
-CREATE INDEX idx_shift_register_user_id ON shift_register(user_id);
-CREATE INDEX idx_shift_register_status ON shift_register(status);
+CREATE INDEX idx_shift_ambulance_id ON shift(ambulance_id);
+CREATE INDEX idx_shift_driver_id ON shift(driver_id);
+CREATE INDEX idx_shift_slot_shift_id ON shift_slot(shift_id);
+CREATE INDEX idx_shift_slot_user_id ON shift_slot(user_id);
+CREATE INDEX idx_shift_slot_status ON shift_slot(status);
 CREATE INDEX idx_notification_user_id ON notification(user_id);
 CREATE INDEX idx_notification_read ON notification(read);
 CREATE INDEX idx_notification_date ON notification(date);
@@ -264,30 +278,33 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
--- Create triggers to automatically update updated_at for all tables
+-- Create triggers to automatically update updated_at for all tables with updated_at column
 CREATE TRIGGER update_account_updated_at BEFORE UPDATE ON account FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_team_updated_at BEFORE UPDATE ON team FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_user_team_updated_at BEFORE UPDATE ON user_team FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_user_group_updated_at BEFORE UPDATE ON user_group FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_user_info_updated_at BEFORE UPDATE ON user_info FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_emergency_contacts_updated_at BEFORE UPDATE ON emergency_contacts FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_permissions_updated_at BEFORE UPDATE ON permissions FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_user_group_permission_updated_at BEFORE UPDATE ON user_group_permission FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_tag_updated_at BEFORE UPDATE ON tag FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_tag_permission_updated_at BEFORE UPDATE ON tag_permission FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_account_tag_updated_at BEFORE UPDATE ON account_tag FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_area_updated_at BEFORE UPDATE ON area FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_launch_point_updated_at BEFORE UPDATE ON launch_point FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_schedule_updated_at BEFORE UPDATE ON schedule FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_ambulance_updated_at BEFORE UPDATE ON ambulance FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_shift_updated_at BEFORE UPDATE ON shift FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_shift_register_updated_at BEFORE UPDATE ON shift_register FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_shift_slot_updated_at BEFORE UPDATE ON shift_slot FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_notification_updated_at BEFORE UPDATE ON notification FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Insert some initial data
 -- Create a system user for initial records
-INSERT INTO account (id, display_name, email, created_by) 
-VALUES ('00000000-0000-0000-0000-000000000001', 'System', 'system@mitnadvim.com', '00000000-0000-0000-0000-000000000001');
+-- Note: We need to temporarily disable the foreign key constraint for created_by
+-- We'll create the system user first, then update the constraint
+ALTER TABLE account ALTER COLUMN created_by DROP NOT NULL;
 
--- Create default user groups
-INSERT INTO user_group (id, name, created_by) VALUES 
-('00000000-0000-0000-0000-000000000002', 'Admin', '00000000-0000-0000-0000-000000000001'),
-('00000000-0000-0000-0000-000000000003', 'Manager', '00000000-0000-0000-0000-000000000001'),
-('00000000-0000-0000-0000-000000000004', 'Driver', '00000000-0000-0000-0000-000000000001'),
-('00000000-0000-0000-0000-000000000005', 'User', '00000000-0000-0000-0000-000000000001');
+INSERT INTO account (id, display_name, email, created_by) 
+VALUES ('00000000-0000-0000-0000-000000000001', 'System', 'system@mitnadvim.com', NULL);
+
+UPDATE account SET created_by = id WHERE id = '00000000-0000-0000-0000-000000000001';
+
+ALTER TABLE account ALTER COLUMN created_by SET NOT NULL;
 
 -- Create default permissions
 INSERT INTO permissions (id, name, created_by) VALUES 
@@ -297,15 +314,6 @@ INSERT INTO permissions (id, name, created_by) VALUES
 ('00000000-0000-0000-0000-000000000009', 'create_shift', '00000000-0000-0000-0000-000000000001'),
 ('00000000-0000-0000-0000-000000000010', 'edit_shift', '00000000-0000-0000-0000-000000000001'),
 ('00000000-0000-0000-0000-000000000011', 'register_shift', '00000000-0000-0000-0000-000000000001');
-
--- Grant all permissions to Admin group
-INSERT INTO user_group_permission (user_group_id, permission_id, created_by) 
-SELECT '00000000-0000-0000-0000-000000000002', id, '00000000-0000-0000-0000-000000000001' 
-FROM permissions;
-
--- Update system user to be in Admin group
-UPDATE account SET user_group_id = '00000000-0000-0000-0000-000000000002'
-WHERE id = '00000000-0000-0000-0000-000000000001';
 
 -- Insert sample notifications from notificationPanel.tsx
 -- Notification 1: "הודעה למתנדבים"
