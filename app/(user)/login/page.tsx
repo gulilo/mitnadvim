@@ -4,6 +4,7 @@ import { authenticate } from "../../lib/actions";
 import Image from "next/image";
 import { useState } from "react";
 import ForgotPasswordPanel from "../components/forgotPasswordPanel";
+import Footer from "../components/footer";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -13,7 +14,7 @@ export default function Login() {
   };
 
   return (
-    <div className="fixed inset-0 flex flex-col items-center pt-8 pb-6 px-4 overflow-y-auto">
+    <div className="fixed inset-0 flex flex-col items-center pt-8 pb-6 px-4 overflow-y-auto bg-[#FF0000]">
       <div className="relative w-72 h-48 mb-12 md:w-96 md:h-64">
         <Image
           src={"/MDA-Dan-Logo.png"}
@@ -94,6 +95,7 @@ export default function Login() {
           כניסה למערכת
         </button>
       </form>
+      <Footer />
     </div>
   );
 }

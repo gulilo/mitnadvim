@@ -1,5 +1,18 @@
-export type DbAccount = { id: string; email: string; password_hash: string; name: string; user_group_id: string };
+export type DbAccount = {
+  id: string;
+  display_name: string;
+  email: string;
+  phone: string | null;
+  password_hash: string | null;
+};
 
-export type DbUser = { id: string; firstName: string; lastName: string; image: string; address: string; email: string; phone: string }
-
-export type DbUserGroup = { id: string; name: string };
+export type DbUser = {
+  id: string;
+  account_id: string;
+  first_name: string;
+  last_name: string;
+  image_url: string | null;
+  address: string;
+  area_id: string;
+  role: string;
+};

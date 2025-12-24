@@ -6,9 +6,9 @@ export default function loginLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className="flex flex-col h-screen bg-[#FF0000] ">
+    <div className="flex flex-col h-screen">
       {children}
-      <Footer />
+      
     </div>
   );
 }
