@@ -63,7 +63,7 @@ export async function getUserTags(accountId: string) {
       INNER JOIN account_tag at ON t.id = at.tag_id
       WHERE at.account_id = ${accountId}
     `;
-    return tags.map((tag: any) => tag.name);
+    return tags.map((tag) => tag.name);
   } catch (error) {
     console.error('Failed to fetch user tags:', error);
     return [];
