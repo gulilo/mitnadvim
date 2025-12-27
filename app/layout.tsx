@@ -3,6 +3,7 @@ import { Noto_Sans_Hebrew } from "next/font/google";
 import "./globals.css";
 import Header from "./components/layout/header";
 import RtlProvider from "@/app/components/providers/rtl-provider";
+import MainMenu from "./components/layout/mainMenu";
 
 const notoSansHebrew = Noto_Sans_Hebrew({
   subsets: ["hebrew", "latin"],
@@ -21,12 +22,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="he" dir="rtl" className={notoSansHebrew.variable}>
-      <body>
+      <body className="relative">
         <RtlProvider>
-          {/* <Header /> */}
-        <div>  {/* <div className="h-screen bg-gray-200 border-1 rounded-lg m-6 "> */}
-            {children}
-          </div>
+          <MainMenu />
+          {children}
         </RtlProvider>
       </body>
     </html>

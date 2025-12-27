@@ -1,10 +1,12 @@
 "use server";
 
-import { signIn } from "@/auth";
+import { signIn, signOut } from "@/auth";
 import { AuthError } from 'next-auth';
 import {sql} from "./data";
 import bcrypt from "bcrypt";
 import { redirect } from 'next/navigation';
+import { auth } from "@/auth";
+import { getAccountByAccountId, getUserTags, getAreaName, getUserByAccountId } from "@/app/(user)/data/user";
 
 export async function authenticate(formData: FormData) {
     try {
@@ -62,3 +64,8 @@ export async function registerUser(formData: FormData) {
 
   redirect('/');
 }
+
+export async function handleSignOut() {
+  await signOut({ redirectTo: '/' });
+}
+
