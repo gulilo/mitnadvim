@@ -11,6 +11,8 @@ import Image from "next/image";
 import { Camera, User, Cross } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import Tags from "../components/tags";
+import HomeStation from "../components/homeStation";
+import { Separator } from "@/app/components/ui/separator";
 
 export default async function Profile() {
   const session = await auth();
@@ -73,17 +75,7 @@ export default async function Profile() {
           </div>
 
           {/* Home Station */}
-          <div className="flex flex-row mb-2">
-            <Image
-              src="/icon_pin-MDA.svg"
-              alt="Home Station"
-              width={18}
-              height={26}
-            />
-            <h4 className="text-black mr-2">
-              תחנת אם: {areaName || "לא צוין"}
-            </h4>
-          </div>
+         <HomeStation areaName={areaName || ""} />
 
           {/* Tags */}
           <Tags tagsids={tags} />
@@ -130,7 +122,7 @@ export default async function Profile() {
       </div>
 
       {/* Divider */}
-      <div className="h-px bg-red-500 mx-4 my-6" />
+      <Separator className="bg-red-inActive w-100 mx-4 my-6" />
 
       {/* Emergency Contact Section */}
       <div className="px-4 space-y-4 pb-6">
