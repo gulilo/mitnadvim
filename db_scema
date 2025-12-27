@@ -52,6 +52,7 @@ emergencyContacts.userid > userInfo.id
 tag [color:green]{
   id string pk
   name string 
+  category string
   createdAt timestamp
   updatedAt timestamp nullable
   createdBy string fk

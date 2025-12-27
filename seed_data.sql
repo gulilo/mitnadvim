@@ -546,5 +546,469 @@ BEGIN
     END IF;
 END $$;
 
+-- ============================================
+-- Seed Tags with Categories
+-- ============================================
+DO $$
+DECLARE
+    system_account_id UUID;
+BEGIN
+    -- Get system account
+    SELECT id INTO system_account_id FROM account WHERE email = 'system@mitnadvim.com' LIMIT 1;
+    
+    IF system_account_id IS NULL THEN
+        RAISE EXCEPTION 'System account not found. Please ensure the system account is created first.';
+    END IF;
+    
+    -- Insert tags with category "גזרה"
+    -- Check if tags already exist before inserting
+    INSERT INTO tag (id, name, category, created_at, updated_at, created_by, updated_by)
+    SELECT 
+        uuid_generate_v4(),
+        tag_name,
+        'גזרה',
+        NOW(),
+        NULL,
+        system_account_id,
+        NULL
+    FROM (VALUES 
+        ('צפון'),
+        ('דרום'),
+        ('מרכז'),
+        ('מזרח'),
+        ('חוץ'),
+        ('וירטואלי'),
+        ('שכבה י'),
+        ('שכבה יא'),
+        ('שכבה יב')
+    ) AS tag_values(tag_name)
+    WHERE NOT EXISTS (
+        SELECT 1 FROM tag WHERE name = tag_values.tag_name AND category = 'גזרה'
+    );
+    
+    -- Insert tags with category "גיל"
+    INSERT INTO tag (id, name, category, created_at, updated_at, created_by, updated_by)
+    SELECT 
+        uuid_generate_v4(),
+        tag_name,
+        'גיל',
+        NOW(),
+        NULL,
+        system_account_id,
+        NULL
+    FROM (VALUES 
+        ('בוגרים'),
+        ('נוער')
+    ) AS tag_values(tag_name)
+    WHERE NOT EXISTS (
+        SELECT 1 FROM tag WHERE name = tag_values.tag_name AND category = 'גיל'
+    );
+    
+    -- Insert tags with category "סאאוס"
+    INSERT INTO tag (id, name, category, created_at, updated_at, created_by, updated_by)
+    SELECT 
+        uuid_generate_v4(),
+        tag_name,
+        'סאאוס',
+        NOW(),
+        NULL,
+        system_account_id,
+        NULL
+    FROM (VALUES 
+        ('נהג שכיר'),
+        ('מורשה נט"ן'),
+        ('משתלם נהיגה'),
+        ('נהג מתנדב'),
+        ('פרמדיק'),
+        ('חניך'),
+        ('חונך'),
+        ('חובש משתלם')
+    ) AS tag_values(tag_name)
+    WHERE NOT EXISTS (
+        SELECT 1 FROM tag WHERE name = tag_values.tag_name AND category = 'סאאוס'
+    );
+    
+    -- Insert tags with category "תחנת אם"
+    INSERT INTO tag (id, name, category, created_at, updated_at, created_by, updated_by)
+    SELECT 
+        uuid_generate_v4(),
+        tag_name,
+        'תחנת אם',
+        NOW(),
+        NULL,
+        system_account_id,
+        NULL
+    FROM (VALUES 
+        ('תל-אביב'),
+        ('רמת גן')
+    ) AS tag_values(tag_name)
+    WHERE NOT EXISTS (
+        SELECT 1 FROM tag WHERE name = tag_values.tag_name AND category = 'תחנת אם'
+    );
+    
+    -- Insert tags with category "ניהול"
+    INSERT INTO tag (id, name, category, created_at, updated_at, created_by, updated_by)
+    SELECT 
+        uuid_generate_v4(),
+        tag_name,
+        'ניהול',
+        NOW(),
+        NULL,
+        system_account_id,
+        NULL
+    FROM (VALUES 
+        ('א. צפון'),
+        ('א.דרום'),
+        ('א. מרכז'),
+        ('א. מזרח'),
+        ('א. חוץ'),
+        ('א. ויראואלי'),
+        ('א. שכבה י'),
+        ('א. שכבה יא'),
+        ('א.שכבה יב'),
+        ('סדרן עבודה'),
+        ('יצירת משתמשים חדשים'),
+        ('רכז שיבוצים'),
+        ('רכז גזרה')
+    ) AS tag_values(tag_name)
+    WHERE NOT EXISTS (
+        SELECT 1 FROM tag WHERE name = tag_values.tag_name AND category = 'ניהול'
+    );
+END $$;
+
+-- ============================================
+-- Assign Tags to Accounts
+-- ============================================
+DO $$
+DECLARE
+    system_account_id UUID;
+    account_gal_id UUID;
+    account_yaara_id UUID;
+    account_avishag_id UUID;
+    account_michal_id UUID;
+    account_moshe_id UUID;
+    account_ofek_id UUID;
+    account_yair_id UUID;
+    account_daniel_id UUID;
+    current_tag_id UUID;
+BEGIN
+    -- Get system account
+    SELECT id INTO system_account_id FROM account WHERE email = 'system@mitnadvim.com' LIMIT 1;
+    
+    IF system_account_id IS NULL THEN
+        RAISE EXCEPTION 'System account not found. Please ensure the system account is created first.';
+    END IF;
+    
+    -- Get account IDs
+    SELECT id INTO account_gal_id FROM account WHERE email = 'Goldman_Gal@mail.co' LIMIT 1;
+    SELECT id INTO account_yaara_id FROM account WHERE email = 'Y.B.Shushan@mail.co' LIMIT 1;
+    SELECT id INTO account_avishag_id FROM account WHERE email = 'Avishag@mail.co' LIMIT 1;
+    SELECT id INTO account_michal_id FROM account WHERE email = 'MP_MDA@mail.co' LIMIT 1;
+    SELECT id INTO account_moshe_id FROM account WHERE email = 'Moses@mail.co' LIMIT 1;
+    SELECT id INTO account_ofek_id FROM account WHERE email = 'Ofek_Cohen@mail.co' LIMIT 1;
+    SELECT id INTO account_yair_id FROM account WHERE email = 'Y.CornB@mail.co' LIMIT 1;
+    SELECT id INTO account_daniel_id FROM account WHERE email = 'D.Levi@mail.co' LIMIT 1;
+    
+    -- ============================================
+    -- Gal Goldman tags: וירטואלי, מורשה נט"ן, בוגרים, תל-אביב
+    -- ============================================
+    IF account_gal_id IS NOT NULL THEN
+        -- וירטואלי (גזרה)
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'וירטואלי' AND category = 'גזרה' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_gal_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_gal_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+        
+        -- מורשה נט"ן (סאאוס)
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'מורשה נט"ן' AND category = 'סאאוס' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_gal_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_gal_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+        
+        -- בוגרים (גיל)
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'בוגרים' AND category = 'גיל' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_gal_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_gal_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+        
+        -- תל-אביב (תחנת אם)
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'תל-אביב' AND category = 'תחנת אם' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_gal_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_gal_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+    END IF;
+    
+    -- ============================================
+    -- Yaara Yankelovitz tags: שכבה יב, מורשה נט"ן, נוער
+    -- ============================================
+    IF account_yaara_id IS NOT NULL THEN
+        -- שכבה יב (גזרה)
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'שכבה יב' AND category = 'גזרה' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_yaara_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_yaara_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+        
+        -- מורשה נט"ן (סאאוס)
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'מורשה נט"ן' AND category = 'סאאוס' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_yaara_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_yaara_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+        
+        -- נוער (גיל)
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'נוער' AND category = 'גיל' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_yaara_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_yaara_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+    END IF;
+    
+    -- ============================================
+    -- Avishag Hashunamit tags: מרכז, בוגרים, תל-אביב
+    -- ============================================
+    IF account_avishag_id IS NOT NULL THEN
+        -- מרכז (גזרה)
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'מרכז' AND category = 'גזרה' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_avishag_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_avishag_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+        
+        -- בוגרים (גיל)
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'בוגרים' AND category = 'גיל' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_avishag_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_avishag_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+        
+        -- תל-אביב (תחנת אם)
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'תל-אביב' AND category = 'תחנת אם' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_avishag_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_avishag_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+    END IF;
+    
+    -- ============================================
+    -- Michal Moskin tags: שכבה יא, מורשה נט"ן, חונך, נוער
+    -- ============================================
+    IF account_michal_id IS NOT NULL THEN
+        -- שכבה יא (גזרה)
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'שכבה יא' AND category = 'גזרה' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_michal_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_michal_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+        
+        -- מורשה נט"ן (סאאוס)
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'מורשה נט"ן' AND category = 'סאאוס' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_michal_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_michal_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+        
+        -- חונך (סאאוס)
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'חונך' AND category = 'סאאוס' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_michal_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_michal_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+        
+        -- נוער (גיל)
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'נוער' AND category = 'גיל' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_michal_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_michal_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+    END IF;
+    
+    -- ============================================
+    -- Moshe Markovitz tags: חוץ, משתלם נהיגה, בוגרים
+    -- ============================================
+    IF account_moshe_id IS NOT NULL THEN
+        -- חוץ (גזרה)
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'חוץ' AND category = 'גזרה' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_moshe_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_moshe_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+        
+        -- משתלם נהיגה (סאאוס)
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'משתלם נהיגה' AND category = 'סאאוס' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_moshe_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_moshe_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+        
+        -- בוגרים (גיל)
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'בוגרים' AND category = 'גיל' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_moshe_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_moshe_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+    END IF;
+    
+    -- ============================================
+    -- Ofek Aharonov tags: נהג שכיר, תל-אביב
+    -- ============================================
+    IF account_ofek_id IS NOT NULL THEN
+        -- נהג שכיר (סאאוס)
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'נהג שכיר' AND category = 'סאאוס' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_ofek_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_ofek_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+        
+        -- תל-אביב (תחנת אם)
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'תל-אביב' AND category = 'תחנת אם' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_ofek_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_ofek_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+    END IF;
+    
+    -- ============================================
+    -- Yair Yadin tags: מזרח, מורשה נט"ן, נהג מתנדב, בוגרים
+    -- ============================================
+    IF account_yair_id IS NOT NULL THEN
+        -- מזרח (גזרה)
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'מזרח' AND category = 'גזרה' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_yair_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_yair_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+        
+        -- מורשה נט"ן (סאאוס)
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'מורשה נט"ן' AND category = 'סאאוס' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_yair_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_yair_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+        
+        -- נהג מתנדב (סאאוס)
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'נהג מתנדב' AND category = 'סאאוס' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_yair_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_yair_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+        
+        -- בוגרים (גיל)
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'בוגרים' AND category = 'גיל' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_yair_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_yair_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+    END IF;
+    
+    -- ============================================
+    -- Daniel Douglas tags: שכבה י, חניך, נוער
+    -- ============================================
+    IF account_daniel_id IS NOT NULL THEN
+        -- שכבה י (גזרה)
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'שכבה י' AND category = 'גזרה' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_daniel_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_daniel_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+        
+        -- חניך (סאאוס)
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'חניך' AND category = 'סאאוס' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_daniel_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_daniel_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+        
+        -- נוער (גיל)
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'נוער' AND category = 'גיל' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_daniel_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_daniel_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+    END IF;
+END $$;
+
 COMMIT;
 

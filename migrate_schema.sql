@@ -549,7 +549,28 @@ BEGIN
 END $$;
 
 -- ============================================
--- 9. Add updated_at and updated_by to notification table
+-- 9. Add category column to tag table
+-- ============================================
+
+DO $$
+DECLARE
+    table_exists BOOLEAN;
+BEGIN
+    -- Check if table exists
+    SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'tag'
+    ) INTO table_exists;
+    
+    IF table_exists THEN
+        ALTER TABLE tag 
+            ADD COLUMN IF NOT EXISTS category VARCHAR(255);
+    END IF;
+END $$;
+
+-- ============================================
+-- 10. Add updated_at and updated_by to notification table
 -- ============================================
 
 DO $$
@@ -594,14 +615,14 @@ BEGIN
 END $$;
 
 -- ============================================
--- 10. Add phone column to account table (if missing)
+-- 11. Add phone column to account table (if missing)
 -- ============================================
 
 ALTER TABLE account 
     ADD COLUMN IF NOT EXISTS phone VARCHAR(50);
 
 -- ============================================
--- 11. Create/update triggers for updated_at columns
+-- 12. Create/update triggers for updated_at columns
 -- ============================================
 
 -- Create or replace the function if it doesn't exist
@@ -655,7 +676,7 @@ CREATE TRIGGER update_notification_updated_at
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- ============================================
--- 12. Drop indexes that are no longer needed
+-- 13. Drop indexes that are no longer needed
 -- ============================================
 
 DROP INDEX IF EXISTS idx_account_user_group_id;
