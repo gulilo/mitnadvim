@@ -10,7 +10,7 @@ import {
 import Image from "next/image";
 import { Camera, User, Cross } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
-import { cn } from "@/app/lib/utils";
+import Tags from "../components/tags";
 
 export default async function Profile() {
   const session = await auth();
@@ -86,41 +86,7 @@ export default async function Profile() {
           </div>
 
           {/* Tags */}
-          <div className="flex flex-wrap gap-2 justify-start mb-4">
-            {tags.map((tag) => {
-              let bgColor = "bg-gray-200";
-              let textColor = "text-black";
-              let height = "h-7";
-
-              if (tag === "וירטואלי") {
-                bgColor = "bg-[#14ae5c]";
-                textColor = "text-white";
-                height = "h-7";
-              } else if (tag === "בוגרים") {
-                bgColor = "bg-[#fc5c5c]";
-                textColor = "text-white";
-                height = "h-6";
-              } else if (tag === "מורשה נט״ן") {
-                bgColor = "bg-[#fef009]";
-                textColor = "text-black";
-                height = "h-7";
-              }
-
-              return (
-                <span
-                  key={tag}
-                  className={cn(
-                    "px-3 rounded text-base font-bold flex items-center",
-                    bgColor,
-                    textColor,
-                    height
-                  )}
-                >
-                  {tag}
-                </span>
-              );
-            })}
-          </div>
+          <Tags tagsids={tags} />
         </div>
       </div>
 
@@ -179,7 +145,7 @@ export default async function Profile() {
         </div>
 
         {emergencyContact ? (
-          <div className="flex flex-col gap-1 justify-center items-start w-90 border-2 border-red-500 mx-auto">
+          <div className="flex flex-col gap-1 justify-center items-start w-90 mx-auto">
             {/* Relationship */}
             <div className="flex flex-row justify-between items-center gap-13">
               <div className="flex flex-row items-center gap-2">

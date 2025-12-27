@@ -58,14 +58,34 @@ export async function getAreaName(areaId: string): Promise<string | null> {
 export async function getUserTags(accountId: string) {
   try {
     const tags = await sql`
-      SELECT t.name 
+      SELECT t.id 
       FROM tag t
       INNER JOIN account_tag at ON t.id = at.tag_id
       WHERE at.account_id = ${accountId}
     `;
-    return tags.map((tag) => tag.name);
+    return tags.map((tag) => tag.id);
   } catch (error) {
     console.error('Failed to fetch user tags:', error);
     return [];
+  }
+}
+
+export async function getTagName(tagId: string): Promise<string | null> {
+  try {
+    const tag = await sql`SELECT name FROM tag WHERE id = ${tagId}`;
+    return tag[0]?.name || null;
+  } catch (error) {
+    console.error('Failed to fetch tag name:', error);
+    return null;
+  }
+}
+
+export async function getTagCategory(tagId: string): Promise<string | null> {
+  try {
+    const tag = await sql`SELECT category FROM tag WHERE id = ${tagId}`;
+    return tag[0]?.category || null;
+  } catch (error) {
+    console.error('Failed to fetch tag category:', error);
+    return null;
   }
 }

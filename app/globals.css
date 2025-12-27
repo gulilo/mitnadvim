@@ -41,6 +41,10 @@
   --color-sidebar-ring: var(--sidebar-ring);
   --color-red-active: var(--red-active);
   --color-red-inActive: var(--red-inActive);
+  --color-tag-gizra: var(--tag-gizra);
+  --color-tag-age: var(--tag-age);
+  --color-tag-status: var(--tag-status);
+  --color-tag-atn: var(--tag-atn);
 }
 
 :root {
@@ -78,6 +82,10 @@
   --sidebar-ring: oklch(0.708 0 0);
   --red-active: #ff4447;
   --red-inActive: #FC5C5C;
+  --tag-gizra: #14ae5c;
+  --tag-age: #fc5c5c;
+  --tag-status: #FC5C5C80;
+  --tag-atn: #FEF009;
 }
 
 .dark {
