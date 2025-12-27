@@ -28,7 +28,6 @@ export default async function Tags({ tagsids }: { tagsids: string[] }) {
         {tags.map((tag) => {
           let bgColor = null;
           let textColor = "text-black";
-          let height = "h-7";
           let border = null;
 
           if (tag.category === "גזרה") {
@@ -48,10 +47,9 @@ export default async function Tags({ tagsids }: { tagsids: string[] }) {
             <h5
               key={tag.name}
               className={cn(
-                "px-3 rounded flex items-center",
+                "px-3 rounded flex items-center h-7",
                 bgColor,
                 textColor,
-                height,
                 border
               )}
             >
