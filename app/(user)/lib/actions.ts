@@ -2,6 +2,15 @@
 
 import { auth } from "@/auth";
 import { getAccountByAccountId, getAreaName, getUserByAccountId, getUserTags, getTagName, getTagCategory } from "../data/user";
+import { DbUser } from "../data/definitions";
+import { DbAccount } from "../data/definitions";
+
+export type ProfileData = {
+  user: DbUser;
+  account: DbAccount;
+  areaName: string;
+  tags: string[];
+}
 
 export async function getProfileData() {
     try {
@@ -19,12 +28,12 @@ export async function getProfileData() {
       const areaName = await getAreaName(user.area_id);
       const tags = await getUserTags(session.user.id);
   
-      return {
+      return { 
         user,
         account,
         areaName,
         tags,
-      };
+      } as ProfileData;
     } catch (error) {
       console.error('Failed to fetch profile data:', error);
       return null;
