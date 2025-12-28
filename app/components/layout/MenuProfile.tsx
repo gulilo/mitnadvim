@@ -1,39 +1,12 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import { getProfileData } from "@/app/(user)/lib/actions";
 import Image from "next/image";
 import { User } from "lucide-react";
 import Tags from "@/app/(user)/components/tags";
 import HomeStation from "@/app/(user)/components/homeStation";
-export default function MenuProfile() {
-  const [profileData, setProfileData] =
-    useState<Awaited<ReturnType<typeof getProfileData>>>(null);
-  const [loading, setLoading] = useState(true);
+import { ProfileData } from "@/app/(user)/lib/actions";
 
-  useEffect(() => {
-    async function fetchProfile() {
-      try {
-        const data = await getProfileData();
-        setProfileData(data);
-      } catch (error) {
-        console.error("Failed to fetch profile:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchProfile();
-  }, []);
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
-  if (!profileData) {
-    return null;
-  }
-
-  const { user, account, areaName, tags } = profileData;
+export default async function MenuProfile({ profileData }: { profileData: ProfileData }) {
+  const { user, areaName, tags } = profileData;
 
   return (
     <div className="flex flex-row justify-center gap-2">

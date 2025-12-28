@@ -1,6 +1,3 @@
-"use client";
-
-import { useMediaQuery } from "@/app/hooks/use-media-query";
 import {
   Drawer,
   DrawerTrigger,
@@ -12,10 +9,19 @@ import MenuProfile from "./MenuProfile";
 import Link from "next/link";
 import { Separator } from "../ui/separator";
 import { handleSignOut } from "@/app/lib/actions";
+import { redirect } from "next/navigation";
+import { getProfileData, ProfileData } from "@/app/(user)/lib/actions";
+import { getUserPermissions } from "@/app/(user)/data/user";
 
-export default function MainMenu() {
-  const isMobile = useMediaQuery("(max-width: 768px)");
-  return isMobile ? (
+export default async function MainMenu() {
+  const profileData = (await getProfileData()) as ProfileData;
+  if (!profileData) {
+    redirect("./login");
+  }
+  const permissions = await getUserPermissions(profileData.tags);
+  console.log(permissions);
+
+  return (
     <Drawer direction="left">
       <DrawerTrigger>
         <Image
@@ -38,7 +44,7 @@ export default function MainMenu() {
           />
         </DrawerClose>
         {/* profile */}
-        <MenuProfile />
+        <MenuProfile profileData={profileData} />
         <div className="flex flex-col w-60 mx-auto items-start justify-center gap-2">
           <Separator className="bg-white mx-auto" />
 
@@ -60,6 +66,17 @@ export default function MainMenu() {
             </Link>
           </DrawerClose>
           <Separator className="bg-white  mx-auto" />
+
+          {permissions.includes("createShift") && (
+            <>
+              <DrawerClose asChild>
+                <Link href="/adminPanel">
+                  <h2 className="text-white">יצירת משמרת</h2>
+                </Link>
+              </DrawerClose>
+              <Separator className="bg-white  mx-auto" />
+            </>
+          )}
           <DrawerClose asChild>
             <form action={handleSignOut} className="w-full">
               <button
@@ -74,7 +91,5 @@ export default function MainMenu() {
         </div>
       </DrawerContent>
     </Drawer>
-  ) : (
-    <div>Main Menu</div>
   );
 }

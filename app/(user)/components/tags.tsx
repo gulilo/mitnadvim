@@ -1,36 +1,8 @@
-"use client";
-
-import { useEffect, useState } from "react";
 import { cn } from "@/app/lib/utils";
 import { getTagsData } from "../lib/actions";
 
-export default function Tags({ tagsids }: { tagsids: string[] }) {
-  const [tags, setTags] = useState<
-    Array<{ name: string | null; category: string | null }>
-  >([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetchTags() {
-      try {
-        const data = await getTagsData(tagsids);
-        setTags(data);
-      } catch (error) {
-        console.error("Failed to fetch tags:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    if (tagsids && tagsids.length > 0) {
-      fetchTags();
-    } else {
-      setLoading(false);
-    }
-  }, [tagsids]);
-  if (loading) {
-    return <div>Loading tags...</div>;
-  }
-
+export default async function Tags({ tagsids }: { tagsids: string[] }) {
+  const tags = await getTagsData(tagsids);
   if (!tags || tags.length === 0) {
     return null;
   }
