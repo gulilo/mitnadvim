@@ -57,8 +57,8 @@ export default function DeleteLaunchPointButton({
         <AlertDialogHeader>
           <AlertDialogTitle>מחיקת נקודת הזנקה</AlertDialogTitle>
           <AlertDialogDescription>
-            האם אתה בטוח שברצונך למחוק את נקודת ההזנקה "{launchPointName}"?
-            פעולה זו לא ניתנת לביטול.
+            האם אתה בטוח שברצונך למחוק את נקודת ההזנקה {launchPointName}? פעולה
+            זו לא ניתנת לביטול.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
