@@ -15,9 +15,9 @@ import { getUserPermissions } from "@/app/(user)/data/user";
 
 export default async function MainMenu() {
   const profileData = (await getProfileData()) as ProfileData;
-  if (!profileData) {
-    redirect("./login");
-  }
+  // if (!profileData) {
+  //   redirect("./login");
+  // }
   const permissions = await getUserPermissions(profileData.tags);
   console.log(permissions);
 
@@ -72,6 +72,16 @@ export default async function MainMenu() {
               <DrawerClose asChild>
                 <Link href="/adminPanel">
                   <h2 className="text-white">יצירת משמרת</h2>
+                </Link>
+              </DrawerClose>
+              <Separator className="bg-white  mx-auto" />
+            </>
+          )}
+          {permissions.includes("createShift") && (
+            <>
+              <DrawerClose asChild>
+                <Link href="/createLP">
+                  <h2 className="text-white">יצירת נקודת הזנקה</h2>
                 </Link>
               </DrawerClose>
               <Separator className="bg-white  mx-auto" />
