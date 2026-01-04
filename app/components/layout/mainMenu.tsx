@@ -55,7 +55,7 @@ export default async function MainMenu() {
           </DrawerClose>
           <Separator className="bg-white  mx-auto" />
           <DrawerClose asChild>
-            <Link href="/">
+            <Link href="/weeklySchedule">
               <h2 className="text-white">לוח שיבוצים</h2>
             </Link>
           </DrawerClose>
