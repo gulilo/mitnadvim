@@ -131,15 +131,14 @@ ambulance [color:red] {
   updatedBy string fk nullable
 }
 
-shift [color: yellow] {
+permenentShift [color:yellow] {
   id string pk
-  launchPointsid string fk
-  ambulanceId string fk
-  driverid stirng fk
-  date date
+  launchPointid string fk
+  weekDay int
   startTime timestamp
   endTime timestamp
   adultOnly boolean
+  numberOfSlots int
 
   createdAt timestamp
   updatedAt timestamp nullable
@@ -147,6 +146,26 @@ shift [color: yellow] {
   updatedBy string fk nullable
 }
 
+shift [color: yellow] {
+  id string pk
+  pemanentShiftId string fk
+  launchPointsid string fk
+  ambulanceId string fk
+  driverid stirng fk
+  date date
+  startTime timestamp
+  endTime timestamp
+  adultOnly boolean
+  numberOfSlots int
+  status string 
+  
+  createdAt timestamp
+  updatedAt timestamp nullable
+  createdBy string fk
+  updatedBy string fk nullable
+}
+
+shift.pemanentShiftId > permenentShift.id
 shift.driverid - account.id
 shift.launchPointsid < launchPoint.id
 shift.ambulanceId > ambulance.id

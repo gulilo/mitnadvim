@@ -4,8 +4,9 @@
 -- Enable UUID extension for generating UUIDs
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Create custom enum type for shift status
-CREATE TYPE shift_status AS ENUM ('pending', 'confirmed', 'cancelled');
+-- Create custom enum types
+CREATE TYPE shift_status AS ENUM ('pending', 'confirmed', 'cancelled'); -- For shift_slot status
+CREATE TYPE shift_status_type AS ENUM ('active', 'canceled'); -- For shift status
 
 -- Create tables in dependency order (referenced tables first)
 
@@ -183,33 +184,60 @@ CREATE TABLE ambulance (
     CONSTRAINT fk_ambulance_updated_by FOREIGN KEY (updated_by) REFERENCES account(id) ON DELETE CASCADE
 );
 
--- 11. Shift table
-CREATE TABLE shift (
+-- 11. Permanent Shift table
+CREATE TABLE permanent_shift (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     launch_point_id UUID NOT NULL,
-    ambulance_id UUID NOT NULL,
-    driver_id UUID,
-    date DATE NOT NULL,
-    start_time TIMESTAMP WITH TIME ZONE NOT NULL,
-    end_time TIMESTAMP WITH TIME ZONE NOT NULL,
+    week_day INTEGER NOT NULL CHECK (week_day >= 0 AND week_day <= 6), -- 0 = Sunday, 6 = Saturday
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
     adult_only BOOLEAN NOT NULL DEFAULT FALSE,
+    number_of_slots INTEGER NOT NULL DEFAULT 1,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE,
     created_by UUID NOT NULL,
     updated_by UUID,
     
     -- Foreign key constraints
+    CONSTRAINT fk_permanent_shift_launch_point FOREIGN KEY (launch_point_id) REFERENCES launch_point(id) ON DELETE CASCADE,
+    CONSTRAINT fk_permanent_shift_created_by FOREIGN KEY (created_by) REFERENCES account(id) ON DELETE CASCADE,
+    CONSTRAINT fk_permanent_shift_updated_by FOREIGN KEY (updated_by) REFERENCES account(id) ON DELETE CASCADE,
+    
+    -- Check constraint to ensure end_time is after start_time
+    CONSTRAINT chk_permanent_shift_times CHECK (end_time > start_time)
+);
+
+-- 12. Shift table
+CREATE TABLE shift (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    permanent_shift_id UUID,
+    launch_point_id UUID,
+    ambulance_id UUID NOT NULL,
+    driver_id UUID,
+    date DATE NOT NULL,
+    start_time TIMESTAMP WITH TIME ZONE,
+    end_time TIMESTAMP WITH TIME ZONE,
+    adult_only BOOLEAN DEFAULT FALSE,
+    number_of_slots INTEGER DEFAULT 1,
+    status shift_status_type NOT NULL DEFAULT 'active',
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE,
+    created_by UUID NOT NULL,
+    updated_by UUID,
+    
+    -- Foreign key constraints
+    CONSTRAINT fk_shift_permanent_shift FOREIGN KEY (permanent_shift_id) REFERENCES permanent_shift(id) ON DELETE SET NULL,
     CONSTRAINT fk_shift_launch_point FOREIGN KEY (launch_point_id) REFERENCES launch_point(id) ON DELETE CASCADE,
     CONSTRAINT fk_shift_ambulance FOREIGN KEY (ambulance_id) REFERENCES ambulance(id) ON DELETE CASCADE,
     CONSTRAINT fk_shift_driver FOREIGN KEY (driver_id) REFERENCES account(id) ON DELETE CASCADE,
     CONSTRAINT fk_shift_created_by FOREIGN KEY (created_by) REFERENCES account(id) ON DELETE CASCADE,
     CONSTRAINT fk_shift_updated_by FOREIGN KEY (updated_by) REFERENCES account(id) ON DELETE CASCADE,
     
-    -- Check constraint to ensure end_time is after start_time
-    CONSTRAINT chk_shift_times CHECK (end_time > start_time)
+    -- Check constraint to ensure end_time is after start_time (only when both are provided)
+    CONSTRAINT chk_shift_times CHECK (start_time IS NULL OR end_time IS NULL OR end_time > start_time)
 );
 
--- 12. Shift Slot table
+-- 13. Shift Slot table
 CREATE TABLE shift_slot (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     shift_id UUID NOT NULL,
@@ -230,7 +258,7 @@ CREATE TABLE shift_slot (
     CONSTRAINT uk_shift_slot UNIQUE (shift_id, user_id)
 );
 
--- 13. Notification table
+-- 14. Notification table
 CREATE TABLE notification (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL,
@@ -260,9 +288,14 @@ CREATE INDEX idx_tag_permission_permission_id ON tag_permission(permission_id);
 CREATE INDEX idx_account_tag_account_id ON account_tag(account_id);
 CREATE INDEX idx_account_tag_tag_id ON account_tag(tag_id);
 CREATE INDEX idx_launch_point_area_id ON launch_point(area_id);
+CREATE INDEX idx_permanent_shift_launch_point_id ON permanent_shift(launch_point_id);
+CREATE INDEX idx_permanent_shift_week_day ON permanent_shift(week_day);
+CREATE INDEX idx_shift_permanent_shift_id ON shift(permanent_shift_id);
 CREATE INDEX idx_shift_launch_point_id ON shift(launch_point_id);
 CREATE INDEX idx_shift_ambulance_id ON shift(ambulance_id);
 CREATE INDEX idx_shift_driver_id ON shift(driver_id);
+CREATE INDEX idx_shift_status ON shift(status);
+CREATE INDEX idx_shift_date ON shift(date);
 CREATE INDEX idx_shift_slot_shift_id ON shift_slot(shift_id);
 CREATE INDEX idx_shift_slot_user_id ON shift_slot(user_id);
 CREATE INDEX idx_shift_slot_status ON shift_slot(status);
@@ -290,6 +323,7 @@ CREATE TRIGGER update_account_tag_updated_at BEFORE UPDATE ON account_tag FOR EA
 CREATE TRIGGER update_area_updated_at BEFORE UPDATE ON area FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_launch_point_updated_at BEFORE UPDATE ON launch_point FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_ambulance_updated_at BEFORE UPDATE ON ambulance FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_permanent_shift_updated_at BEFORE UPDATE ON permanent_shift FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_shift_updated_at BEFORE UPDATE ON shift FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_shift_slot_updated_at BEFORE UPDATE ON shift_slot FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_notification_updated_at BEFORE UPDATE ON notification FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
