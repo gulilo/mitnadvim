@@ -20,9 +20,23 @@ export async function createPermanentShift(permanentShift: DbPermanentShift) {
 
     console.log(launchPointId, weekDay, startTime, endTime, adultOnly, numberOfSlots);
 
-
-    if (!launchPointId || !weekDay || !startTime || !endTime || adultOnly === undefined || !numberOfSlots) {
-      throw new Error('All fields are required');
+    if (!launchPointId) {
+      throw new Error('נקודת הזנקה נדרשת');
+    }
+    if (weekDay === undefined || weekDay === null) {
+      throw new Error('יום בשבוע נדרש');
+    }
+    if (!startTime) {
+      throw new Error('שעת התחלה נדרשת');
+    }
+    if (!endTime) {
+      throw new Error('שעת סיום נדרשת');
+    }
+    if (adultOnly === undefined) {
+      throw new Error('זמינות לשיבוץ נדרשת');
+    }
+    if (!numberOfSlots) {
+      throw new Error('מספר מלווים נדרש');
     }
 
 
@@ -58,8 +72,26 @@ export async function createShift(shift: DbShift) {
 
     console.log(permanentShiftId, launchPointId, ambulanceId, driverId, date, startTime, endTime, adultOnly, numberOfSlots, status);
 
-    if (!launchPointId || !date || !startTime || !endTime || adultOnly === undefined || !numberOfSlots || !status) {
-      throw new Error('All fields are required');
+    if (!launchPointId) {
+      throw new Error('נקודת הזנקה נדרשת');
+    }
+    if (!date) {
+      throw new Error('תאריך נדרש');
+    }
+    if (!startTime) {
+      throw new Error('שעת התחלה נדרשת');
+    }
+    if (!endTime) {
+      throw new Error('שעת סיום נדרשת');
+    }
+    if (adultOnly === undefined) {
+      throw new Error('זמינות לשיבוץ נדרשת');
+    }
+    if (!numberOfSlots) {
+      throw new Error('מספר מלווים נדרש');
+    }
+    if (!status) {
+      throw new Error('סטטוס נדרש');
     }
 
     await sql`
