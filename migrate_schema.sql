@@ -676,7 +676,181 @@ CREATE TRIGGER update_notification_updated_at
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- ============================================
--- 13. Drop indexes that are no longer needed
+-- 13. Create shift_type_enum if it doesn't exist
+-- ============================================
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'shift_type_enum') THEN
+        CREATE TYPE shift_type_enum AS ENUM ('day', 'evening', 'night');
+    END IF;
+END $$;
+
+-- ============================================
+-- 14. Add new columns to permanent_shift table
+-- ============================================
+
+DO $$
+DECLARE
+    system_account_id UUID;
+    table_exists BOOLEAN;
+    column_exists BOOLEAN;
+BEGIN
+    -- Check if table exists
+    SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'permanent_shift'
+    ) INTO table_exists;
+    
+    IF table_exists THEN
+        -- Add area_id column if it doesn't exist
+        SELECT EXISTS (
+            SELECT FROM information_schema.columns 
+            WHERE table_schema = 'public' 
+            AND table_name = 'permanent_shift' 
+            AND column_name = 'area_id'
+        ) INTO column_exists;
+        
+        IF NOT column_exists THEN
+            -- Get area_id from launch_point for existing records
+            ALTER TABLE permanent_shift 
+                ADD COLUMN area_id UUID;
+            
+            -- Update existing records with area_id from launch_point
+            UPDATE permanent_shift ps
+            SET area_id = lp.area_id
+            FROM launch_point lp
+            WHERE ps.launch_point_id = lp.id;
+            
+            -- Try to find system account for default
+            SELECT id INTO system_account_id FROM account WHERE email = 'system@mitnadvim.com' LIMIT 1;
+            IF system_account_id IS NULL THEN
+                SELECT id INTO system_account_id FROM account LIMIT 1;
+            END IF;
+            
+            -- Set default for any remaining NULL values (shouldn't happen, but just in case)
+            IF system_account_id IS NOT NULL THEN
+                UPDATE permanent_shift 
+                SET area_id = (SELECT area_id FROM launch_point WHERE id = permanent_shift.launch_point_id LIMIT 1)
+                WHERE area_id IS NULL;
+            END IF;
+            
+            -- Make area_id NOT NULL
+            ALTER TABLE permanent_shift
+                ALTER COLUMN area_id SET NOT NULL;
+            
+            -- Add foreign key constraint
+            ALTER TABLE permanent_shift
+                ADD CONSTRAINT fk_permanent_shift_area 
+                    FOREIGN KEY (area_id) REFERENCES area(id) ON DELETE CASCADE;
+            
+            -- Create index
+            CREATE INDEX IF NOT EXISTS idx_permanent_shift_area_id ON permanent_shift(area_id);
+        END IF;
+        
+        -- Drop type column if it exists (replaced by shift_type)
+        SELECT EXISTS (
+            SELECT FROM information_schema.columns 
+            WHERE table_schema = 'public' 
+            AND table_name = 'permanent_shift' 
+            AND column_name = 'type'
+        ) INTO column_exists;
+        
+        IF column_exists THEN
+            ALTER TABLE permanent_shift 
+                DROP COLUMN type;
+        END IF;
+        
+        -- Add ambulance_type column if it doesn't exist
+        SELECT EXISTS (
+            SELECT FROM information_schema.columns 
+            WHERE table_schema = 'public' 
+            AND table_name = 'permanent_shift' 
+            AND column_name = 'ambulance_type'
+        ) INTO column_exists;
+        
+        IF NOT column_exists THEN
+            ALTER TABLE permanent_shift 
+                ADD COLUMN ambulance_type VARCHAR(255) DEFAULT 'white';
+            
+            -- Update existing records with default value
+            UPDATE permanent_shift 
+            SET ambulance_type = 'white' 
+            WHERE ambulance_type IS NULL;
+            
+            -- Make ambulance_type NOT NULL
+            ALTER TABLE permanent_shift
+                ALTER COLUMN ambulance_type SET NOT NULL,
+                ALTER COLUMN ambulance_type DROP DEFAULT;
+        END IF;
+        
+        -- Add shift_type column if it doesn't exist
+        SELECT EXISTS (
+            SELECT FROM information_schema.columns 
+            WHERE table_schema = 'public' 
+            AND table_name = 'permanent_shift' 
+            AND column_name = 'shift_type'
+        ) INTO column_exists;
+        
+        IF NOT column_exists THEN
+            ALTER TABLE permanent_shift 
+                ADD COLUMN shift_type shift_type_enum DEFAULT 'night';
+            
+            -- Update existing records with default value
+            UPDATE permanent_shift 
+            SET shift_type = 'night' 
+            WHERE shift_type IS NULL;
+            
+            -- Make shift_type NOT NULL
+            ALTER TABLE permanent_shift
+                ALTER COLUMN shift_type SET NOT NULL,
+                ALTER COLUMN shift_type DROP DEFAULT;
+        END IF;
+    END IF;
+END $$;
+
+-- ============================================
+-- 15. Add shift_type column to shift table
+-- ============================================
+
+DO $$
+DECLARE
+    table_exists BOOLEAN;
+    column_exists BOOLEAN;
+BEGIN
+    -- Check if table exists
+    SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'shift'
+    ) INTO table_exists;
+    
+    IF table_exists THEN
+        -- Add shift_type column if it doesn't exist
+        SELECT EXISTS (
+            SELECT FROM information_schema.columns 
+            WHERE table_schema = 'public' 
+            AND table_name = 'shift' 
+            AND column_name = 'shift_type'
+        ) INTO column_exists;
+        
+        IF NOT column_exists THEN
+            ALTER TABLE shift 
+                ADD COLUMN shift_type shift_type_enum;
+            
+            -- Optionally, populate shift_type from permanent_shift for existing records
+            UPDATE shift s
+            SET shift_type = ps.shift_type
+            FROM permanent_shift ps
+            WHERE s.permanent_shift_id = ps.id
+            AND s.shift_type IS NULL;
+        END IF;
+    END IF;
+END $$;
+
+-- ============================================
+-- 16. Drop indexes that are no longer needed
 -- ============================================
 
 DROP INDEX IF EXISTS idx_account_user_group_id;

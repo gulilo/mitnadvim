@@ -2,12 +2,15 @@ import { sql } from "../../lib/data";
 
 export type DbPermanentShift = {
   id: string;
+  area_id: string;
   launch_point_id: string;
+  shift_type: "day" | "evening" | "night";
   week_day: number;
   start_time: string;
   end_time: string;
   adult_only: boolean;
   number_of_slots: number;
+  ambulance_type: string;
 };
 
 export type DbShift = {
@@ -19,6 +22,7 @@ export type DbShift = {
   date: Date;
   start_time: string | null;
   end_time: string | null;
+  shift_type: "day" | "evening" | "night" | null;
   adult_only: boolean;
   number_of_slots: number;
   status: "active" | "canceled";
@@ -42,6 +46,19 @@ export async function getAllPermanentShifts(): Promise<DbPermanentShift[]> {
   } catch (error) {
     console.error('Failed to fetch permanent shifts:', error);
     throw new Error('Failed to fetch permanent shifts.');
+  }
+}
+
+export async function getPermanentShiftByDate(date: Date): Promise<DbPermanentShift[]> {
+  try {
+    const permanentShifts = await sql`
+      SELECT * FROM permanent_shift 
+      WHERE week_day = ${date.getDay()}
+    `;
+    return permanentShifts as DbPermanentShift[];
+  } catch (error) {
+    console.error('Failed to fetch permanent shifts by date:', error);
+    throw new Error('Failed to fetch permanent shifts by date.');
   }
 }
 
@@ -197,11 +214,71 @@ export async function getShiftSlotById(id: string): Promise<DbShiftSlot | null> 
   }
 }
 
+export async function getDisplayShiftByDate(date: Date): Promise<Map<string, DisplayShift[]>> {
+  try {
+    const shifts = await getShiftsByDate(date);
+    const permanentShifts = await getPermanentShiftByDate(date);
+    const displayShifts: Map<string, DisplayShift[]> = new Map();
+    permanentShifts.forEach(permanentShift => {
+      const shift: DisplayShift = {
+        id: null,
+        permanent_shift_id: permanentShift.id,
+        area_id: permanentShift.area_id,
+        launch_point_id: permanentShift.launch_point_id,
+        ambulance_type: permanentShift.ambulance_type,
+        ambulance_id: null,
+        driver_id: null,
+        date: date,
+        start_time: permanentShift.start_time,
+        end_time: permanentShift.end_time,
+        adult_only: permanentShift.adult_only,
+        number_of_slots: permanentShift.number_of_slots,
+        shift_type: permanentShift.shift_type,
+        status: "permanent",
+        isFromPermanent: true,
+      };
+      const existing = displayShifts.get(permanentShift.launch_point_id) || [];
+      displayShifts.set(permanentShift.launch_point_id, [...existing, shift]);
+    });
+    console.log(displayShifts);
+    // shifts.forEach(shift => {
+    //   const displayShift: DisplayShift = {
+    //     id: shift.id,
+    //     permanent_shift_id: shift.permanent_shift_id,
+    //     launch_point_id: shift.launch_point_id || '',
+    //     ambulance_id: shift.ambulance_id,
+    //     driver_id: shift.driver_id,
+    //     date: shift.date,
+    //     start_time: shift.start_time || '',
+    //     end_time: shift.end_time || '',
+    //     adult_only: shift.adult_only,
+    //     number_of_slots: shift.number_of_slots,
+    //     status: shift.status,
+    //     isFromPermanent: false,
+    //   };
+    //   const launchPointId = shift.launch_point_id || '';
+    //   const existing = displayShifts.get(launchPointId) || [];
+    //   displayShifts.set(launchPointId, [...existing, displayShift]);
+    // });
+    return displayShifts;
+  } catch (error) {
+    console.error('Failed to fetch display shifts by date:', error);
+    throw new Error('Failed to fetch display shifts by date.');
+  }
+}
+
+
+
+
+
+
 // Combined shift type for display (actual shift or generated from permanent shift)
 export type DisplayShift = {
   id: string | null;
   permanent_shift_id: string | null;
+  area_id: string;
   launch_point_id: string;
+  ambulance_type: string;
   ambulance_id: string | null;
   driver_id: string | null;
   date: Date;
@@ -211,6 +288,7 @@ export type DisplayShift = {
   number_of_slots: number;
   status: "active" | "canceled" | "permanent";
   isFromPermanent: boolean;
+  shift_type: "day" | "evening" | "night" | null;
 };
 
 // Get shifts for next week, filling in with permanent shifts where needed
@@ -263,7 +341,9 @@ export async function getNextWeekShifts(): Promise<DisplayShift[]> {
         displayShifts.push({
           id: shift.id,
           permanent_shift_id: shift.permanent_shift_id,
+          area_id: '', // Will be populated from launch_point if needed
           launch_point_id: shift.launch_point_id || '',
+          ambulance_type: '', // Will be populated from permanent_shift if needed
           ambulance_id: shift.ambulance_id,
           driver_id: shift.driver_id,
           date: shiftDate,
@@ -271,6 +351,7 @@ export async function getNextWeekShifts(): Promise<DisplayShift[]> {
           end_time: shift.end_time || '',
           adult_only: shift.adult_only,
           number_of_slots: shift.number_of_slots,
+          shift_type: shift.shift_type,
           status: shift.status,
           isFromPermanent: false,
         });
@@ -287,7 +368,9 @@ export async function getNextWeekShifts(): Promise<DisplayShift[]> {
           displayShifts.push({
             id: null,
             permanent_shift_id: permanentShift.id,
+            area_id: permanentShift.area_id,
             launch_point_id: permanentShift.launch_point_id,
+            ambulance_type: permanentShift.ambulance_type,
             ambulance_id: null,
             driver_id: null,
             date: new Date(currentDate),
@@ -295,6 +378,7 @@ export async function getNextWeekShifts(): Promise<DisplayShift[]> {
             end_time: permanentShift.end_time,
             adult_only: permanentShift.adult_only,
             number_of_slots: permanentShift.number_of_slots,
+            shift_type: permanentShift.shift_type,
             status: "permanent",
             isFromPermanent: true,
           });

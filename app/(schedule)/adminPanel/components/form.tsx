@@ -21,10 +21,12 @@ export default function Form({
 }: {
   launchPoints: DbLaunchPoint[];
 }) {
-  const [shiftType, setShiftType] = useState("");
+  const [shiftTypeValue, setShiftTypeValue] = useState<
+    "day" | "evening" | "night"
+  >("night");
   const [shiftFrequency, setShiftFrequency] = useState("permanent");
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [date2, setDate2] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [date2, setDate2] = useState(new Date().toISOString().split("T")[0]);
   const [launchPoint, setLaunchPoint] = useState("");
   const [ambulanceType, setAmbulanceType] = useState("white");
   const [numEscorts, setNumEscorts] = useState("3");
@@ -60,16 +62,41 @@ export default function Form({
 
   const handleSabmit = async (formData: FormData) => {
     if (shiftFrequency === "permanent") {
+      if (!launchPoint) {
+        alert("אנא בחר נקודת הזנקה");
+        return;
+      }
+      // Get area_id from the selected launch point
+      const selectedLaunchPoint = launchPoints.find(
+        (lp) => lp.id === launchPoint
+      );
+      if (!selectedLaunchPoint) {
+        alert("נקודת הזנקה לא נמצאה");
+        return;
+      }
+
+      // Check if at least one day is selected
+      const hasSelectedDay = Object.values(selectedDays).some(
+        (selected) => selected
+      );
+      if (!hasSelectedDay) {
+        alert("אנא בחר לפחות יום אחד בשבוע");
+        return;
+      }
+
       for (const dayObj of daysOfWeek) {
         if (selectedDays[dayObj.key]) {
           const permanentShift: DbPermanentShift = {
             id: "",
+            area_id: selectedLaunchPoint.area_id,
             launch_point_id: launchPoint,
+            shift_type: shiftTypeValue,
             week_day: dayObj.value,
             start_time: startTime,
             end_time: endTime,
             adult_only: availability === "adults-only",
             number_of_slots: parseInt(numEscorts),
+            ambulance_type: ambulanceType,
           };
           await createPermanentShift(permanentShift);
         }
@@ -83,6 +110,7 @@ export default function Form({
         date: new Date(date),
         start_time: startTime,
         end_time: endTime,
+        shift_type: shiftTypeValue,
         adult_only: availability === "adults-only",
         number_of_slots: parseInt(numEscorts),
         status: "active",
@@ -102,13 +130,13 @@ export default function Form({
             סוג משמרת:
           </Label>
           <div className="relative flex-1">
-            <Select value={shiftType} onValueChange={setShiftType}>
+            <Select value={shiftTypeValue} onValueChange={(value: "day" | "evening" | "night") => setShiftTypeValue(value as "day" | "evening" | "night")}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="night">לילה</SelectItem>
-                <SelectItem value="morning">בוקר</SelectItem>
+                <SelectItem value="day">יום</SelectItem>
                 <SelectItem value="pre_shift">תגבור</SelectItem>
                 <SelectItem value="evening">ערב</SelectItem>
                 <SelectItem value="over_the_machine">מעל התקן</SelectItem>
@@ -297,9 +325,9 @@ export default function Form({
                 </Label>
               </div>
               <div className="flex flex-row items-center justify-start gap-3">
-                <RadioGroupItem value="intensive" id="intensive" />
+                <RadioGroupItem value="atan" id="atan" />
                 <Label
-                  htmlFor="intensive"
+                  htmlFor="atan"
                   className="text-[20px] font-semibold cursor-pointer"
                 >
                   אמבולנס טיפול נמרץ

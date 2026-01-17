@@ -7,6 +7,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- Create custom enum types
 CREATE TYPE shift_status AS ENUM ('pending', 'confirmed', 'cancelled'); -- For shift_slot status
 CREATE TYPE shift_status_type AS ENUM ('active', 'canceled'); -- For shift status
+CREATE TYPE shift_type_enum AS ENUM ('day', 'evening', 'night'); -- For shift_type
 
 -- Create tables in dependency order (referenced tables first)
 
@@ -187,18 +188,22 @@ CREATE TABLE ambulance (
 -- 11. Permanent Shift table
 CREATE TABLE permanent_shift (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    area_id UUID NOT NULL,
     launch_point_id UUID NOT NULL,
+    shift_type shift_type_enum NOT NULL,
     week_day INTEGER NOT NULL CHECK (week_day >= 0 AND week_day <= 6), -- 0 = Sunday, 6 = Saturday
     start_time TIME NOT NULL,
     end_time TIME NOT NULL,
     adult_only BOOLEAN NOT NULL DEFAULT FALSE,
     number_of_slots INTEGER NOT NULL DEFAULT 1,
+    ambulance_type VARCHAR(255) NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE,
     created_by UUID NOT NULL,
     updated_by UUID,
     
     -- Foreign key constraints
+    CONSTRAINT fk_permanent_shift_area FOREIGN KEY (area_id) REFERENCES area(id) ON DELETE CASCADE,
     CONSTRAINT fk_permanent_shift_launch_point FOREIGN KEY (launch_point_id) REFERENCES launch_point(id) ON DELETE CASCADE,
     CONSTRAINT fk_permanent_shift_created_by FOREIGN KEY (created_by) REFERENCES account(id) ON DELETE CASCADE,
     CONSTRAINT fk_permanent_shift_updated_by FOREIGN KEY (updated_by) REFERENCES account(id) ON DELETE CASCADE,
@@ -217,6 +222,7 @@ CREATE TABLE shift (
     date DATE NOT NULL,
     start_time TIMESTAMP WITH TIME ZONE,
     end_time TIMESTAMP WITH TIME ZONE,
+    shift_type shift_type_enum,
     adult_only BOOLEAN DEFAULT FALSE,
     number_of_slots INTEGER DEFAULT 1,
     status shift_status_type NOT NULL DEFAULT 'active',
@@ -288,6 +294,7 @@ CREATE INDEX idx_tag_permission_permission_id ON tag_permission(permission_id);
 CREATE INDEX idx_account_tag_account_id ON account_tag(account_id);
 CREATE INDEX idx_account_tag_tag_id ON account_tag(tag_id);
 CREATE INDEX idx_launch_point_area_id ON launch_point(area_id);
+CREATE INDEX idx_permanent_shift_area_id ON permanent_shift(area_id);
 CREATE INDEX idx_permanent_shift_launch_point_id ON permanent_shift(launch_point_id);
 CREATE INDEX idx_permanent_shift_week_day ON permanent_shift(week_day);
 CREATE INDEX idx_shift_permanent_shift_id ON shift(permanent_shift_id);
