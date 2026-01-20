@@ -1,3 +1,5 @@
+'use server';
+
 import { sql } from "../../lib/data";
 
 export type DbPermanentShift = {
@@ -120,7 +122,7 @@ export async function getShiftsByDate(date: Date): Promise<DbShift[]> {
   try {
     const shifts = await sql`
       SELECT * FROM shift 
-      WHERE date = ${date}
+      WHERE start_date = ${date}
       ORDER BY start_time ASC
     `;
     return shifts as DbShift[];

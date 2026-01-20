@@ -11,7 +11,6 @@ export async function createPermanentShift(permanentShift: DbPermanentShift) {
     if (!session?.user?.id) {
       throw new Error('Unauthorized');
     }
-    const areaId = permanentShift.area_id;
     const launchPointId = permanentShift.launch_point_id;
     const shiftType = permanentShift.shift_type;
     const weekDay = permanentShift.week_day;
@@ -21,11 +20,8 @@ export async function createPermanentShift(permanentShift: DbPermanentShift) {
     const numberOfSlots = permanentShift.number_of_slots;
     const ambulanceType = permanentShift.ambulance_type;
 
-    console.log(areaId, launchPointId, shiftType, weekDay, startTime, endTime, adultOnly, numberOfSlots, ambulanceType);
+    console.log(launchPointId, shiftType, weekDay, startTime, endTime, adultOnly, numberOfSlots, ambulanceType);
 
-    if (!areaId) {
-      throw new Error('אזור נדרש');
-    }
     if (!launchPointId) {
       throw new Error('נקודת הזנקה נדרשת');
     }
@@ -53,8 +49,8 @@ export async function createPermanentShift(permanentShift: DbPermanentShift) {
 
 
     await sql`
-      INSERT INTO permanent_shift (area_id, launch_point_id, shift_type, week_day, start_time, end_time, adult_only, number_of_slots, ambulance_type, created_by)
-      VALUES (${areaId}, ${launchPointId}, ${shiftType}, ${weekDay}, ${startTime}, ${endTime}, ${adultOnly}, ${numberOfSlots}, ${ambulanceType}, ${session.user.id})
+      INSERT INTO permanent_shift (launch_point_id, shift_type, week_day, start_time, end_time, adult_only, number_of_slots, ambulance_type, created_by)
+      VALUES (${launchPointId}, ${shiftType}, ${weekDay}, ${startTime}, ${endTime}, ${adultOnly}, ${numberOfSlots}, ${ambulanceType}, ${session.user.id})
       RETURNING id
     `;
 

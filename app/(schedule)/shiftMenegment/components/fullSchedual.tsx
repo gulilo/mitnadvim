@@ -1,43 +1,17 @@
-"use client";
+import WhiteSchedual from "./whiteSchedual";
+import { getShiftsByDate } from "../../data/shift";
 
-import { fetchDisplayShiftsByDate } from "../../lib/actions";
-import { Card, CardHeader, CardTitle } from "@/app/components/ui/card";
-import { useEffect, useState } from "react";
-
-export default function FullSchedual({ date }: { date: Date }) {
-  const [displayShifts, setDisplayShifts] = useState<Array<[string, any[]]>>(
-    []
-  );
-
-  useEffect(() => {
-    async function loadShifts() {
-      try {
-        const shifts = await fetchDisplayShiftsByDate(date);
-        setDisplayShifts(shifts);
-      } catch (err) {
-        console.error("Error loading shifts:", err);
-      } 
-    }
-    loadShifts();
-  }, [date]);
-
+export default async function FullSchedual({ date }: { date: string }) {
+  // Parse the date string (YYYY-MM-DD) to a Date object
+  const dateObj = new Date(date);
+  dateObj.setHours(0, 0, 0, 0); // Set to start of day to ensure proper date comparison
+  
+  const shifts = await getShiftsByDate(dateObj);
+  console.log(shifts);
+  
   return (
     <div>
-      <h1>Full Schedual</h1>
-      {displayShifts.map(([launchPointId, shifts]) => (
-        <Card className="bg-accent" key={launchPointId}>
-          <CardHeader>
-            <CardTitle>{launchPointId}</CardTitle>
-          </CardHeader>
-          {shifts.map((shift) => (
-            <Card key={shift.id}>
-              <CardHeader>
-                <CardTitle>{shift.start_time} - {shift.end_time}</CardTitle>
-              </CardHeader>
-            </Card>
-          ))}
-        </Card>
-      ))}
+      <WhiteSchedual />
     </div>
   );
 }

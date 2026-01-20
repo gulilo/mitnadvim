@@ -22,7 +22,8 @@ export default function ShiftMenegmentPage() {
           <h1>סידור עבודה</h1>
         </div>
       </div>
-      {date && <FullSchedual date={date} />}
+      {/* <FullSchedual date={date?.toISOString} /> */}
+      {/* {date && <FullSchedual date={date.toISOString().split('T')[0]} />} */}
     </div>
   );
 }
