@@ -11,7 +11,7 @@ import { Separator } from "../ui/separator";
 import { handleSignOut } from "@/app/lib/actions";
 import { redirect } from "next/navigation";
 import { getProfileData, ProfileData } from "@/app/(user)/lib/actions";
-import { getUserPermissions } from "@/app/(user)/data/user";
+import { getUserPermissions } from "@/app/(user)/data/account";
 
 export default async function MainMenu() {
   const profileData = (await getProfileData()) as ProfileData;

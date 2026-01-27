@@ -1,9 +1,10 @@
 "use server";
 
 import { auth } from "@/auth";
-import { getAccountByAccountId, getAreaName, getUserByAccountId, getUserTags, getTagName, getTagCategory } from "../data/user";
-import { DbUser } from "../data/definitions";
-import { DbAccount } from "../data/definitions";
+import { getAccountByAccountId, getUserTags, getTagName, getTagCategory } from "../data/account";
+import { getAreaName, getUserByAccountId } from "../data/user";
+import { DbUser } from "../data/user";
+import { DbAccount } from "../data/account";
 
 export type ProfileData = {
   user: DbUser;

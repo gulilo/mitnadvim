@@ -1,12 +1,10 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import {
-  getUserByAccountId,
-  getAccountByAccountId,
-  getEmergencyContactByUserId,
-  getAreaName,
-  getUserTags,
-} from "../data/user";
+import { getUserByAccountId} from "../data/user";
+import { getAccountByAccountId } from "../data/account";
+import { getEmergencyContactByUserId } from "../data/emergency_contacts";
+import { getAreaName } from "../data/user";
+import { getUserTags } from "../data/account";
 import Image from "next/image";
 import { Camera, User, Cross } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
@@ -75,7 +73,7 @@ export default async function Profile() {
           </div>
 
           {/* Home Station */}
-         <HomeStation areaName={areaName || ""} />
+          <HomeStation areaName={areaName || ""} />
 
           {/* Tags */}
           <Tags tagsids={tags} />
@@ -150,7 +148,7 @@ export default async function Profile() {
                 />
                 <h5 className=" block ">קרבה:</h5>
               </div>
-              <p className=" ">{emergencyContact.relationship}</p>
+              <p className=" ">{emergencyContact[0].relationship}</p>
             </div>
 
             {/* Name */}
@@ -165,7 +163,7 @@ export default async function Profile() {
                 />
                 <h5 className=" block">שם:</h5>
               </div>
-              <p className="">{emergencyContact.name}</p>
+              <p className="">{emergencyContact[0].name}</p> 
             </div>
 
             {/* Phone */}
@@ -181,7 +179,7 @@ export default async function Profile() {
                 <h5 className="block ">מספר טלפון:</h5>
               </div>
               <p dir="ltr" className="">
-                {emergencyContact.phone}
+                {emergencyContact[0].phone}
               </p>
             </div>
 
@@ -198,7 +196,7 @@ export default async function Profile() {
                 <h5 className=" block ">כתובת דוא״ל:</h5>
               </div>
               <p className="text-base font-normal text-black">
-                {emergencyContact.email}
+                {emergencyContact[0].email}
               </p>
             </div>
 
@@ -214,7 +212,7 @@ export default async function Profile() {
                 />
                 <h5 className=" block">כתובת:</h5>
               </div>
-              <p className=" whitespace-pre-wrap">{emergencyContact.address}</p>
+              <p className=" whitespace-pre-wrap">{emergencyContact[0].address}</p>
             </div>
           </div>
         ) : (

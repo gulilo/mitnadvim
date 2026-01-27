@@ -5,8 +5,6 @@ import { AuthError } from 'next-auth';
 import {sql} from "./data";
 import bcrypt from "bcrypt";
 import { redirect } from 'next/navigation';
-import { auth } from "@/auth";
-import { getAccountByAccountId, getUserTags, getAreaName, getUserByAccountId } from "@/app/(user)/data/user";
 
 export async function authenticate(formData: FormData) {
     try {
