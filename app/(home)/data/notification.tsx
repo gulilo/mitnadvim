@@ -1,6 +1,14 @@
 import { sql } from "../../lib/data";
-import { DBNotifiction } from "./definitions";
 import { ReactNode } from "react";
+
+export type DBNotifiction = {
+  id: string;
+  user_id: string;
+  title: string;
+  message: string;
+  timestamp: Date;
+  read: boolean;
+};
 
 export async function getNotification(userid: string) {
   console.log(userid);

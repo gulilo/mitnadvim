@@ -1,67 +1,13 @@
 import NotificationCard from "./NotificationCard";
 import { Separator } from "@/app/components/ui/separator";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
-import { DBNotifiction } from "@/app/(home)/data/definitions";
 import {
   getNotification,
+  DBNotifiction,
   formatTimestamp,
 } from "@/app/(home)/data/notification";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-
-// const notifications = [
-//   {
-//     id: "volunteers",
-//     title: "הודעה למתנדבים",
-//     timestamp: "11/7/2025 (14:45)",
-//     message:
-//       "לורם איפסום דולור סיט אמט, קונסקטורר אדיפיסינג אלית לפרומי בלוף קינץ תתיח לרעח. לת צשחמי צש בליא, מנסוטו צמלח לביקו ננבי, צמוקו בלוקריה שיצמה ברורק.",
-//     icon: <ChevronDown className="size-5 text-[#222]" strokeWidth={2.5} />,
-//   },
-//   {
-//     id: "approved",
-//     title: "בקשת השיבוץ שלך אושרה 😃",
-//     timestamp: "8/7/2025 (11:17)",
-//     message: (
-//       <>
-//         <span>שובצת למשמרת </span>
-//         <strong>ערב</strong>
-//         <span> ביום </span>
-//         <strong>רביעי</strong>
-//         <span> (</span>
-//         <strong>16/7/2025</strong>
-//         <span>) בנה״ז </span>
-//         <strong>ת״א 2</strong>.
-//       </>
-//     ),
-//     icon: <Trash2 className="size-5 text-[#222]" />,
-//   },
-//   {
-//     id: "rejected",
-//     title: "בקשת השיבוץ שלך נדחתה ☹️",
-//     timestamp: "6/7/2025 (8:32)",
-//     message: (
-//       <>
-//         <span>לצערנו לא ניתן לשבץ אותך למשמרת </span>
-//         <strong>בוקר</strong>
-//         <span> ביום </span>
-//         <strong>שישי</strong>
-//         <span> (</span>
-//         <strong>18/7/2025</strong>
-//         <span>) בנה״ז </span>
-//         <strong>נט״ן ת״א 1</strong>.{" "}
-//         <span>
-//           בכל שאלה או הבהרה אנא{" "}
-//           <span className="underline decoration-black decoration-solid">
-//             פני לרכז שלך
-//           </span>
-//           .
-//         </span>
-//       </>
-//     ),
-//     icon: <Trash2 className="size-5 text-[#222]" />,
-//   },
-// ];
 
 export default async function NotificationPanel() {
   const session = await auth();
