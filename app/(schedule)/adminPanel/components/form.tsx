@@ -105,9 +105,9 @@ export default function Form({
     if (shiftFrequency === "one-time") {
       const shift: DbShift = {
         id: "",
-        permanent_shift_id: null,
         launch_point_id: launchPoint,
-        date: new Date(date),
+        start_date: new Date(date),
+        end_date: new Date(date2),
         start_time: startTime,
         end_time: endTime,
         shift_type: shiftTypeValue,
@@ -116,6 +116,7 @@ export default function Form({
         status: "active",
         ambulance_id: null,
         driver_id: null,
+        ambulance_type: ambulanceType,
       };
       await createShift(shift);
     }

@@ -67,11 +67,11 @@ export async function createShift(shift: DbShift) {
     if (!session?.user?.id) {
       throw new Error('Unauthorized');
     }
-    const permanentShiftId = shift.permanent_shift_id;
     const launchPointId = shift.launch_point_id;
     const ambulanceId = shift.ambulance_id;
     const driverId = shift.driver_id;
-    const date = shift.date;
+    const startDate = shift.start_date;
+    const endDate = shift.end_date;
     const startTime = shift.start_time;
     const endTime = shift.end_time;
     const shiftType = shift.shift_type;
@@ -79,13 +79,16 @@ export async function createShift(shift: DbShift) {
     const numberOfSlots = shift.number_of_slots;    
     const status = shift.status;
 
-    console.log(permanentShiftId, launchPointId, ambulanceId, driverId, date, startTime, endTime, shiftType, adultOnly, numberOfSlots, status);
+    console.log(launchPointId, ambulanceId, driverId, startDate, endDate, startTime, endTime, shiftType, adultOnly, numberOfSlots, status);
 
     if (!launchPointId) {
       throw new Error('נקודת הזנקה נדרשת');
     }
-    if (!date) {
-      throw new Error('תאריך נדרש');
+    if (!startDate) {
+      throw new Error('תאריך התחלה נדרש');
+    }
+    if (!endDate) {
+      throw new Error('תאריך סיום נדרש');
     }
     if (!startTime) {
       throw new Error('שעת התחלה נדרשת');
@@ -105,7 +108,7 @@ export async function createShift(shift: DbShift) {
 
     await sql`
       INSERT INTO shift (permanent_shift_id, launch_point_id, ambulance_id, driver_id, date, start_time, end_time, shift_type, adult_only, number_of_slots, status, created_by)
-      VALUES (${permanentShiftId}, ${launchPointId}, ${ambulanceId}, ${driverId}, ${date}, ${startTime}, ${endTime}, ${shiftType}, ${adultOnly}, ${numberOfSlots}, ${status}, ${session.user.id})
+      VALUES (${launchPointId}, ${ambulanceId}, ${driverId}, ${startDate}, ${endDate}, ${startTime}, ${endTime}, ${shiftType}, ${adultOnly}, ${numberOfSlots}, ${status}, ${session.user.id})
     `;
 
     revalidatePath('/adminPanel');

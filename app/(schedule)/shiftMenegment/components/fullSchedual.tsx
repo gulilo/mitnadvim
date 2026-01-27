@@ -1,6 +1,7 @@
-import WhiteSchedual from "./whiteSchedual";
 import { getShiftsByDate } from "../../data/shift";
 import { parseHebrewDate } from "@/app/lib/date-utils";
+import { columns } from "./schedualTable/columns";
+import { DataTable } from "./schedualTable/data-table";
 
 export default async function FullSchedual({ date }: { date: string }) {
   console.log("date", date)
@@ -17,7 +18,8 @@ export default async function FullSchedual({ date }: { date: string }) {
   console.log("shifts", shifts)
   return (
     <div>
-       <WhiteSchedual shift={shifts.filter(shift => shift.ambulance_type === "white" || shift.ambulance_type === "atan")}/>
+       {/* <WhiteSchedual shift={shifts.filter(shift => shift.ambulance_type === "white" || shift.ambulance_type === "atan")}/> */}
+       <DataTable columns={columns} data={shifts} />
     </div>
   );
 }
