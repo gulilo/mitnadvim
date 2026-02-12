@@ -1,12 +1,17 @@
 'use server';
 
+import { DbUser } from "@/app/(user)/data/definitions";
 import { sql } from "../../lib/data";
+import { DbLaunchPoint } from "./launchPoint";
+import type { DbAmbulance } from "./ambulance";
+
+export type ShiftType = "day" | "evening" | "night" | "reinforcement" | "over_the_machine" | "security";
 
 export type DbPermanentShift = {
   id: string;
   area_id: string;
   launch_point_id: string;
-  shift_type: "day" | "evening" | "night";
+  shift_type: ShiftType;
   week_day: number;
   start_time: string;
   end_time: string;
@@ -25,7 +30,7 @@ export type DbShift = {
   end_date: Date;
   start_time: string;
   end_time: string;
-  shift_type: string;
+  shift_type: ShiftType;
   adult_only: boolean;
   number_of_slots: number;
   status: "active" | "canceled";
@@ -36,6 +41,21 @@ export type DbShiftSlot = {
   shift_id: string;
   user_id: string;
   status: "pending" | "confirmed" | "cancelled";
+};
+
+export type DisplayShift = {
+  id: string;
+  launch_point: DbLaunchPoint;
+  ambulance_type: string;
+  ambulance: DbAmbulance | null;
+  driver: DbUser | null;
+  start_date: Date;
+  end_date: Date;
+  start_time: string;
+  end_time: string;
+  shift_type: ShiftType;
+  adult_only: boolean;
+  number_of_slots: number;
 };
 
 // Permanent Shift functions

@@ -21,6 +21,12 @@ interface DataTableProps<TData, TValue> {
     data: TData[]
 }
 
+function getRowBgClass(row: unknown): string {
+    const r = row as { ambulance_type?: string } | undefined
+    if (!r?.ambulance_type) return ""
+    return r.ambulance_type === "white" ? "bg-red-inActive" : "bg-tag-atn"
+}
+
 export function DataTable<TData, TValue>({
     columns,
     data,
@@ -32,8 +38,8 @@ export function DataTable<TData, TValue>({
     })
 
     return (
-        <div className="overflow-hidden rounded-md border">
-            <Table>
+        <div className="overflow-hidden rounded-md border ">
+            <Table className="table-fixed">
                 <TableHeader>
                     {table.getHeaderGroups().map((headerGroup) => (
                         <TableRow key={headerGroup.id}>
@@ -58,9 +64,9 @@ export function DataTable<TData, TValue>({
                             <TableRow
                                 key={row.id}
                                 data-state={row.getIsSelected() && "selected"}
+                                className={getRowBgClass(row.original)}
                             >
                                 {row.getVisibleCells().map((cell) => (
-                                    console.log(row),
                                     <TableCell key={cell.id}>
                                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                     </TableCell>

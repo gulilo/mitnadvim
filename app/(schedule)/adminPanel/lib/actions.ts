@@ -74,6 +74,7 @@ export async function createShift(shift: DbShift) {
     const endDate = shift.end_date;
     const startTime = shift.start_time;
     const endTime = shift.end_time;
+    const ambulanceType = shift.ambulance_type;
     const shiftType = shift.shift_type;
     const adultOnly = shift.adult_only;
     const numberOfSlots = shift.number_of_slots;    
@@ -105,10 +106,13 @@ export async function createShift(shift: DbShift) {
     if (!status) {
       throw new Error('סטטוס נדרש');
     }
+    if (!ambulanceType) {
+      throw new Error('סוג אמבולנס נדרש');
+    }
 
     await sql`
-      INSERT INTO shift (permanent_shift_id, launch_point_id, ambulance_id, driver_id, date, start_time, end_time, shift_type, adult_only, number_of_slots, status, created_by)
-      VALUES (${launchPointId}, ${ambulanceId}, ${driverId}, ${startDate}, ${endDate}, ${startTime}, ${endTime}, ${shiftType}, ${adultOnly}, ${numberOfSlots}, ${status}, ${session.user.id})
+      INSERT INTO shift (launch_point_id, ambulance_type, ambulance_id, driver_id, start_date, end_date, start_time, end_time, shift_type, adult_only, number_of_slots, status, created_by)
+      VALUES (${launchPointId}, ${ambulanceType}, ${ambulanceId}, ${driverId}, ${startDate}, ${endDate}, ${startTime}, ${endTime}, ${shiftType}, ${adultOnly}, ${numberOfSlots}, ${status}, ${session.user.id})
     `;
 
     revalidatePath('/adminPanel');
