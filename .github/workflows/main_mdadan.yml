@@ -32,6 +32,13 @@ jobs:
         env:
           POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
 
+      - name: Prepare standalone for deployment
+        run: |
+          # Copy static assets into standalone (required for Next.js standalone)
+          cp -r .next/static .next/standalone/.next/static
+          # Copy public folder if it exists
+          if [ -d public ]; then cp -r public .next/standalone/; fi
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -45,4 +52,4 @@ jobs:
         with:
           app-name: 'MDAdan'
           slot-name: 'Production'
-          package: .
+          package: .next/standalone
