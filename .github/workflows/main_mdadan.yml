@@ -29,6 +29,7 @@ jobs:
           npm install
           npm run build --if-present
           npm run test --if-present
+          ls -l .next/standalone
           cp -r public .next/standalone/ && cp -r .next/static .next/standalone/.next/
         env:
           POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
@@ -47,3 +48,4 @@ jobs:
           app-name: 'MDAdan'
           slot-name: 'Production'
           package: .next/standalone
+
