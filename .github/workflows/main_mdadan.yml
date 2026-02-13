@@ -17,7 +17,7 @@ jobs:
       id-token: write #This is required for requesting the JWT
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4*
 
       - name: Set up Node.js version
         uses: actions/setup-node@v3
@@ -34,10 +34,14 @@ jobs:
 
       - name: Prepare standalone for deployment
         run: |
-          # Copy static assets into standalone (required for Next.js standalone)
+          # Ensure .next exists inside standalone (required for static assets)
+          mkdir -p .next/standalone/.next
+          # Copy static assets (CSS, JS chunks) into standalone - required for Next.js
           cp -r .next/static .next/standalone/.next/static
           # Copy public folder if it exists
           if [ -d public ]; then cp -r public .next/standalone/; fi
+          # Create zip including dotfiles (.next) so Azure receives CSS and static assets
+          cd .next/standalone && zip -r ../../deploy.zip . -q && cd ../..
 
       - name: Login to Azure
         uses: azure/login@v2
@@ -52,4 +56,4 @@ jobs:
         with:
           app-name: 'MDAdan'
           slot-name: 'Production'
-          package: .next/standalone
+          package: deploy.zip
