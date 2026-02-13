@@ -29,13 +29,17 @@ jobs:
           npm install
           npm run build --if-present
           npm run test --if-present
-          ls -l .next/
-          cp -r public .next/standalone/
-          cp -r .next/static .next/standalone/.next/
-          ls -l .next/standalone
-
         env:
           POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
+
+      - name: Prepare standalone for deployment
+        run: |
+          # Create full path (cp does not create parent dirs; standalone may not have .next)
+          mkdir -p .next/standalone/.next/static
+          # Copy static contents into it (CSS, JS chunks)
+          cp -r .next/static/. .next/standalone/.next/static/
+          # Copy public folder (images, favicon, etc.)
+          cp -r public .next/standalone/
 
       - name: Login to Azure
         uses: azure/login@v2
