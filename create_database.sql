@@ -1,13 +1,19 @@
 -- PostgreSQL Database Schema for Mitnadvim App
--- This script creates all tables with proper constraints and relationships
+-- This script creates all tables with proper constraints, relationships, and seed data
+
+BEGIN;
 
 -- Enable UUID extension for generating UUIDs
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- Enable pgcrypto extension for password hashing (used by seed data)
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- Create custom enum types
 CREATE TYPE shift_status AS ENUM ('pending', 'confirmed', 'cancelled'); -- For shift_slot status
 CREATE TYPE shift_status_type AS ENUM ('active', 'canceled'); -- For shift status
 CREATE TYPE shift_type_enum AS ENUM ('day', 'evening', 'night'); -- For shift_type
+CREATE TYPE "ambulance_type" AS ENUM('white', 'atan');
+
 
 -- Create tables in dependency order (referenced tables first)
 
@@ -29,7 +35,21 @@ CREATE TABLE account (
     CONSTRAINT fk_account_updated_by FOREIGN KEY (updated_by) REFERENCES account(id) ON DELETE CASCADE
 );
 
--- 2. User Info table (additional account details)
+-- 2. Area table (referenced by user_info and launch_point)
+CREATE TABLE area (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE,
+    created_by UUID NOT NULL,
+    updated_by UUID,
+    
+    -- Foreign key constraints
+    CONSTRAINT fk_area_created_by FOREIGN KEY (created_by) REFERENCES account(id) ON DELETE CASCADE,
+    CONSTRAINT fk_area_updated_by FOREIGN KEY (updated_by) REFERENCES account(id) ON DELETE CASCADE
+);
+
+-- 3. User Info table (additional account details)
 CREATE TABLE user_info (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     account_id UUID NOT NULL,
@@ -51,7 +71,7 @@ CREATE TABLE user_info (
     CONSTRAINT fk_user_info_updated_by FOREIGN KEY (updated_by) REFERENCES account(id) ON DELETE CASCADE
 );
 
--- 3. Emergency Contacts table
+-- 4. Emergency Contacts table
 CREATE TABLE emergency_contacts (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL,
@@ -71,7 +91,7 @@ CREATE TABLE emergency_contacts (
     CONSTRAINT fk_emergency_contacts_updated_by FOREIGN KEY (updated_by) REFERENCES account(id) ON DELETE CASCADE
 );
 
--- 4. Permissions table
+-- 5. Permissions table
 CREATE TABLE permissions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(255) NOT NULL UNIQUE,
@@ -85,7 +105,7 @@ CREATE TABLE permissions (
     CONSTRAINT fk_permissions_updated_by FOREIGN KEY (updated_by) REFERENCES account(id) ON DELETE CASCADE
 );
 
--- 5. Tag table
+-- 6. Tag table
 CREATE TABLE tag (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(255) NOT NULL,
@@ -100,7 +120,7 @@ CREATE TABLE tag (
     CONSTRAINT fk_tag_updated_by FOREIGN KEY (updated_by) REFERENCES account(id) ON DELETE CASCADE
 );
 
--- 6. Tag Permission junction table
+-- 7. Tag Permission junction table
 CREATE TABLE tag_permission (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tag_id UUID NOT NULL,
@@ -120,7 +140,7 @@ CREATE TABLE tag_permission (
     CONSTRAINT uk_tag_permission UNIQUE (tag_id, permission_id)
 );
 
--- 7. Account Tag junction table
+-- 8. Account Tag junction table
 CREATE TABLE account_tag (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     account_id UUID NOT NULL,
@@ -138,20 +158,6 @@ CREATE TABLE account_tag (
     
     -- Unique constraint to prevent duplicate account-tag relationships
     CONSTRAINT uk_account_tag UNIQUE (account_id, tag_id)
-);
-
--- 8. Area table
-CREATE TABLE area (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    name VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE,
-    created_by UUID NOT NULL,
-    updated_by UUID,
-    
-    -- Foreign key constraints
-    CONSTRAINT fk_area_created_by FOREIGN KEY (created_by) REFERENCES account(id) ON DELETE CASCADE,
-    CONSTRAINT fk_area_updated_by FOREIGN KEY (updated_by) REFERENCES account(id) ON DELETE CASCADE
 );
 
 -- 9. Launch Point table
@@ -357,68 +363,933 @@ INSERT INTO permissions (id, name, created_by) VALUES
 ('00000000-0000-0000-0000-000000000010', 'edit_shift', '00000000-0000-0000-0000-000000000001'),
 ('00000000-0000-0000-0000-000000000011', 'register_shift', '00000000-0000-0000-0000-000000000001');
 
--- Insert sample notifications from notificationPanel.tsx
--- Notification 1: "הודעה למתנדבים"
-INSERT INTO notification (
-    id,
-    user_id,
-    title,
-    message,
-    date,
-    read,
-    created_at,
-    created_by
-) VALUES (
-    uuid_generate_v4(),
-    'cc64fcef-5edb-4ad7-b8ef-e205e4d8fafd',
-    'הודעה למתנדבים',
-    'לורם איפסום דולור סיט אמט, קונסקטורר אדיפיסינג אלית לפרומי בלוף קינץ תתיח לרעח. לת צשחמי צש בליא, מנסוטו צמלח לביקו ננבי, צמוקו בלוקריה שיצמה ברורק.',
-    '2025-07-11 14:45:00+00'::timestamp with time zone,
-    FALSE,
-    '2025-07-11 14:45:00+00'::timestamp with time zone,
-    '2c722ede-eb04-413f-b30b-aec09fa83caa'
-);
+-- ============================================
+-- Seed data (accounts, users, areas, tags, account_tag)
+-- Data extracted from Figma design: MDA Scheduling App - Profile Page
+-- ============================================
 
--- Notification 2: "בקשת השיבוץ שלך אושרה 😃"
-INSERT INTO notification (
-    id,
-    user_id,
-    title,
-    message,
-    date,
-    read,
-    created_at,
-    created_by
-) VALUES (
-    uuid_generate_v4(),
-    'cc64fcef-5edb-4ad7-b8ef-e205e4d8fafd',
-    'בקשת השיבוץ שלך אושרה 😃',
-    'שובצת למשמרת ערב ביום רביעי (16/7/2025) בנה״ז ת״א 2.',
-    '2025-07-08 11:17:00+00'::timestamp with time zone,
-    FALSE,
-    '2025-07-08 11:17:00+00'::timestamp with time zone,
-    '2c722ede-eb04-413f-b30b-aec09fa83caa'
-);
+DO $$
+DECLARE
+    system_account_id UUID;
+    area_tel_aviv_id UUID;
+    account_gal_id UUID;
+    gal_user_info_id UUID;
+    account_yaara_id UUID;
+    yaara_user_info_id UUID;
+    account_avishag_id UUID;
+    avishag_user_info_id UUID;
+    account_michal_id UUID;
+    michal_user_info_id UUID;
+    account_moshe_id UUID;
+    moshe_user_info_id UUID;
+    account_ofek_id UUID;
+    ofek_user_info_id UUID;
+    account_yair_id UUID;
+    yair_user_info_id UUID;
+    account_daniel_id UUID;
+    daniel_user_info_id UUID;
+BEGIN
+    -- Get system account
+    SELECT id INTO system_account_id FROM account WHERE email = 'system@mitnadvim.com' LIMIT 1;
+    
+    -- Ensure system account exists
+    IF system_account_id IS NULL THEN
+        RAISE EXCEPTION 'System account not found. Please ensure the system account is created first.';
+    END IF;
+    
+    -- Create or get Tel Aviv area
+    SELECT id INTO area_tel_aviv_id FROM area WHERE name = 'תל-אביב, יפו' LIMIT 1;
+    
+    IF area_tel_aviv_id IS NULL THEN
+        INSERT INTO area (id, name, created_by)
+        VALUES (uuid_generate_v4(), 'תל-אביב, יפו', system_account_id)
+        RETURNING id INTO area_tel_aviv_id;
+    END IF;
+    
+    -- Ensure area was created or found
+    IF area_tel_aviv_id IS NULL THEN
+        RAISE EXCEPTION 'Failed to create or find Tel Aviv area.';
+    END IF;
+    
+    -- ============================================
+    -- 1. Main User: Gal Goldman (גל גולדמן)
+    -- ============================================
+    
+    -- Check if account already exists
+    SELECT id INTO account_gal_id FROM account WHERE email = 'Goldman_Gal@mail.co' LIMIT 1;
+    
+    IF account_gal_id IS NULL THEN
+        -- Ensure we have valid IDs before creating records
+        IF system_account_id IS NULL OR area_tel_aviv_id IS NULL THEN
+            RAISE EXCEPTION 'Cannot create user: system_account_id or area_tel_aviv_id is NULL';
+        END IF;
+        
+        -- Create account for Gal Goldman
+        -- Password: Goldman_Gal (email name before @)
+        INSERT INTO account (
+            id,
+            display_name,
+            email,
+            phone,
+            password_hash,
+            created_at,
+            updated_at,
+            created_by,
+            updated_by
+        ) VALUES (
+            uuid_generate_v4(),
+            'גל גולדמן',
+            'Goldman_Gal@mail.co',
+            '(057) 555-1234',
+            crypt('Goldman_Gal', gen_salt('bf', 12)), -- bcrypt hash of email name
+            NOW(),
+            NULL,
+            system_account_id,
+            NULL
+        ) RETURNING id INTO account_gal_id;
+        
+        -- Create user_info for Gal Goldman
+        INSERT INTO user_info (
+            id,
+            account_id,
+            first_name,
+            last_name,
+            image_url,
+            address,
+            area_id,
+            role,
+            created_at,
+            updated_at,
+            created_by,
+            updated_by
+        ) VALUES (
+            uuid_generate_v4(),
+            account_gal_id,
+            'גל',
+            'גולדמן',
+            NULL, -- Image URL can be added later
+            'רחוב יגאל אלון 96, כניסה א׳, קומה 2, דירה 4, תל-אביב, יפו 1234567',
+            area_tel_aviv_id,
+            'פאראמדיקית',
+            NOW(),
+            NULL,
+            system_account_id,
+            NULL
+        ) RETURNING id INTO gal_user_info_id;
+    ELSE
+        -- Get existing user_info ID
+        SELECT ui.id INTO gal_user_info_id 
+        FROM user_info ui 
+        WHERE ui.account_id = account_gal_id 
+        LIMIT 1;
+    END IF;
+    
+    -- ============================================
+    -- 2. Emergency Contact: Elisha the Shunamite (אלישע השונמי)
+    -- ============================================
+    
+    -- Create emergency contact relationship for Gal
+    IF gal_user_info_id IS NOT NULL THEN
+        -- Check if emergency contact already exists
+        IF NOT EXISTS (
+            SELECT 1 FROM emergency_contacts 
+            WHERE user_id = gal_user_info_id 
+            AND email = 'Alisha.Shu@mail.com'
+        ) THEN
+            INSERT INTO emergency_contacts (
+                id,
+                user_id,
+                name,
+                relationship,
+                phone,
+                email,
+                address,
+                created_at,
+                updated_at,
+                created_by,
+                updated_by
+            ) VALUES (
+                uuid_generate_v4(),
+                gal_user_info_id,
+                'אלישע השונמי',
+                'הורה',
+                '(055) 555-4321',
+                'Alisha.Shu@mail.com',
+                'רחוב יגאל אלון 96, כניסה א׳, קומה 2, דירה 4, תל-אביב, יפו 1234567',
+                NOW(),
+                NULL,
+                system_account_id,
+                NULL
+            );
+        END IF;
+    END IF;
+    
+    -- ============================================
+    -- 3. User: Yaara Yankelovitz (יערה ינקלוביץ)
+    -- ============================================
+    
+    SELECT id INTO account_yaara_id FROM account WHERE email = 'Y.B.Shushan@mail.co' LIMIT 1;
+    
+    IF account_yaara_id IS NULL THEN
+        IF system_account_id IS NULL OR area_tel_aviv_id IS NULL THEN
+            RAISE EXCEPTION 'Cannot create user: system_account_id or area_tel_aviv_id is NULL';
+        END IF;
+        
+        -- Password: Y.B.Shushan (email name before @)
+        INSERT INTO account (
+            id, display_name, email, phone, password_hash,
+            created_at, updated_at, created_by, updated_by
+        ) VALUES (
+            uuid_generate_v4(), 'יערה ינקלוביץ', 'Y.B.Shushan@mail.co', '(054) 555-1234',
+            crypt('Y.B.Shushan', gen_salt('bf', 12)), -- bcrypt hash of email name
+            NOW(), NULL, system_account_id, NULL
+        ) RETURNING id INTO account_yaara_id;
+        
+        INSERT INTO user_info (
+            id, account_id, first_name, last_name, image_url, address,
+            area_id, role, created_at, updated_at, created_by, updated_by
+        ) VALUES (
+            uuid_generate_v4(), account_yaara_id, 'יערה', 'ינקלוביץ', NULL,
+            'רחוב יגאל אלון 96, כניסה א׳, קומה 2, דירה 4, תל-אביב, יפו 1234567',
+            area_tel_aviv_id, 'מגישת עזרה ראשונה',
+            NOW(), NULL, system_account_id, NULL
+        ) RETURNING id INTO yaara_user_info_id;
+    ELSE
+        SELECT ui.id INTO yaara_user_info_id FROM user_info ui WHERE ui.account_id = account_yaara_id LIMIT 1;
+    END IF;
+    
+    -- Emergency contact for Yaara
+    IF yaara_user_info_id IS NOT NULL THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM emergency_contacts 
+            WHERE user_id = yaara_user_info_id AND email = 'Alisha.Shu@mail.com'
+        ) THEN
+            INSERT INTO emergency_contacts (
+                id, user_id, name, relationship, phone, email, address,
+                created_at, updated_at, created_by, updated_by
+            ) VALUES (
+                uuid_generate_v4(), yaara_user_info_id, 'אלישע השונמי', 'הורה',
+                '(055) 555-4321', 'Alisha.Shu@mail.com',
+                'רחוב יגאל אלון 96, כניסה א׳, קומה 2, דירה 4, תל-אביב, יפו 1234567',
+                NOW(), NULL, system_account_id, NULL
+            );
+        END IF;
+    END IF;
+    
+    -- ============================================
+    -- 4. User: Avishag Hashunamit (אבישג השונמית)
+    -- ============================================
+    
+    SELECT id INTO account_avishag_id FROM account WHERE email = 'Avishag@mail.co' LIMIT 1;
+    
+    IF account_avishag_id IS NULL THEN
+        IF system_account_id IS NULL OR area_tel_aviv_id IS NULL THEN
+            RAISE EXCEPTION 'Cannot create user: system_account_id or area_tel_aviv_id is NULL';
+        END IF;
+        
+        -- Password: Avishag (email name before @)
+        INSERT INTO account (
+            id, display_name, email, phone, password_hash,
+            created_at, updated_at, created_by, updated_by
+        ) VALUES (
+            uuid_generate_v4(), 'אבישג השונמית', 'Avishag@mail.co', '(055) 555-1234',
+            crypt('Avishag', gen_salt('bf', 12)), -- bcrypt hash of email name
+            NOW(), NULL, system_account_id, NULL
+        ) RETURNING id INTO account_avishag_id;
+        
+        INSERT INTO user_info (
+            id, account_id, first_name, last_name, image_url, address,
+            area_id, role, created_at, updated_at, created_by, updated_by
+        ) VALUES (
+            uuid_generate_v4(), account_avishag_id, 'אבישג', 'השונמית', NULL,
+            'רחוב יגאל אלון 96, כניסה א׳, קומה 2, דירה 4, תל-אביב, יפו 1234567',
+            area_tel_aviv_id, 'חובשת רפואת חירום',
+            NOW(), NULL, system_account_id, NULL
+        ) RETURNING id INTO avishag_user_info_id;
+    ELSE
+        SELECT ui.id INTO avishag_user_info_id FROM user_info ui WHERE ui.account_id = account_avishag_id LIMIT 1;
+    END IF;
+    
+    -- Emergency contact for Avishag
+    IF avishag_user_info_id IS NOT NULL THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM emergency_contacts 
+            WHERE user_id = avishag_user_info_id AND email = 'Alisha.Shu@mail.com'
+        ) THEN
+            INSERT INTO emergency_contacts (
+                id, user_id, name, relationship, phone, email, address,
+                created_at, updated_at, created_by, updated_by
+            ) VALUES (
+                uuid_generate_v4(), avishag_user_info_id, 'אלישע השונמי', 'הורה',
+                '(055) 555-4321', 'Alisha.Shu@mail.com',
+                'רחוב יגאל אלון 96, כניסה א׳, קומה 2, דירה 4, תל-אביב, יפו 1234567',
+                NOW(), NULL, system_account_id, NULL
+            );
+        END IF;
+    END IF;
+    
+    -- ============================================
+    -- 5. User: Michal Moskin (מיכל מוסקין)
+    -- ============================================
+    
+    SELECT id INTO account_michal_id FROM account WHERE email = 'MP_MDA@mail.co' LIMIT 1;
+    
+    IF account_michal_id IS NULL THEN
+        IF system_account_id IS NULL OR area_tel_aviv_id IS NULL THEN
+            RAISE EXCEPTION 'Cannot create user: system_account_id or area_tel_aviv_id is NULL';
+        END IF;
+        
+        -- Password: MP_MDA (email name before @)
+        INSERT INTO account (
+            id, display_name, email, phone, password_hash,
+            created_at, updated_at, created_by, updated_by
+        ) VALUES (
+            uuid_generate_v4(), 'מיכל מוסקין', 'MP_MDA@mail.co', '(053) 555-1234',
+            crypt('MP_MDA', gen_salt('bf', 12)), -- bcrypt hash of email name
+            NOW(), NULL, system_account_id, NULL
+        ) RETURNING id INTO account_michal_id;
+        
+        INSERT INTO user_info (
+            id, account_id, first_name, last_name, image_url, address,
+            area_id, role, created_at, updated_at, created_by, updated_by
+        ) VALUES (
+            uuid_generate_v4(), account_michal_id, 'מיכל', 'מוסקין', NULL,
+            'רחוב יגאל אלון 96, כניסה א׳, קומה 2, דירה 4, תל-אביב, יפו 1234567',
+            area_tel_aviv_id, 'מגישת עזרה ראשונה',
+            NOW(), NULL, system_account_id, NULL
+        ) RETURNING id INTO michal_user_info_id;
+    ELSE
+        SELECT ui.id INTO michal_user_info_id FROM user_info ui WHERE ui.account_id = account_michal_id LIMIT 1;
+    END IF;
+    
+    -- Emergency contact for Michal
+    IF michal_user_info_id IS NOT NULL THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM emergency_contacts 
+            WHERE user_id = michal_user_info_id AND email = 'Alisha.Shu@mail.com'
+        ) THEN
+            INSERT INTO emergency_contacts (
+                id, user_id, name, relationship, phone, email, address,
+                created_at, updated_at, created_by, updated_by
+            ) VALUES (
+                uuid_generate_v4(), michal_user_info_id, 'אלישע השונמי', 'הורה',
+                '(055) 555-4321', 'Alisha.Shu@mail.com',
+                'רחוב יגאל אלון 96, כניסה א׳, קומה 2, דירה 4, תל-אביב, יפו 1234567',
+                NOW(), NULL, system_account_id, NULL
+            );
+        END IF;
+    END IF;
+    
+    -- ============================================
+    -- 6. User: Moshe Markovitz (משה מרקוביץ׳)
+    -- ============================================
+    
+    SELECT id INTO account_moshe_id FROM account WHERE email = 'Moses@mail.co' LIMIT 1;
+    
+    IF account_moshe_id IS NULL THEN
+        IF system_account_id IS NULL OR area_tel_aviv_id IS NULL THEN
+            RAISE EXCEPTION 'Cannot create user: system_account_id or area_tel_aviv_id is NULL';
+        END IF;
+        
+        -- Password: Moses (email name before @)
+        INSERT INTO account (
+            id, display_name, email, phone, password_hash,
+            created_at, updated_at, created_by, updated_by
+        ) VALUES (
+            uuid_generate_v4(), 'משה מרקוביץ׳', 'Moses@mail.co', '(050) 555-1234',
+            crypt('Moses', gen_salt('bf', 12)), -- bcrypt hash of email name
+            NOW(), NULL, system_account_id, NULL
+        ) RETURNING id INTO account_moshe_id;
+        
+        INSERT INTO user_info (
+            id, account_id, first_name, last_name, image_url, address,
+            area_id, role, created_at, updated_at, created_by, updated_by
+        ) VALUES (
+            uuid_generate_v4(), account_moshe_id, 'משה', 'מרקוביץ׳', NULL,
+            'רחוב יגאל אלון 96, כניסה א׳, קומה 2, דירה 4, תל-אביב, יפו 1234567',
+            area_tel_aviv_id, 'חובש - נהג משתלם',
+            NOW(), NULL, system_account_id, NULL
+        ) RETURNING id INTO moshe_user_info_id;
+    ELSE
+        SELECT ui.id INTO moshe_user_info_id FROM user_info ui WHERE ui.account_id = account_moshe_id LIMIT 1;
+    END IF;
+    
+    -- Emergency contact for Moshe
+    IF moshe_user_info_id IS NOT NULL THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM emergency_contacts 
+            WHERE user_id = moshe_user_info_id AND email = 'Alisha.Shu@mail.com'
+        ) THEN
+            INSERT INTO emergency_contacts (
+                id, user_id, name, relationship, phone, email, address,
+                created_at, updated_at, created_by, updated_by
+            ) VALUES (
+                uuid_generate_v4(), moshe_user_info_id, 'אלישע השונמי', 'הורה',
+                '(055) 555-4321', 'Alisha.Shu@mail.com',
+                'רחוב יגאל אלון 96, כניסה א׳, קומה 2, דירה 4, תל-אביב, יפו 1234567',
+                NOW(), NULL, system_account_id, NULL
+            );
+        END IF;
+    END IF;
+    
+    -- ============================================
+    -- 7. User: Ofek Aharonov (אופק אהרונוב)
+    -- ============================================
+    
+    SELECT id INTO account_ofek_id FROM account WHERE email = 'Ofek_Cohen@mail.co' LIMIT 1;
+    
+    IF account_ofek_id IS NULL THEN
+        IF system_account_id IS NULL OR area_tel_aviv_id IS NULL THEN
+            RAISE EXCEPTION 'Cannot create user: system_account_id or area_tel_aviv_id is NULL';
+        END IF;
+        
+        -- Password: Ofek_Cohen (email name before @)
+        INSERT INTO account (
+            id, display_name, email, phone, password_hash,
+            created_at, updated_at, created_by, updated_by
+        ) VALUES (
+            uuid_generate_v4(), 'אופק אהרונוב', 'Ofek_Cohen@mail.co', '(056) 555-1234',
+            crypt('Ofek_Cohen', gen_salt('bf', 12)), -- bcrypt hash of email name
+            NOW(), NULL, system_account_id, NULL
+        ) RETURNING id INTO account_ofek_id;
+        
+        INSERT INTO user_info (
+            id, account_id, first_name, last_name, image_url, address,
+            area_id, role, created_at, updated_at, created_by, updated_by
+        ) VALUES (
+            uuid_generate_v4(), account_ofek_id, 'אופק', 'אהרונוב', NULL,
+            'רחוב יגאל אלון 96, כניסה א׳, קומה 2, דירה 4, תל-אביב, יפו 1234567',
+            area_tel_aviv_id, 'חובש - נהג',
+            NOW(), NULL, system_account_id, NULL
+        ) RETURNING id INTO ofek_user_info_id;
+    ELSE
+        SELECT ui.id INTO ofek_user_info_id FROM user_info ui WHERE ui.account_id = account_ofek_id LIMIT 1;
+    END IF;
+    
+    -- Emergency contact for Ofek
+    IF ofek_user_info_id IS NOT NULL THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM emergency_contacts 
+            WHERE user_id = ofek_user_info_id AND email = 'Alisha.Shu@mail.com'
+        ) THEN
+            INSERT INTO emergency_contacts (
+                id, user_id, name, relationship, phone, email, address,
+                created_at, updated_at, created_by, updated_by
+            ) VALUES (
+                uuid_generate_v4(), ofek_user_info_id, 'אלישע השונמי', 'הורה',
+                '(055) 555-4321', 'Alisha.Shu@mail.com',
+                'רחוב יגאל אלון 96, כניסה א׳, קומה 2, דירה 4, תל-אביב, יפו 1234567',
+                NOW(), NULL, system_account_id, NULL
+            );
+        END IF;
+    END IF;
+    
+    -- ============================================
+    -- 8. User: Yair Yadin (יאיר ידין)
+    -- ============================================
+    
+    SELECT id INTO account_yair_id FROM account WHERE email = 'Y.CornB@mail.co' LIMIT 1;
+    
+    IF account_yair_id IS NULL THEN
+        IF system_account_id IS NULL OR area_tel_aviv_id IS NULL THEN
+            RAISE EXCEPTION 'Cannot create user: system_account_id or area_tel_aviv_id is NULL';
+        END IF;
+        
+        -- Password: Y.CornB (email name before @)
+        INSERT INTO account (
+            id, display_name, email, phone, password_hash,
+            created_at, updated_at, created_by, updated_by
+        ) VALUES (
+            uuid_generate_v4(), 'יאיר ידין', 'Y.CornB@mail.co', '(051) 555-1234',
+            crypt('Y.CornB', gen_salt('bf', 12)), -- bcrypt hash of email name
+            NOW(), NULL, system_account_id, NULL
+        ) RETURNING id INTO account_yair_id;
+        
+        INSERT INTO user_info (
+            id, account_id, first_name, last_name, image_url, address,
+            area_id, role, created_at, updated_at, created_by, updated_by
+        ) VALUES (
+            uuid_generate_v4(), account_yair_id, 'יאיר', 'ידין', NULL,
+            'רחוב יגאל אלון 96, כניסה א׳, קומה 2, דירה 4, תל-אביב, יפו 1234567',
+            area_tel_aviv_id, 'חובש - נהג',
+            NOW(), NULL, system_account_id, NULL
+        ) RETURNING id INTO yair_user_info_id;
+    ELSE
+        SELECT ui.id INTO yair_user_info_id FROM user_info ui WHERE ui.account_id = account_yair_id LIMIT 1;
+    END IF;
+    
+    -- Emergency contact for Yair
+    IF yair_user_info_id IS NOT NULL THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM emergency_contacts 
+            WHERE user_id = yair_user_info_id AND email = 'Alisha.Shu@mail.com'
+        ) THEN
+            INSERT INTO emergency_contacts (
+                id, user_id, name, relationship, phone, email, address,
+                created_at, updated_at, created_by, updated_by
+            ) VALUES (
+                uuid_generate_v4(), yair_user_info_id, 'אלישע השונמי', 'הורה',
+                '(055) 555-4321', 'Alisha.Shu@mail.com',
+                'רחוב יגאל אלון 96, כניסה א׳, קומה 2, דירה 4, תל-אביב, יפו 1234567',
+                NOW(), NULL, system_account_id, NULL
+            );
+        END IF;
+    END IF;
+    
+    -- ============================================
+    -- 9. User: Daniel Douglas (דניאל דגלאס)
+    -- ============================================
+    
+    SELECT id INTO account_daniel_id FROM account WHERE email = 'D.Levi@mail.co' LIMIT 1;
+    
+    IF account_daniel_id IS NULL THEN
+        IF system_account_id IS NULL OR area_tel_aviv_id IS NULL THEN
+            RAISE EXCEPTION 'Cannot create user: system_account_id or area_tel_aviv_id is NULL';
+        END IF;
+        
+        -- Password: D.Levi (email name before @)
+        INSERT INTO account (
+            id, display_name, email, phone, password_hash,
+            created_at, updated_at, created_by, updated_by
+        ) VALUES (
+            uuid_generate_v4(), 'דניאל דגלאס', 'D.Levi@mail.co', '(052) 555-1234',
+            crypt('D.Levi', gen_salt('bf', 12)), -- bcrypt hash of email name
+            NOW(), NULL, system_account_id, NULL
+        ) RETURNING id INTO account_daniel_id;
+        
+        INSERT INTO user_info (
+            id, account_id, first_name, last_name, image_url, address,
+            area_id, role, created_at, updated_at, created_by, updated_by
+        ) VALUES (
+            uuid_generate_v4(), account_daniel_id, 'דניאל', 'דגלאס', NULL,
+            'רחוב יגאל אלון 96, כניסה א׳, קומה 2, דירה 4, תל-אביב, יפו 1234567',
+            area_tel_aviv_id, 'מגיש עזרה ראשונה',
+            NOW(), NULL, system_account_id, NULL
+        ) RETURNING id INTO daniel_user_info_id;
+    ELSE
+        SELECT ui.id INTO daniel_user_info_id FROM user_info ui WHERE ui.account_id = account_daniel_id LIMIT 1;
+    END IF;
+    
+    -- Emergency contact for Daniel
+    IF daniel_user_info_id IS NOT NULL THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM emergency_contacts 
+            WHERE user_id = daniel_user_info_id AND email = 'Alisha.Shu@mail.com'
+        ) THEN
+            INSERT INTO emergency_contacts (
+                id, user_id, name, relationship, phone, email, address,
+                created_at, updated_at, created_by, updated_by
+            ) VALUES (
+                uuid_generate_v4(), daniel_user_info_id, 'אלישע השונמי', 'הורה',
+                '(055) 555-4321', 'Alisha.Shu@mail.com',
+                'רחוב יגאל אלון 96, כניסה א׳, קומה 2, דירה 4, תל-אביב, יפו 1234567',
+                NOW(), NULL, system_account_id, NULL
+            );
+        END IF;
+    END IF;
+END $$;
 
--- Notification 3: "בקשת השיבוץ שלך נדחתה ☹️"
-INSERT INTO notification (
-    id,
-    user_id,
-    title,
-    message,
-    date,
-    read,
-    created_at,
-    created_by
-) VALUES (
-    uuid_generate_v4(),
-    'cc64fcef-5edb-4ad7-b8ef-e205e4d8fafd',
-    'בקשת השיבוץ שלך נדחתה ☹️',
-    'לצערנו לא ניתן לשבץ אותך למשמרת בוקר ביום שישי (18/7/2025) בנה״ז נט״ן ת״א 1. בכל שאלה או הבהרה אנא פני לרכז שלך.',
-    '2025-07-06 08:32:00+00'::timestamp with time zone,
-    FALSE,
-    '2025-07-06 08:32:00+00'::timestamp with time zone,
-    '2c722ede-eb04-413f-b30b-aec09fa83caa'
-);
+-- ============================================
+-- Seed Tags with Categories
+-- ============================================
+DO $$
+DECLARE
+    system_account_id UUID;
+BEGIN
+    -- Get system account
+    SELECT id INTO system_account_id FROM account WHERE email = 'system@mitnadvim.com' LIMIT 1;
+    
+    IF system_account_id IS NULL THEN
+        RAISE EXCEPTION 'System account not found. Please ensure the system account is created first.';
+    END IF;
+    
+    -- Insert tags with category "גזרה"
+    INSERT INTO tag (id, name, category, created_at, updated_at, created_by, updated_by)
+    SELECT 
+        uuid_generate_v4(),
+        tag_name,
+        'גזרה',
+        NOW(),
+        NULL,
+        system_account_id,
+        NULL
+    FROM (VALUES 
+        ('צפון'),
+        ('דרום'),
+        ('מרכז'),
+        ('מזרח'),
+        ('חוץ'),
+        ('וירטואלי'),
+        ('שכבה י'),
+        ('שכבה יא'),
+        ('שכבה יב')
+    ) AS tag_values(tag_name)
+    WHERE NOT EXISTS (
+        SELECT 1 FROM tag WHERE name = tag_values.tag_name AND category = 'גזרה'
+    );
+    
+    -- Insert tags with category "גיל"
+    INSERT INTO tag (id, name, category, created_at, updated_at, created_by, updated_by)
+    SELECT 
+        uuid_generate_v4(),
+        tag_name,
+        'גיל',
+        NOW(),
+        NULL,
+        system_account_id,
+        NULL
+    FROM (VALUES 
+        ('בוגרים'),
+        ('נוער')
+    ) AS tag_values(tag_name)
+    WHERE NOT EXISTS (
+        SELECT 1 FROM tag WHERE name = tag_values.tag_name AND category = 'גיל'
+    );
+    
+    -- Insert tags with category "סאאוס"
+    INSERT INTO tag (id, name, category, created_at, updated_at, created_by, updated_by)
+    SELECT 
+        uuid_generate_v4(),
+        tag_name,
+        'סאאוס',
+        NOW(),
+        NULL,
+        system_account_id,
+        NULL
+    FROM (VALUES 
+        ('נהג שכיר'),
+        ('מורשה נט"ן'),
+        ('משתלם נהיגה'),
+        ('נהג מתנדב'),
+        ('פרמדיק'),
+        ('חניך'),
+        ('חונך'),
+        ('חובש משתלם')
+    ) AS tag_values(tag_name)
+    WHERE NOT EXISTS (
+        SELECT 1 FROM tag WHERE name = tag_values.tag_name AND category = 'סאאוס'
+    );
+    
+    -- Insert tags with category "תחנת אם"
+    INSERT INTO tag (id, name, category, created_at, updated_at, created_by, updated_by)
+    SELECT 
+        uuid_generate_v4(),
+        tag_name,
+        'תחנת אם',
+        NOW(),
+        NULL,
+        system_account_id,
+        NULL
+    FROM (VALUES 
+        ('תל-אביב'),
+        ('רמת גן')
+    ) AS tag_values(tag_name)
+    WHERE NOT EXISTS (
+        SELECT 1 FROM tag WHERE name = tag_values.tag_name AND category = 'תחנת אם'
+    );
+    
+    -- Insert tags with category "ניהול"
+    INSERT INTO tag (id, name, category, created_at, updated_at, created_by, updated_by)
+    SELECT 
+        uuid_generate_v4(),
+        tag_name,
+        'ניהול',
+        NOW(),
+        NULL,
+        system_account_id,
+        NULL
+    FROM (VALUES 
+        ('א. צפון'),
+        ('א.דרום'),
+        ('א. מרכז'),
+        ('א. מזרח'),
+        ('א. חוץ'),
+        ('א. ויראואלי'),
+        ('א. שכבה י'),
+        ('א. שכבה יא'),
+        ('א.שכבה יב'),
+        ('סדרן עבודה'),
+        ('יצירת משתמשים חדשים'),
+        ('רכז שיבוצים'),
+        ('רכז גזרה')
+    ) AS tag_values(tag_name)
+    WHERE NOT EXISTS (
+        SELECT 1 FROM tag WHERE name = tag_values.tag_name AND category = 'ניהול'
+    );
+END $$;
+
+-- ============================================
+-- Assign Tags to Accounts
+-- ============================================
+DO $$
+DECLARE
+    system_account_id UUID;
+    account_gal_id UUID;
+    account_yaara_id UUID;
+    account_avishag_id UUID;
+    account_michal_id UUID;
+    account_moshe_id UUID;
+    account_ofek_id UUID;
+    account_yair_id UUID;
+    account_daniel_id UUID;
+    current_tag_id UUID;
+BEGIN
+    -- Get system account
+    SELECT id INTO system_account_id FROM account WHERE email = 'system@mitnadvim.com' LIMIT 1;
+    
+    IF system_account_id IS NULL THEN
+        RAISE EXCEPTION 'System account not found. Please ensure the system account is created first.';
+    END IF;
+    
+    -- Get account IDs
+    SELECT id INTO account_gal_id FROM account WHERE email = 'Goldman_Gal@mail.co' LIMIT 1;
+    SELECT id INTO account_yaara_id FROM account WHERE email = 'Y.B.Shushan@mail.co' LIMIT 1;
+    SELECT id INTO account_avishag_id FROM account WHERE email = 'Avishag@mail.co' LIMIT 1;
+    SELECT id INTO account_michal_id FROM account WHERE email = 'MP_MDA@mail.co' LIMIT 1;
+    SELECT id INTO account_moshe_id FROM account WHERE email = 'Moses@mail.co' LIMIT 1;
+    SELECT id INTO account_ofek_id FROM account WHERE email = 'Ofek_Cohen@mail.co' LIMIT 1;
+    SELECT id INTO account_yair_id FROM account WHERE email = 'Y.CornB@mail.co' LIMIT 1;
+    SELECT id INTO account_daniel_id FROM account WHERE email = 'D.Levi@mail.co' LIMIT 1;
+    
+    -- Gal Goldman tags: וירטואלי, מורשה נט"ן, בוגרים, תל-אביב
+    IF account_gal_id IS NOT NULL THEN
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'וירטואלי' AND category = 'גזרה' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_gal_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_gal_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'מורשה נט"ן' AND category = 'סאאוס' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_gal_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_gal_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'בוגרים' AND category = 'גיל' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_gal_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_gal_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'תל-אביב' AND category = 'תחנת אם' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_gal_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_gal_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+    END IF;
+    
+    -- Yaara Yankelovitz tags: שכבה יב, מורשה נט"ן, נוער
+    IF account_yaara_id IS NOT NULL THEN
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'שכבה יב' AND category = 'גזרה' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_yaara_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_yaara_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'מורשה נט"ן' AND category = 'סאאוס' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_yaara_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_yaara_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'נוער' AND category = 'גיל' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_yaara_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_yaara_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+    END IF;
+    
+    -- Avishag Hashunamit tags: מרכז, בוגרים, תל-אביב
+    IF account_avishag_id IS NOT NULL THEN
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'מרכז' AND category = 'גזרה' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_avishag_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_avishag_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'בוגרים' AND category = 'גיל' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_avishag_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_avishag_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'תל-אביב' AND category = 'תחנת אם' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_avishag_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_avishag_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+    END IF;
+    
+    -- Michal Moskin tags: שכבה יא, מורשה נט"ן, חונך, נוער
+    IF account_michal_id IS NOT NULL THEN
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'שכבה יא' AND category = 'גזרה' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_michal_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_michal_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'מורשה נט"ן' AND category = 'סאאוס' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_michal_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_michal_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'חונך' AND category = 'סאאוס' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_michal_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_michal_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'נוער' AND category = 'גיל' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_michal_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_michal_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+    END IF;
+    
+    -- Moshe Markovitz tags: חוץ, משתלם נהיגה, בוגרים
+    IF account_moshe_id IS NOT NULL THEN
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'חוץ' AND category = 'גזרה' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_moshe_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_moshe_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'משתלם נהיגה' AND category = 'סאאוס' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_moshe_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_moshe_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'בוגרים' AND category = 'גיל' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_moshe_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_moshe_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+    END IF;
+    
+    -- Ofek Aharonov tags: נהג שכיר, תל-אביב
+    IF account_ofek_id IS NOT NULL THEN
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'נהג שכיר' AND category = 'סאאוס' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_ofek_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_ofek_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'תל-אביב' AND category = 'תחנת אם' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_ofek_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_ofek_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+    END IF;
+    
+    -- Yair Yadin tags: מזרח, מורשה נט"ן, נהג מתנדב, בוגרים
+    IF account_yair_id IS NOT NULL THEN
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'מזרח' AND category = 'גזרה' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_yair_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_yair_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'מורשה נט"ן' AND category = 'סאאוס' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_yair_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_yair_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'נהג מתנדב' AND category = 'סאאוס' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_yair_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_yair_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'בוגרים' AND category = 'גיל' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_yair_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_yair_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+    END IF;
+    
+    -- Daniel Douglas tags: שכבה י, חניך, נוער
+    IF account_daniel_id IS NOT NULL THEN
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'שכבה י' AND category = 'גזרה' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_daniel_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_daniel_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'חניך' AND category = 'סאאוס' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_daniel_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_daniel_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+        SELECT id INTO current_tag_id FROM tag WHERE name = 'נוער' AND category = 'גיל' LIMIT 1;
+        IF current_tag_id IS NOT NULL THEN
+            INSERT INTO account_tag (account_id, tag_id, created_at, created_by)
+            SELECT account_daniel_id, current_tag_id, NOW(), system_account_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM account_tag at WHERE at.account_id = account_daniel_id AND at.tag_id = current_tag_id
+            );
+        END IF;
+    END IF;
+END $$;
 
 COMMIT;
