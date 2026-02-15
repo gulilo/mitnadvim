@@ -37,7 +37,7 @@ jobs:
           # Create full path (cp does not create parent dirs; standalone may not have .next)
           mkdir -p .next/standalone/.next/static
           # Copy static contents into it (CSS, JS chunks)
-          cp -r -v ".next/static/." ".next/standalone/.next/static/"
+          cp -r -v .next/static/. .next/standalone/.next/static/
           # Copy public folder (images, favicon, etc.)
           cp -r public .next/standalone/
 
@@ -55,6 +55,7 @@ jobs:
           app-name: 'MDAdan'
           slot-name: 'Production'
           package: .next/standalone
+
 
 
 
