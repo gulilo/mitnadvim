@@ -54,7 +54,8 @@ jobs:
         with:
           app-name: 'MDAdan'
           slot-name: 'Production'
-          package: .
+          package: .next/standalone/
+
 
 
 
