@@ -40,8 +40,8 @@ jobs:
           cp -r -v .next/static/ .next/standalone/.next/
           # Copy public folder (images, favicon, etc.)
           cp -r public .next/standalone/
-          # Zip -rv standalone (includes .next and all files) for deploy
-          cd .next/standalone && zip -r ../../deploy.zip . -q && cd ../..
+          # Zip standalone (includes .next and all files) for deploy
+          cd .next/standalone && zip -rv ../../deploy.zip . -q && cd ../..
 
       - name: Login to Azure
         uses: azure/login@v2
@@ -57,6 +57,7 @@ jobs:
           app-name: 'MDAdan'
           slot-name: 'Production'
           package: deploy.zip
+
 
 
 
