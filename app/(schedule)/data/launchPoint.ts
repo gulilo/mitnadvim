@@ -4,19 +4,11 @@ export type DbLaunchPoint = {
   id: string;
   area_id: string;
   name: string;
-  created_at: Date;
-  updated_at: Date | null;
-  created_by: string;
-  updated_by: string | null;
 };
 
 export type DbArea = {
   id: string;
   name: string;
-  created_at: Date;
-  updated_at: Date | null;
-  created_by: string;
-  updated_by: string | null;
 };
 
 export async function getAllLaunchPoints(): Promise<DbLaunchPoint[]> {
@@ -55,3 +47,12 @@ export async function getAreaName(areaId: string): Promise<string | null> {
   }
 }
 
+export async function getLaunchPointById(id: string): Promise<DbLaunchPoint | null> {
+  try {
+    const launchPoint = await sql`SELECT * FROM launch_point WHERE id = ${id}`;
+    return launchPoint[0] as DbLaunchPoint | null;
+  } catch (error) {
+    console.error('Failed to fetch launch point:', error);
+    return null;
+  }
+}

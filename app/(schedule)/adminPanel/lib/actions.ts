@@ -12,16 +12,21 @@ export async function createPermanentShift(permanentShift: DbPermanentShift) {
       throw new Error('Unauthorized');
     }
     const launchPointId = permanentShift.launch_point_id;
+    const shiftType = permanentShift.shift_type;
     const weekDay = permanentShift.week_day;
     const startTime = permanentShift.start_time;
     const endTime = permanentShift.end_time;
     const adultOnly = permanentShift.adult_only;
     const numberOfSlots = permanentShift.number_of_slots;
+    const ambulanceType = permanentShift.ambulance_type;
 
-    console.log(launchPointId, weekDay, startTime, endTime, adultOnly, numberOfSlots);
+    console.log(launchPointId, shiftType, weekDay, startTime, endTime, adultOnly, numberOfSlots, ambulanceType);
 
     if (!launchPointId) {
       throw new Error('נקודת הזנקה נדרשת');
+    }
+    if (!shiftType) {
+      throw new Error('סוג משמרת (יום/ערב/לילה) נדרש');
     }
     if (weekDay === undefined || weekDay === null) {
       throw new Error('יום בשבוע נדרש');
@@ -38,11 +43,14 @@ export async function createPermanentShift(permanentShift: DbPermanentShift) {
     if (!numberOfSlots) {
       throw new Error('מספר מלווים נדרש');
     }
+    if (!ambulanceType) {
+      throw new Error('סוג אמבולנס נדרש');
+    }
 
 
     await sql`
-      INSERT INTO permanent_shift (launch_point_id, week_day, start_time, end_time, adult_only, number_of_slots, created_by)
-      VALUES (${launchPointId}, ${weekDay}, ${startTime}, ${endTime}, ${adultOnly}, ${numberOfSlots}, ${session.user.id})
+      INSERT INTO permanent_shift (launch_point_id, shift_type, week_day, start_time, end_time, adult_only, number_of_slots, ambulance_type, created_by)
+      VALUES (${launchPointId}, ${shiftType}, ${weekDay}, ${startTime}, ${endTime}, ${adultOnly}, ${numberOfSlots}, ${ambulanceType}, ${session.user.id})
       RETURNING id
     `;
 
@@ -59,24 +67,29 @@ export async function createShift(shift: DbShift) {
     if (!session?.user?.id) {
       throw new Error('Unauthorized');
     }
-    const permanentShiftId = shift.permanent_shift_id;
     const launchPointId = shift.launch_point_id;
     const ambulanceId = shift.ambulance_id;
     const driverId = shift.driver_id;
-    const date = shift.date;
+    const startDate = shift.start_date;
+    const endDate = shift.end_date;
     const startTime = shift.start_time;
     const endTime = shift.end_time;
+    const ambulanceType = shift.ambulance_type;
+    const shiftType = shift.shift_type;
     const adultOnly = shift.adult_only;
     const numberOfSlots = shift.number_of_slots;    
     const status = shift.status;
 
-    console.log(permanentShiftId, launchPointId, ambulanceId, driverId, date, startTime, endTime, adultOnly, numberOfSlots, status);
+    console.log(launchPointId, ambulanceId, driverId, startDate, endDate, startTime, endTime, shiftType, adultOnly, numberOfSlots, status);
 
     if (!launchPointId) {
       throw new Error('נקודת הזנקה נדרשת');
     }
-    if (!date) {
-      throw new Error('תאריך נדרש');
+    if (!startDate) {
+      throw new Error('תאריך התחלה נדרש');
+    }
+    if (!endDate) {
+      throw new Error('תאריך סיום נדרש');
     }
     if (!startTime) {
       throw new Error('שעת התחלה נדרשת');
@@ -93,10 +106,13 @@ export async function createShift(shift: DbShift) {
     if (!status) {
       throw new Error('סטטוס נדרש');
     }
+    if (!ambulanceType) {
+      throw new Error('סוג אמבולנס נדרש');
+    }
 
     await sql`
-      INSERT INTO shift (permanent_shift_id, launch_point_id, ambulance_id, driver_id, date, start_time, end_time, adult_only, number_of_slots, status, created_by)
-      VALUES (${permanentShiftId}, ${launchPointId}, ${ambulanceId}, ${driverId}, ${date}, ${startTime}, ${endTime}, ${adultOnly}, ${numberOfSlots}, ${status}, ${session.user.id})
+      INSERT INTO shift (launch_point_id, ambulance_type, ambulance_id, driver_id, start_date, end_date, start_time, end_time, shift_type, adult_only, number_of_slots, status, created_by)
+      VALUES (${launchPointId}, ${ambulanceType}, ${ambulanceId}, ${driverId}, ${startDate}, ${endDate}, ${startTime}, ${endTime}, ${shiftType}, ${adultOnly}, ${numberOfSlots}, ${status}, ${session.user.id})
     `;
 
     revalidatePath('/adminPanel');

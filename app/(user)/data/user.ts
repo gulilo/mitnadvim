@@ -112,3 +112,13 @@ export async function getUserPermissions(tags_id: string[]): Promise<string[]> {
     return [];
   }
 }
+
+export async function getUsersByPartialName(name: string): Promise<DbUser[]> {
+  try {
+    const users = await sql`SELECT * FROM user_info WHERE first_name ILIKE ${`%${name}%`} OR last_name ILIKE ${`%${name}%`} LIMIT 10`;
+    return users as DbUser[];
+  } catch (error) {
+    console.error('Failed to fetch users by partial name:', error);
+    return [];
+  }
+}
