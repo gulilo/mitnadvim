@@ -61,6 +61,12 @@ export default async function MainMenu() {
           </DrawerClose>
           <Separator className="bg-white  mx-auto" />
           <DrawerClose asChild>
+            <Link href="/shiftPicker">
+              <h2 className="text-white">לוח משמרות</h2>
+            </Link>
+          </DrawerClose>
+          <Separator className="bg-white  mx-auto" />
+          <DrawerClose asChild>
             <Link href="/profile">
               <h2 className="text-white">פרופיל אישי</h2>
             </Link>
