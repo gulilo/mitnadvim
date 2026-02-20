@@ -6,6 +6,18 @@ export type DbAmbulance = {
   atan: boolean;
 };
 
+export async function getAllAmbulances(): Promise<DbAmbulance[]> {
+  try {
+    const ambulances = await sql`
+      SELECT * FROM ambulance ORDER BY number ASC
+    `;
+    return ambulances as DbAmbulance[];
+  } catch (error) {
+    console.error("Failed to get all ambulances:", error);
+    throw new Error("Failed to get all ambulances.");
+  }
+}
+
 export async function getAmbulanceById(id: string): Promise<DbAmbulance | null> {
   try {
     const ambulance = await sql`

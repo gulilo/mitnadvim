@@ -2,7 +2,8 @@
 
 import { DbUser } from "@/app/(user)/data/definitions";
 import { sql } from "../../lib/data";
-import { DbLaunchPoint } from "./launchPoint";
+import { DbLaunchPoint, getAllLaunchPoints } from "./launchPoint";
+import { getAllAmbulances } from "./ambulance";
 import type { DbAmbulance } from "./ambulance";
 
 export type ShiftType = "day" | "evening" | "night" | "reinforcement" | "over_the_machine" | "security";
@@ -193,6 +194,119 @@ export async function getShiftsByDriver(driverId: string): Promise<DbShift[]> {
     console.error('Failed to fetch shifts by driver:', error);
     throw new Error('Failed to fetch shifts by driver.');
   }
+}
+
+// Picker: grouped by shift_type, then ambulance_type, then location (launch point)
+export type PickerLocationRow = {
+  id: string;
+  label: string;
+  ambulanceNumber: string | null;
+  shiftId: string;
+};
+
+export type PickerAmbulanceType = {
+  id: string;
+  label: string;
+  count: number;
+  locations: PickerLocationRow[];
+};
+
+export type PickerShiftType = {
+  id: ShiftType;
+  label: string;
+  count: number;
+  ambulanceTypes: PickerAmbulanceType[];
+};
+
+const SHIFT_TYPE_ORDER: ShiftType[] = [
+  "day",
+  "reinforcement",
+  "evening",
+  "night",
+  "over_the_machine",
+  "security",
+];
+
+const SHIFT_TYPE_LABELS: Record<ShiftType, string> = {
+  day: "בוקר",
+  reinforcement: "תגבור",
+  evening: "ערב",
+  night: "לילה",
+  over_the_machine: "מעל התקן",
+  security: "אבטחה",
+};
+
+const AMBULANCE_TYPE_LABELS: Record<string, string> = {
+  white: "אמבולנס לבן",
+  intensive: "אמבולנס טיפול נמרץ",
+};
+
+function getAmbulanceTypeLabel(ambulanceType: string): string {
+  const key = ambulanceType.toLowerCase().replace(/\s+/g, "_");
+  return AMBULANCE_TYPE_LABELS[key] ?? AMBULANCE_TYPE_LABELS[ambulanceType] ?? ambulanceType;
+}
+
+export async function getShiftsForPickerDay(date: Date): Promise<PickerShiftType[]> {
+  const shifts = await getShiftsByDate(date);
+  const launchPoints = await getAllLaunchPoints();
+  const ambulances = await getAllAmbulances();
+
+  const lpMap = new Map(launchPoints.map((lp) => [lp.id, lp.name]));
+  const ambMap = new Map(ambulances.map((a) => [a.id, a.number]));
+
+  // Group by shift_type -> ambulance_type -> list of shifts (for location rows)
+  type GroupKey = string;
+  const byShiftType = new Map<ShiftType, Map<string, DbShift[]>>();
+
+  for (const shift of shifts) {
+    if (shift.status !== "active") continue;
+    const st = shift.shift_type;
+    if (!byShiftType.has(st)) byShiftType.set(st, new Map());
+    const byAmb = byShiftType.get(st)!;
+    const ambType = shift.ambulance_type ?? "";
+    if (!byAmb.has(ambType)) byAmb.set(ambType, []);
+    byAmb.get(ambType)!.push(shift);
+  }
+
+  const result: PickerShiftType[] = [];
+
+  for (const shiftType of SHIFT_TYPE_ORDER) {
+    const byAmb = byShiftType.get(shiftType);
+    if (!byAmb || byAmb.size === 0) continue;
+
+    const ambulanceTypes: PickerAmbulanceType[] = [];
+    const ambTypeKeys = Array.from(byAmb.keys()).sort();
+
+    for (const ambType of ambTypeKeys) {
+      const typeShifts = byAmb.get(ambType)!;
+      const locations: PickerLocationRow[] = typeShifts.map((s) => ({
+        id: s.id,
+        label: lpMap.get(s.launch_point_id) ?? s.launch_point_id,
+        ambulanceNumber: s.ambulance_id ? ambMap.get(s.ambulance_id) ?? null : null,
+        shiftId: s.id,
+      }));
+      // Sort locations by label (launch point name)
+      locations.sort((a, b) => a.label.localeCompare(b.label, "he"));
+
+      ambulanceTypes.push({
+        id: ambType || "default",
+        label: getAmbulanceTypeLabel(ambType),
+        count: typeShifts.length,
+        locations,
+      });
+    }
+
+    const totalCount = shifts.filter((s) => s.shift_type === shiftType && s.status === "active").length;
+
+    result.push({
+      id: shiftType,
+      label: SHIFT_TYPE_LABELS[shiftType],
+      count: totalCount,
+      ambulanceTypes,
+    });
+  }
+
+  return result;
 }
 
 // Shift Slot functions

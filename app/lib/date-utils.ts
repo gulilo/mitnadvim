@@ -30,3 +30,6 @@ export function parseHebrewDate(dateString: string): Date | undefined {
   console.warn("Invalid date string:", dateString);
   return undefined;
 }
+export const HEBREW_MONTHS = [
+  "ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני", "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר",
+];

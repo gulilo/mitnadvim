@@ -1,29 +1,40 @@
-import Image from "next/image";
+import { HEBREW_MONTHS, parseHebrewDate } from "@/app/lib/date-utils";
+import { getShiftsForPickerDay } from "../data/shift";
 import ShiftPickerContent from "./ShiftPickerContent";
+import CalendarComponent from "../shiftMenegment/components/Calendar-component";
 
-export default function ShiftPickerPage() {
-  return (
-    <div className="relative min-h-screen w-full bg-[#f5f5f5]" dir="rtl">
-      {/* Header: logo (right), title center, menu is absolute left from MainMenu */}
-      <header className="relative flex h-16 w-full items-center px-4 pt-2">
-        <div className="h-10 w-[60px] shrink-0">
-          <Image
-            src="/Milkboss_Logo.svg"
-            alt="לוגו"
-            width={60}
-            height={40}
-            className="h-full w-full object-contain object-right"
-          />
-        </div>
-        <div className="flex flex-1 justify-center">
-          <h1 className="text-lg font-bold leading-none text-black">
-            לוח משמרות
-          </h1>
-        </div>
-        <div className="w-10 shrink-0" aria-hidden />
-      </header>
+function getSelectedDateLabel(date: Date): string {
+    const d = date.getDate();
+    const m = HEBREW_MONTHS[date.getMonth()];
+    const y = date.getFullYear();
+    return `${d} ${m} ${y}`;
+}
 
-      <ShiftPickerContent />
-    </div>
-  );
+export default async function ShiftPickerPage({
+    searchParams,
+}: {
+    searchParams: Promise<{ date?: string }>;
+}) {
+    const { date } = await searchParams;
+    const paramDate = date ?? new Date().toLocaleDateString("he-IL");
+    const selectedDate = parseHebrewDate(paramDate) ?? new Date();
+    const shiftsData = await getShiftsForPickerDay(selectedDate);
+
+    return (
+        <div className="flex flex-col items-center w-full">
+            <h1 className="text-lg font-bold text-black px-4 py-2">
+                לוח משמרות
+            </h1>
+
+            <CalendarComponent propsDate={paramDate} />
+            
+            {/* Selected date & holiday line */}
+            <p className="mt-2 text-center text-base font-bold leading-normal text-black text-shadow-[0px_4px_4px_rgba(0,0,0,0.25)]">
+                {getSelectedDateLabel(selectedDate)}
+                {/* TODO: Add Hebrew date (Heb Cal API) and holiday when available */}
+            </p>
+
+            <ShiftPickerContent shiftsData={shiftsData} />
+        </div>
+    );
 }

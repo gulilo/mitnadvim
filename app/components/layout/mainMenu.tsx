@@ -55,12 +55,6 @@ export default async function MainMenu() {
           </DrawerClose>
           <Separator className="bg-white  mx-auto" />
           <DrawerClose asChild>
-            <Link href="/shiftMenegment">
-              <h2 className="text-white">לוח שיבוצים</h2>
-            </Link>
-          </DrawerClose>
-          <Separator className="bg-white  mx-auto" />
-          <DrawerClose asChild>
             <Link href="/shiftPicker">
               <h2 className="text-white">לוח משמרות</h2>
             </Link>
