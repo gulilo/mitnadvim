@@ -12,7 +12,7 @@ export default async function FullSchedual({ date }: { date: string }) {
 
   const scheduleRows = await getDisplayShifts(dateObj);
   return (
-    <div>
+    <div className="px-5">
       <ScheduleTable initialData={scheduleRows} />
     </div>
   );

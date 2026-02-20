@@ -70,6 +70,16 @@ export default async function MainMenu() {
           {permissions.includes("createShift") && (
             <>
               <DrawerClose asChild>
+                <Link href="/shiftMenegment">
+                  <h2 className="text-white">סידור עבודה</h2>
+                </Link>
+              </DrawerClose>
+              <Separator className="bg-white  mx-auto" />
+            </>
+          )}
+          {permissions.includes("createShift") && (
+            <>
+              <DrawerClose asChild>
                 <Link href="/adminPanel">
                   <h2 className="text-white">יצירת משמרת</h2>
                 </Link>
