@@ -5,9 +5,9 @@ import CalendarComponent from "./components/Calendar-component";
 export default async function ShiftMenegmentPage({
   searchParams,
 }: {
-  searchParams: { date?: string }
+  searchParams: Promise<{ date?: string }>
 }) {
-  const {date} = await searchParams
+  const { date } = await searchParams
   // Use Hebrew locale format (DD/MM/YYYY)
   const paramDate = date ? date : new Date().toLocaleDateString("he-IL");
   return (
