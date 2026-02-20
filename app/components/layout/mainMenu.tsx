@@ -15,11 +15,11 @@ import { getUserPermissions } from "@/app/(user)/data/user";
 
 export default async function MainMenu() {
   const profileData = (await getProfileData()) as ProfileData;
+  
   // if (!profileData) {
   //   redirect("./login");
   // }
   const permissions = await getUserPermissions(profileData.tags);
-  console.log(permissions);
 
   return (
     <Drawer direction="left">
@@ -55,7 +55,7 @@ export default async function MainMenu() {
           </DrawerClose>
           <Separator className="bg-white  mx-auto" />
           <DrawerClose asChild>
-            <Link href="/weeklySchedule">
+            <Link href="/shiftMenegment">
               <h2 className="text-white">לוח שיבוצים</h2>
             </Link>
           </DrawerClose>
@@ -73,6 +73,16 @@ export default async function MainMenu() {
           </DrawerClose>
           <Separator className="bg-white  mx-auto" />
 
+          {permissions.includes("createShift") && (
+            <>
+              <DrawerClose asChild>
+                <Link href="/shiftMenegment">
+                  <h2 className="text-white">סידור עבודה</h2>
+                </Link>
+              </DrawerClose>
+              <Separator className="bg-white  mx-auto" />
+            </>
+          )}
           {permissions.includes("createShift") && (
             <>
               <DrawerClose asChild>

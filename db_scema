@@ -133,12 +133,15 @@ ambulance [color:red] {
 
 permenentShift [color:yellow] {
   id string pk
+  areaid string fk
   launchPointid string fk
+  shiftType string
   weekDay int
   startTime timestamp
   endTime timestamp
   adultOnly boolean
   numberOfSlots int
+  ambulanceType string
 
   createdAt timestamp
   updatedAt timestamp nullable
@@ -146,8 +149,11 @@ permenentShift [color:yellow] {
   updatedBy string fk nullable
 }
 
+permenentShift.areaid < area.id
+permenentShift.launchPointid < launchPoint.id
+
 shift [color: yellow] {
-  id string pk
+id string pk
   pemanentShiftId string fk
   launchPointsid string fk
   ambulanceId string fk
@@ -155,9 +161,10 @@ shift [color: yellow] {
   date date
   startTime timestamp
   endTime timestamp
+  shiftType string
   adultOnly boolean
   numberOfSlots int
-  status string 
+  status string
   
   createdAt timestamp
   updatedAt timestamp nullable
