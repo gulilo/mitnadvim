@@ -1,0 +1,67 @@
+# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
+# More GitHub Actions for Azure: https://github.com/Azure/actions
+
+name: Build and deploy Node.js app to Azure Web App - MDAdan
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read #This is required for actions/checkoutpermissions:
+      id-token: write #This is required for requesting the JWT
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js version
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20.x'
+
+      - name: npm install, build, and test
+        run: |
+          npm install
+          npm run build --if-present
+          npm run test --if-present
+        env:
+          POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
+
+      - name: Prepare standalone for deployment
+        run: |
+          # Create full path (cp does not create parent dirs; standalone may not have .next)
+          mkdir -p .next/standalone/.next/static
+          # Copy static contents into it (CSS, JS chunks)
+          cp -r -v .next/static/ .next/standalone/.next/
+          # Copy public folder (images, favicon, etc.)
+          cp -r public .next/standalone/
+          # Zip standalone (includes .next and all files) for deploy
+          cd .next/standalone && zip -rv ../../deploy.zip . -q && cd ../..
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_0CA66942C2F84B9EB190F1FC79926DE7 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_BA3D4B80544044BA9971078AD224AC99 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_74837E675D174FEAB052E2FBE3E7ED78 }}
+
+      - name: 'Deploy to Azure Web App'
+        id: deploy-to-webapp
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'MDAdan'
+          slot-name: 'Production'
+          package: deploy.zip
+
+
+
+
+
+
+
+

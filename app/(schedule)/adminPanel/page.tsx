@@ -1,10 +1,15 @@
-import { ProfileData } from "@/app/(user)/lib/actions";
+import { getProfileData } from "@/app/(user)/lib/actions";
 import HomeStation from "@/app/(user)/components/homeStation";
 import { getAllLaunchPoints } from "../data/launchPoint";
 import Form from "./components/form";
 
-export default async function AdminPanel(userProfile: ProfileData) {
+export default async function AdminPanel() {
+  const userProfile = await getProfileData();
   const launchPoints = await getAllLaunchPoints();
+
+  if (!userProfile) {
+    return null; // or redirect to login
+  }
 
   return (
     <div className="w-full min-h-screen bg-[#f5f5f5] py-8">
