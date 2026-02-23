@@ -1,6 +1,6 @@
 import { HEBREW_MONTHS, parseHebrewDate } from "@/app/lib/date-utils";
 import { getShiftsForPickerDay } from "../data/shift";
-import ShiftPickerContent from "./ShiftPickerContent";
+import ShiftPickerContent from "./components/ShiftPickerContent";
 import CalendarComponent from "../shiftMenegment/components/Calendar-component";
 
 function getSelectedDateLabel(date: Date): string {
@@ -27,7 +27,7 @@ export default async function ShiftPickerPage({
             </h1>
 
             <CalendarComponent propsDate={paramDate} />
-            
+
             {/* Selected date & holiday line */}
             <p className="mt-2 text-center text-base font-bold leading-normal text-black text-shadow-[0px_4px_4px_rgba(0,0,0,0.25)]">
                 {getSelectedDateLabel(selectedDate)}

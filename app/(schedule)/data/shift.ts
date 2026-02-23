@@ -1,12 +1,15 @@
 'use server';
 
 import { DbUser } from "@/app/(user)/data/definitions";
+import { getUserByAccountId } from "@/app/(user)/data/user";
 import { sql } from "../../lib/data";
 import { DbLaunchPoint, getAllLaunchPoints } from "./launchPoint";
 import { getAllAmbulances } from "./ambulance";
 import type { DbAmbulance } from "./ambulance";
 
 export type ShiftType = "day" | "evening" | "night" | "reinforcement" | "over_the_machine" | "security";
+export type AmbulanceType = "white" | "intensive";
+
 
 export type DbPermanentShift = {
   id: string;
@@ -47,7 +50,7 @@ export type DbShiftSlot = {
 export type DisplayShift = {
   id: string;
   launch_point: DbLaunchPoint;
-  ambulance_type: string;
+  ambulance_type: AmbulanceType;
   ambulance: DbAmbulance | null;
   driver: DbUser | null;
   start_date: Date;
@@ -57,6 +60,14 @@ export type DisplayShift = {
   shift_type: ShiftType;
   adult_only: boolean;
   number_of_slots: number;
+  slots: (DisplayShiftSlot | null)[];
+};
+
+export type DisplayShiftSlot = {
+  id: string;
+  shift_id: string;
+  user: DbUser | null;
+  status: "pending" | "confirmed" | "cancelled";
 };
 
 // Permanent Shift functions
@@ -154,6 +165,67 @@ export async function getShiftsByDate(date: Date): Promise<DbShift[]> {
   }
 }
 
+/** Returns shifts for a date enriched as DisplayShift (launch_point, ambulance, driver, slots). */
+export async function getDisplayShiftsByDate(date: Date): Promise<DisplayShift[]> {
+  const shifts = await getShiftsByDate(date);
+  const active = shifts.filter((s) => s.status === "active");
+  const launchPoints = await getAllLaunchPoints();
+  const ambulances = await getAllAmbulances();
+  const lpMap = new Map(launchPoints.map((lp) => [lp.id, lp]));
+  const ambMap = new Map(ambulances.map((a) => [a.id, a]));
+  const driverIds = [...new Set(active.map((s) => s.driver_id).filter(Boolean))] as string[];
+  const driverMap = new Map<string, DbUser>();
+  await Promise.all(
+    driverIds.map(async (id) => {
+      const user = await getUserByAccountId(id);
+      if (user) driverMap.set(id, user);
+    })
+  );
+  const slotsPerShift = await Promise.all(active.map((s) => getShiftSlotsByShift(s.id)));
+  const slotUserIds = [...new Set(slotsPerShift.flat().map((slot) => slot.user_id).filter(Boolean))];
+  const slotUserMap = new Map<string, DbUser>();
+  await Promise.all(
+    slotUserIds.map(async (id) => {
+      const user = await getUserByAccountId(id);
+      if (user) slotUserMap.set(id, user);
+    })
+  );
+  const displayShifts: DisplayShift[] = active.map((s, i) => {
+    const launch_point = lpMap.get(s.launch_point_id);
+    if (!launch_point) throw new Error(`Launch point not found: ${s.launch_point_id}`);
+    const rawSlots = slotsPerShift[i];
+    const slots: (DisplayShiftSlot | null)[] = Array.from(
+      { length: s.number_of_slots },
+      (_, j) => {
+        if (j >= rawSlots.length) return null;
+        const slot = rawSlots[j];
+        return {
+          id: slot.id,
+          shift_id: slot.shift_id,
+          user: slotUserMap.get(slot.user_id) ?? null,
+          status: slot.status,
+        };
+      }
+    );
+    return {
+      id: s.id,
+      launch_point,
+      ambulance_type: s.ambulance_type as AmbulanceType,
+      ambulance: s.ambulance_id ? ambMap.get(s.ambulance_id) ?? null : null,
+      driver: s.driver_id ? (driverMap.get(s.driver_id) ?? null) : null,
+      start_date: s.start_date,
+      end_date: s.end_date,
+      start_time: s.start_time,
+      end_time: s.end_time,
+      shift_type: s.shift_type,
+      adult_only: s.adult_only,
+      number_of_slots: s.number_of_slots,
+      slots,
+    };
+  });
+  return displayShifts;
+}
+
 export async function getShiftsByDateRange(startDate: Date, endDate: Date): Promise<DbShift[]> {
   try {
     const shifts = await sql`
@@ -197,6 +269,11 @@ export async function getShiftsByDriver(driverId: string): Promise<DbShift[]> {
 }
 
 // Picker: grouped by shift_type, then ambulance_type, then location (launch point)
+
+
+
+
+
 export type PickerLocationRow = {
   id: string;
   label: string;
@@ -227,86 +304,63 @@ const SHIFT_TYPE_ORDER: ShiftType[] = [
   "security",
 ];
 
-const SHIFT_TYPE_LABELS: Record<ShiftType, string> = {
-  day: "בוקר",
-  reinforcement: "תגבור",
-  evening: "ערב",
-  night: "לילה",
-  over_the_machine: "מעל התקן",
-  security: "אבטחה",
-};
 
-const AMBULANCE_TYPE_LABELS: Record<string, string> = {
-  white: "אמבולנס לבן",
-  intensive: "אמבולנס טיפול נמרץ",
-};
 
-function getAmbulanceTypeLabel(ambulanceType: string): string {
-  const key = ambulanceType.toLowerCase().replace(/\s+/g, "_");
-  return AMBULANCE_TYPE_LABELS[key] ?? AMBULANCE_TYPE_LABELS[ambulanceType] ?? ambulanceType;
-}
+export async function getShiftsForPickerDay(date: Date): Promise<Map<ShiftType, Map<AmbulanceType, DisplayShift[]>>> {
+  const displayShifts = await getDisplayShiftsByDate(date);
 
-export async function getShiftsForPickerDay(date: Date): Promise<PickerShiftType[]> {
-  const shifts = await getShiftsByDate(date);
-  const launchPoints = await getAllLaunchPoints();
-  const ambulances = await getAllAmbulances();
+  // Group by shift_type -> ambulance_type -> list of DisplayShift (for location rows)
+  const byShiftType = new Map<ShiftType, Map<AmbulanceType, DisplayShift[]>>();
 
-  const lpMap = new Map(launchPoints.map((lp) => [lp.id, lp.name]));
-  const ambMap = new Map(ambulances.map((a) => [a.id, a.number]));
-
-  // Group by shift_type -> ambulance_type -> list of shifts (for location rows)
-  type GroupKey = string;
-  const byShiftType = new Map<ShiftType, Map<string, DbShift[]>>();
-
-  for (const shift of shifts) {
-    if (shift.status !== "active") continue;
+  for (const shift of displayShifts) {
     const st = shift.shift_type;
     if (!byShiftType.has(st)) byShiftType.set(st, new Map());
     const byAmb = byShiftType.get(st)!;
-    const ambType = shift.ambulance_type ?? "";
-    if (!byAmb.has(ambType)) byAmb.set(ambType, []);
-    byAmb.get(ambType)!.push(shift);
+    const ambType = shift.ambulance_type as AmbulanceType;
+    if (!byAmb.has(ambType as AmbulanceType)) byAmb.set(ambType as AmbulanceType, []);
+    byAmb.get(ambType as AmbulanceType)!.push(shift);
   }
 
-  const result: PickerShiftType[] = [];
+  return byShiftType;
+  // const result: PickerShiftType[] = [];
 
-  for (const shiftType of SHIFT_TYPE_ORDER) {
-    const byAmb = byShiftType.get(shiftType);
-    if (!byAmb || byAmb.size === 0) continue;
+  // for (const shiftType of SHIFT_TYPE_ORDER) {
+  //   const byAmb = byShiftType.get(shiftType);
+  //   if (!byAmb || byAmb.size === 0) continue;
 
-    const ambulanceTypes: PickerAmbulanceType[] = [];
-    const ambTypeKeys = Array.from(byAmb.keys()).sort();
+  //   const ambulanceTypes: PickerAmbulanceType[] = [];
+  //   const ambTypeKeys = Array.from(byAmb.keys()).sort();
 
-    for (const ambType of ambTypeKeys) {
-      const typeShifts = byAmb.get(ambType)!;
-      const locations: PickerLocationRow[] = typeShifts.map((s) => ({
-        id: s.id,
-        label: lpMap.get(s.launch_point_id) ?? s.launch_point_id,
-        ambulanceNumber: s.ambulance_id ? ambMap.get(s.ambulance_id) ?? null : null,
-        shiftId: s.id,
-      }));
-      // Sort locations by label (launch point name)
-      locations.sort((a, b) => a.label.localeCompare(b.label, "he"));
+  //   for (const ambType of ambTypeKeys) {
+  //     const typeShifts = byAmb.get(ambType)!;
+  //     const locations: PickerLocationRow[] = typeShifts.map((s) => ({
+  //       id: s.id,
+  //       label: s.launch_point.name,
+  //       ambulanceNumber: s.ambulance?.number ?? null,
+  //       shiftId: s.id,
+  //     }));
+  //     locations.sort((a, b) => a.label.localeCompare(b.label, "he"));
 
-      ambulanceTypes.push({
-        id: ambType || "default",
-        label: getAmbulanceTypeLabel(ambType),
-        count: typeShifts.length,
-        locations,
-      });
-    }
+  //     ambulanceTypes.push({
+  //       id: ambType || "default",
+  //       label: getAmbulanceTypeLabel(ambType),
+  //       count: typeShifts.length,
+  //       locations,
+  //     });
+  //   }
 
-    const totalCount = shifts.filter((s) => s.shift_type === shiftType && s.status === "active").length;
+  //   const totalCount = displayShifts.filter((s) => s.shift_type === shiftType).length;
 
-    result.push({
-      id: shiftType,
-      label: SHIFT_TYPE_LABELS[shiftType],
-      count: totalCount,
-      ambulanceTypes,
-    });
-  }
+  //   result.push({
+  //     id: shiftType,
+  //     label: SHIFT_TYPE_LABELS[shiftType],
+  //     count: totalCount,
+  //     ambulanceTypes,
+  //   });
+  // }
 
-  return result;
+  // console.log("result", result);
+  // return result;
 }
 
 // Shift Slot functions

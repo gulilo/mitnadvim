@@ -5,7 +5,27 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/app/components/ui/accordion";
-import type { PickerShiftType } from "../data/shift";
+import type { AmbulanceType, DisplayShift, PickerShiftType, ShiftType } from "../../data/shift";
+import PickerCell from "./pickerCell";
+
+const SHIFT_TYPE_LABELS: Record<ShiftType, string> = {
+  day: "בוקר",
+  reinforcement: "תגבור",
+  evening: "ערב",
+  night: "לילה",
+  over_the_machine: "מעל התקן",
+  security: "אבטחה",
+};
+
+const AMBULANCE_TYPE_LABELS: Record<string, string> = {
+  white: "אמבולנס לבן",
+  atan: "אמבולנס טיפול נמרץ",
+};
+
+function getAmbulanceTypeLabel(ambulanceType: string): string {
+  const key = ambulanceType.toLowerCase().replace(/\s+/g, "_");
+  return AMBULANCE_TYPE_LABELS[key] ?? AMBULANCE_TYPE_LABELS[ambulanceType] ?? ambulanceType;
+}
 
 const SHIFT_TYPE_STYLE: Record<
   string,
@@ -33,19 +53,19 @@ function getAmbulanceStyle(ambulanceTypeId: string): { bg: string; textDark: boo
 export default function ShiftPickerContent({
   shiftsData,
 }: {
-  shiftsData: PickerShiftType[];
+  shiftsData: Map<ShiftType, Map<AmbulanceType, DisplayShift[]>>;
 }) {
   const shiftStyle = (id: string) => SHIFT_TYPE_STYLE[id] ?? { bg: "#e5e5e5", textDark: true };
-
+  
   return (
     <Accordion type="multiple" className="mt-6 w-full">
-      {shiftsData.map((shift) => {
-        const style = shiftStyle(shift.id);
-        const hasAmbulanceTypes = shift.ambulanceTypes.length > 0;
+      {[...shiftsData].map(([shiftType, ambulanceType]) => {
+        const style = shiftStyle(shiftType);
+        const hasAmbulanceTypes = ambulanceType.size > 0;
         return (
           <AccordionItem
-            key={shift.id}
-            value={shift.id}
+            key={shiftType}
+            value={shiftType}
             className={cn("border border-red-500")}
           >
             <AccordionTrigger
@@ -56,18 +76,18 @@ export default function ShiftPickerContent({
               )}
               style={{ backgroundColor: style.bg }}
             >
-              <span>{shift.label}</span>
-              <span>({shift.count})</span>
+              <span>{SHIFT_TYPE_LABELS[shiftType]}</span>
+              <span>({ambulanceType.size})</span>
             </AccordionTrigger>
             <AccordionContent className="p-0">
               {hasAmbulanceTypes ? (
                 <Accordion type="multiple" className="w-full">
-                  {shift.ambulanceTypes.map((amb) => {
-                    const ambStyle = getAmbulanceStyle(amb.id);
+                  {[...ambulanceType].map(([ambulanceType, shifts]) => {
+                    const ambStyle = getAmbulanceStyle(ambulanceType);
                     return (
                       <AccordionItem
-                        key={amb.id}
-                        value={amb.id}
+                        key={ambulanceType}
+                        value={ambulanceType}
                         className={cn("border border-red-500")}
                       >
                         <AccordionTrigger
@@ -77,26 +97,30 @@ export default function ShiftPickerContent({
                           )}
                           style={{ backgroundColor: ambStyle.bg }}
                         >
-                          <span>{amb.label}</span>
-                          <span>({amb.count})</span>
+                          <span>{getAmbulanceTypeLabel(ambulanceType)}</span>
+                          <span>({shifts.length})</span>
                         </AccordionTrigger>
-                        <AccordionContent className="p-0">
-                          {amb.locations.map((loc) => (
-                            <div
-                              key={loc.shiftId}
-                              className="flex h-20 w-full items-center justify-between gap-4 px-6 text-lg font-bold border border-red-500"
-                              style={{
-                                backgroundColor: ambStyle.bg,
-                                color: ambStyle.textDark ? "black" : "white",
-                              }}
-                            >
-                              {loc.ambulanceNumber != null && (
-                                <span>
-                                  {loc.ambulanceNumber}
-                                </span>
-                              )}
-                              <span>{loc.label}</span>
-                            </div>
+                        <AccordionContent className="p-0"
+                          style={{ backgroundColor: ambStyle.bg }}
+                        >
+                          {shifts.map((shift) => (
+                            <PickerCell shift={shift} key={shift.id} />
+
+                            // <div
+                            //   key={loc.shiftId}
+                            //   className="flex h-20 w-full items-center justify-between gap-4 px-6 text-lg font-bold border border-red-500"
+                            //   style={{
+                            //     backgroundColor: ambStyle.bg,
+                            //     color: ambStyle.textDark ? "black" : "white",
+                            //   }}
+                            // >
+                            //   {loc.ambulanceNumber != null && (
+                            //     <span>
+                            //       {loc.ambulanceNumber}
+                            //     </span>
+                            //   )}
+                            //   <span>{loc.label}</span>
+                            // </div>
                           ))}
                         </AccordionContent>
                       </AccordionItem>
