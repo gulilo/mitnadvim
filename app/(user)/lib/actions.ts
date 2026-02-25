@@ -2,14 +2,14 @@
 
 import { auth } from "@/auth";
 import { getAccountByAccountId, getAreaName, getUserByAccountId, getUserTags, getTagName, getTagCategory } from "../data/user";
-import { DbUser } from "../data/definitions";
+import { DbTag, DbUser } from "../data/definitions";
 import { DbAccount } from "../data/definitions";
 
 export type ProfileData = {
   user: DbUser;
   account: DbAccount;
   areaName: string;
-  tags: string[];
+  tags: DbTag[];
 }
 
 export async function getProfileData() {

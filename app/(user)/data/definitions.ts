@@ -16,3 +16,17 @@ export type DbUser = {
   area_id: string;
   role: string;
 };
+
+export type DbTag = {
+  id: string;
+  name: string;
+  category: string;
+};
+
+export type DisplayTag ={
+  id: string;
+  name: string;
+  bgColor: string;
+  textColor: string;
+  border: string;
+}

@@ -10,12 +10,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/app/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/app/components/ui/popover"
 import { Button } from "@/app/components/ui/button";
 import { Separator } from "@/app/components/ui/separator";
 import { cn } from "@/app/lib/utils";
 import type { DbArea } from "@/app/(schedule)/data/launchPoint";
-import { Camera } from "lucide-react";
+import { Camera, PlusIcon } from "lucide-react";
 import { Switch } from "@/app/components/ui/switch";
+import Tags from "../components/tags";
+import { DisplayTag } from "../data/definitions";
 
 const QUALIFICATION_OPTIONS = [
   { value: "first_aid_m", label: "מגיש עזרה ראשונה" },
@@ -89,12 +96,22 @@ function FormRow({
   );
 }
 
-export default function CreateUserForm({ areas }: { areas: DbArea[] }) {
+export default function CreateUserForm({ areas, displayTags }: { areas: DbArea[], displayTags: DisplayTag[] }) {
+  
   const [qualification, setQualification] = useState("");
   const [homeStation, setHomeStation] = useState("");
   const [membershipYear, setMembershipYear] = useState("2025");
   const [isActive, setIsActive] = useState(false);
   const [emergencyRelationship, setEmergencyRelationship] = useState("");
+  const [selectedTags, setSelectedTags] = useState<DisplayTag[]>([]);
+  
+  function handleTagClick(tag: DisplayTag) {
+    setSelectedTags((prev) =>
+      prev.some((t) => t.id === tag.id)
+        ? prev.filter((t) => t.id !== tag.id)
+        : [...prev, tag]
+    );
+  }
 
   return (
     <form className="flex flex-col w-full max-w-[430px] mx-auto px-4 pb-8" >
@@ -112,9 +129,6 @@ export default function CreateUserForm({ areas }: { areas: DbArea[] }) {
           </div>
         </div>
         <div className="flex flex-col gap-1 flex-1">
-          <div className="flex flex-row items-center gap-2">
-
-          </div>
           <Select value={qualification} onValueChange={setQualification}>
             <SelectTrigger className="w-full border-b-2 border-b-primary bg-transparent rounded-none h-auto py-1">
               <SelectValue placeholder="הכשרה" />
@@ -161,6 +175,31 @@ export default function CreateUserForm({ areas }: { areas: DbArea[] }) {
           </div>
 
           {/* בחירת קבוצות */}
+          <Popover>
+            <PopoverTrigger>
+              {selectedTags.length > 0 ? <p>{selectedTags.map((tag) => tag.name).join(", ")}</p> : <p>בחר קבוצות</p>}
+            </PopoverTrigger>
+            <PopoverContent>
+              <div className="flex flex-wrap gap-2 justify-start mb-4">
+                {displayTags.map((tag, index) => {
+                  return (
+                    <button
+                      key={`${tag.name}-${index}`}
+                      className={cn(
+                        "px-3 rounded flex items-center h-7",
+                        tag.bgColor,
+                        tag.textColor,
+                        tag.border
+                      )}
+                      onClick={() => handleTagClick(tag)}
+                    >
+                      {tag.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
 
       </div>
@@ -182,7 +221,7 @@ export default function CreateUserForm({ areas }: { areas: DbArea[] }) {
         </div>
         <div className="flex flex-row items-center gap-2">
 
-          
+
           <p className="text-base font-normal text-black">
             דמי חבר שולמו עד לתאריך: 31 בדצמבר,
           </p>

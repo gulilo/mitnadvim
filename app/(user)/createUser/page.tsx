@@ -4,6 +4,7 @@ import Image from "next/image";
 import MainMenu from "@/app/components/layout/mainMenu";
 import { getAllAreas } from "@/app/(schedule)/data/launchPoint";
 import CreateUserForm from "./CreateUserForm";
+import { getAllTags, getDisplayTags } from "../data/user";
 
 export default async function CreateUserPage() {
   const session = await auth();
@@ -11,8 +12,9 @@ export default async function CreateUserPage() {
     redirect("/login");
   }
 
-  const areas = await getAllAreas();
-
+    const areas = await getAllAreas();
+    const tags = await getAllTags();
+    const displayTags = await getDisplayTags(tags);
   return (
     <div
       dir="rtl"
@@ -24,7 +26,7 @@ export default async function CreateUserPage() {
         יצירת משתמש חדש
       </h1>
 
-      <CreateUserForm areas={areas} />
+      <CreateUserForm areas={areas} displayTags={displayTags} />
     </div>
   );
 }
