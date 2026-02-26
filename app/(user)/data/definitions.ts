@@ -30,3 +30,13 @@ export type DisplayTag ={
   textColor: string;
   border: string;
 }
+
+export type DbEmergencyContact = {
+  id: string;
+  user_id: string;
+  name: string;
+  relationship: string;
+  phone: string;
+  email: string;
+  address: string;
+}

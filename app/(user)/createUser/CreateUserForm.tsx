@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useActionState, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -23,6 +23,7 @@ import { Camera, PlusIcon } from "lucide-react";
 import { Switch } from "@/app/components/ui/switch";
 import Tags from "../components/tags";
 import { DisplayTag } from "../data/definitions";
+import { submitCreateUserForm } from "../lib/actions";
 
 const QUALIFICATION_OPTIONS = [
   { value: "first_aid_m", label: "מגיש עזרה ראשונה" },
@@ -97,14 +98,21 @@ function FormRow({
 }
 
 export default function CreateUserForm({ areas, displayTags }: { areas: DbArea[], displayTags: DisplayTag[] }) {
-  
+  const [formState, formAction] = useActionState(submitCreateUserForm, {});
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [emergencyName, setEmergencyName] = useState("");
+  const [emergencyPhone, setEmergencyPhone] = useState("");
+  const [emergencyEmail, setEmergencyEmail] = useState("");
+  const [emergencyAddress, setEmergencyAddress] = useState("");
   const [qualification, setQualification] = useState("");
   const [homeStation, setHomeStation] = useState("");
   const [membershipYear, setMembershipYear] = useState("2025");
   const [isActive, setIsActive] = useState(false);
   const [emergencyRelationship, setEmergencyRelationship] = useState("");
   const [selectedTags, setSelectedTags] = useState<DisplayTag[]>([]);
-  
+
   function handleTagClick(tag: DisplayTag) {
     setSelectedTags((prev) =>
       prev.some((t) => t.id === tag.id)
@@ -114,7 +122,7 @@ export default function CreateUserForm({ areas, displayTags }: { areas: DbArea[]
   }
 
   return (
-    <form className="flex flex-col w-full max-w-[430px] mx-auto px-4 pb-8" >
+    <form className="flex flex-col w-full max-w-[430px] mx-auto px-4 pb-8" action={formAction}>
       {/* User Info */}
       <div className="flex flex-row gap-4 pb-4">
         <div className="flex flex-col items-center shrink-0">
@@ -253,6 +261,8 @@ export default function CreateUserForm({ areas, displayTags }: { areas: DbArea[]
             name="phone"
             dir="ltr"
             className="border-b-2 border-b-primary bg-transparent flex-1 min-w-0 py-1 text-base focus:outline-none text-right"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
           />
         </FormRow>
         <FormRow icon="/icon_email.svg" label="כתובת דוא״ל:">
@@ -261,6 +271,8 @@ export default function CreateUserForm({ areas, displayTags }: { areas: DbArea[]
             name="email"
             dir="ltr"
             className="border-b-2 border-b-primary bg-transparent flex-1 min-w-0 py-1 text-base focus:outline-none text-right"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
           />
         </FormRow>
         <FormRow icon="/icon_pin-home.svg" label="כתובת:">
@@ -269,6 +281,8 @@ export default function CreateUserForm({ areas, displayTags }: { areas: DbArea[]
             name="address"
             className="border-b-2 border-b-primary bg-transparent flex-1 min-w-0 py-1 text-base focus:outline-none text-right"
             dir="rtl"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
           />
         </FormRow>
       </div>
@@ -306,6 +320,8 @@ export default function CreateUserForm({ areas, displayTags }: { areas: DbArea[]
             name="emergency_name"
             className="border-b-2 border-b-primary bg-transparent flex-1 min-w-0 py-1 text-base focus:outline-none text-right"
             dir="rtl"
+            value={emergencyName}
+            onChange={(e) => setEmergencyName(e.target.value)}
           />
         </FormRow>
         <FormRow icon="/icon_phone.svg" label="מספר טלפון:">
@@ -314,6 +330,8 @@ export default function CreateUserForm({ areas, displayTags }: { areas: DbArea[]
             name="emergency_phone"
             dir="ltr"
             className="border-b-2 border-b-primary bg-transparent flex-1 min-w-0 py-1 text-base focus:outline-none text-right"
+            value={emergencyPhone}
+            onChange={(e) => setEmergencyPhone(e.target.value)}
           />
         </FormRow>
         <FormRow icon="/icon_email.svg" label="כתובת דוא״ל:">
@@ -322,6 +340,8 @@ export default function CreateUserForm({ areas, displayTags }: { areas: DbArea[]
             name="emergency_email"
             dir="ltr"
             className="border-b-2 border-b-primary bg-transparent flex-1 min-w-0 py-1 text-base focus:outline-none text-right"
+            value={emergencyEmail}
+            onChange={(e) => setEmergencyEmail(e.target.value)}
           />
         </FormRow>
         <FormRow icon="/icon_pin-home.svg" label="כתובת:">
@@ -330,10 +350,17 @@ export default function CreateUserForm({ areas, displayTags }: { areas: DbArea[]
             name="emergency_address"
             className="border-b-2 border-b-primary bg-transparent flex-1 min-w-0 py-1 text-base focus:outline-none text-right"
             dir="rtl"
+            value={emergencyAddress}
+            onChange={(e) => setEmergencyAddress(e.target.value)}
           />
         </FormRow>
       </div>
 
+      {formState?.error && (
+        <p className="text-red-600 text-sm text-center mb-2" role="alert">
+          {formState.error}
+        </p>
+      )}
       <div className="pt-6 flex justify-center">
         <Button
           type="submit"
