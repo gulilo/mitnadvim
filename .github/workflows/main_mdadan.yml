@@ -35,11 +35,14 @@ jobs:
       - name: Prepare standalone for deployment
         run: |
           # Create full path (cp does not create parent dirs; standalone may not have .next)
-          mkdir -p .next/standalone/.next/static
+          mkdir -p ./.next/standalone/.next/static
           # Copy static contents into it (CSS, JS chunks)
-          cp -r -v .next/static/ .next/standalone/.next/static/
+          cp -r -v ./.next/static ./.next/standalone/.next
           # Copy public folder (images, favicon, etc.)
-          cp -r public .next/standalone/
+          cp -r ./public ./.next/standalone
+          ls la ./.next/standalone
+          ls la ./.next/standalone/.next
+          ls la ./.next/standalone/.next/static
           # Zip standalone (includes .next and all files) for deploy
           #cd .next/standalone && zip -rv ../../deploy.zip . -q && cd ../..
 
@@ -56,7 +59,7 @@ jobs:
         with:
           app-name: 'MDAdan'
           slot-name: 'Production'
-          package: .next/standalone
+          package: ./.next/standalone
 
 
 
