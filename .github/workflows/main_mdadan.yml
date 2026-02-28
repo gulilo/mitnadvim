@@ -6,7 +6,7 @@ name: Build and deploy Node.js app to Azure Web App - MDAdan
 on:
   push:
     branches:
-      - main
+      # - main
   workflow_dispatch:
 
 jobs:
@@ -57,11 +57,3 @@ jobs:
           app-name: 'MDAdan'
           slot-name: 'Production'
           package: ./.next/standalone
-
-
-
-
-
-
-
-
