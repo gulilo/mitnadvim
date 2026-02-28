@@ -34,10 +34,10 @@ jobs:
       - name: Prepare standalone build
         run: |
           mkdir deploy
-          cp -r -v .next/standalone/* deploy/
+          cp -r .next/standalone/* deploy/
           mkdir -p deploy/.next
-          cp -r -v .next/static deploy/.next/
-          cp -r -v public deploy/ || true
+          cp -r .next/static deploy/.next/
+          cp -r public deploy/ || true
           echo "ls -la deploy"
           ls -la deploy
           echo "ls -la deploy/.next"
