@@ -3,11 +3,11 @@
 
 name: Build and deploy Node.js app to Azure Web App - MDAdan
 
-# on:
-#   push:
-#     branches:
-#       # - main
-#   workflow_dispatch:
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
   build-and-deploy:
@@ -26,22 +26,31 @@ jobs:
 
       - name: npm install, build, and test
         run: |
-          npm install
+          npm ci
           npm run build --if-present
           npm run test --if-present
         env:
           POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
 
-      - name: Prepare standalone for deployment
+      - name: Prepare standalone build
         run: |
-          # Create full path (cp does not create parent dirs; standalone may not have .next)
-          mkdir -p ./.next/standalone/.next/static
-          # Copy static contents into it (CSS, JS chunks)
-          cp -r -v ./.next/static ./.next/standalone/.next
-          # Copy public folder (images, favicon, etc.)
-          cp -r -v ./public ./.next/standalone
-          echo "list files in ./.next/standalone/.next/static"
-          ls -la ./.next/standalone/.next/static
+          mkdir deploy
+
+          # Copy standalone output (server.js + minimal node_modules)
+          cp -r .next/standalone/* deploy/
+
+          # Copy FULL .next directory (not only static)
+          cp -r .next deploy/
+
+          # Copy public folder if exists
+          if [ -d "public" ]; then cp -r public deploy/; fi
+
+          echo "ls -la deploy"
+          ls -la deploy
+          echo "ls -la deploy/.next"
+          ls -la deploy/.next
+          echo "ls -la deploy/.next/static"
+          ls -la deploy/.next/static
 
       - name: Login to Azure
         uses: azure/login@v2
@@ -56,4 +65,4 @@ jobs:
         with:
           app-name: 'MDAdan'
           slot-name: 'Production'
-          package: ./.next/standalone
+          package: deploy
