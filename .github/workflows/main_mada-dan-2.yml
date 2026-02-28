@@ -34,10 +34,19 @@ jobs:
       - name: Prepare standalone build
         run: |
           mkdir deploy
+
+          # Copy standalone output (server.js + minimal node_modules)
           cp -r .next/standalone/* deploy/
+
+          # Ensure .next exists in deploy
           mkdir -p deploy/.next
+
+          # Copy static files correctly
           cp -r .next/static deploy/.next/
-          cp -r public deploy/ || true
+
+          # Copy public folder if exists
+          if [ -d "public" ]; then cp -r public deploy/; fi
+
           echo "ls -la deploy"
           ls -la deploy
           echo "ls -la deploy/.next"
