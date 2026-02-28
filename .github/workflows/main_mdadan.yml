@@ -39,12 +39,9 @@ jobs:
           # Copy static contents into it (CSS, JS chunks)
           cp -r -v ./.next/static ./.next/standalone/.next
           # Copy public folder (images, favicon, etc.)
-          cp -r ./public ./.next/standalone
-          ls -la ./.next/standalone
-          ls -la ./.next/standalone/.next
+          cp -r -v ./public ./.next/standalone
+          echo "list files in ./.next/standalone/.next/static"
           ls -la ./.next/standalone/.next/static
-          # Zip standalone (includes .next and all files) for deploy
-          #cd .next/standalone && zip -rv ../../deploy.zip . -q && cd ../..
 
       - name: Login to Azure
         uses: azure/login@v2
