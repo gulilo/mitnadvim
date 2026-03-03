@@ -15,6 +15,8 @@ export type DbUser = {
   address: string;
   area_id: string;
   role: string;
+  active: boolean;
+  active_date: Date | null;
 };
 
 export type DbTag = {

@@ -2,8 +2,7 @@
 
 import { auth } from "@/auth";
 import { getAccountByAccountId, getAreaName, getUserByAccountId, getUserByEmail, getUserTags, getTagName, getTagCategory } from "../data/user";
-import { DbEmergencyContact, DbTag, DbUser } from "../data/definitions";
-import { DbAccount } from "../data/definitions";
+import { DbAccount, DbTag, DbUser } from "../data/definitions";
 import { sql } from "@/app/lib/data";
 
 export type ProfileData = {
@@ -78,109 +77,191 @@ export async function accountExistsByEmail(email: string): Promise<boolean> {
   }
 }
 
-export async function createAccount(account: DbAccount): Promise<string | null> {
-  try {
-    const accountId = await sql`INSERT INTO account
-     (display_name, email, phone, password_hash) VALUES 
-     (${account.display_name}, ${account.email}, ${account.phone}, ${account.password_hash})
-     RETURNING id`;
-
-    return accountId[0].id;
-  } catch (error) {
-    console.error('Failed to create account:', error);
-    return null;
-  }
-}
-
-export async function createUser(user: DbUser): Promise<string | null> {
-  try {
-    const newUser = await sql`INSERT INTO user_info
-     (account_id, first_name, last_name, image_url, address, area_id, role) VALUES 
-     (${user.account_id}, ${user.first_name}, ${user.last_name}, ${user.image_url}, ${user.address}, ${user.area_id}, ${user.role})
-     RETURNING id`;
-    return newUser[0].id as string;
-  } catch (error) {
-    console.error('Failed to create user:', error);
-    return null;
-  }
-}
-
-export async function createEmergencyContact(emergencyContact: DbEmergencyContact): Promise<string | null> {
-  try {
-    const newEmergencyContact = await sql`INSERT INTO emergency_contacts
-     (user_id, name, relationship, phone, email, address) VALUES 
-     (${emergencyContact.user_id}, ${emergencyContact.name}, ${emergencyContact.relationship}, ${emergencyContact.phone}, ${emergencyContact.email}, ${emergencyContact.address})
-     RETURNING id`;
-    return newEmergencyContact[0].id as string;
-  } catch (error) {
-    console.error('Failed to create emergency contact:', error);
-    return null;
-  }
-}
-
 export type CreateUserFormState = { error?: string };
 
 function generateRandomPassword() {
   return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 }
 
-export async function submitCreateUserForm(
-  _prevState: CreateUserFormState,
-  formData: FormData
-): Promise<CreateUserFormState> {
+/**
+ * Validates all form fields and returns parsed values or an error.
+ * No DB writes — run this before any insert.
+ */
+function validateCreateUserForm(formData: FormData): CreateUserFormState | {
+  ok: true;
+  email: string;
+  phone: string;
+  displayName: string;
+  firstName: string;
+  lastName: string;
+  areaId: string;
+  qualification: string;
+  address: string;
+  isActive: boolean;
+  membershipYear: string | null;
+  emergencyName: string;
+  emergencyRelationship: string;
+  emergencyPhone: string;
+  emergencyEmail: string;
+  emergencyAddress: string;
+  passwordHash: string;
+} {
   const email = (formData.get("email") as string)?.trim();
   if (!email) {
     return { error: "נא להזין כתובת דוא״ל" };
   }
 
-  const exists = await accountExistsByEmail(email);
+  const firstName = (formData.get("first_name") as string)?.trim() ?? "";
+  const lastName = (formData.get("last_name") as string)?.trim() ?? "";
+  if (!firstName || !lastName) {
+    return { error: "נא להזין שם פרטי ושם משפחה" };
+  }
+
+  const areaId = (formData.get("home_station") as string)?.trim();
+  if (!areaId) {
+    return { error: "נא לבחור תחנת אם" };
+  }
+
+  const qualification = (formData.get("qualification") as string)?.trim();
+  if (!qualification) {
+    return { error: "נא לבחור הכשרה" };
+  }
+
+  const emergencyRelationship = (formData.get("emergency_relationship") as string)?.trim();
+  if (!emergencyRelationship) {
+    return { error: "נא לבחור קרבה לאיש קשר בחירום" };
+  }
+
+  const emergencyName = (formData.get("emergency_name") as string)?.trim() ?? "";
+  const emergencyPhone = (formData.get("emergency_phone") as string)?.trim() ?? "";
+  if (!emergencyName || !emergencyPhone) {
+    return { error: "נא להזין שם ומספר טלפון לאיש קשר בחירום" };
+  }
+
+  const phone = (formData.get("phone") as string)?.trim() ?? "";
+  const address = (formData.get("address") as string)?.trim() ?? "";
+  const isActive = (formData.get("is_active") as string) === "true";
+  const membershipYearRaw = (formData.get("membership_year") as string)?.trim() || null;
+  const emergencyEmail = (formData.get("emergency_email") as string)?.trim() ?? "";
+  const emergencyAddress = (formData.get("emergency_address") as string)?.trim() ?? "";
+  const passwordHash = generateRandomPassword();
+  const displayName = `${firstName} ${lastName}`.trim();
+
+  return {
+    ok: true,
+    email,
+    phone,
+    displayName,
+    firstName,
+    lastName,
+    areaId,
+    qualification,
+    address,
+    isActive,
+    membershipYear: membershipYearRaw,
+    emergencyName,
+    emergencyRelationship,
+    emergencyPhone,
+    emergencyEmail,
+    emergencyAddress,
+    passwordHash,
+  };
+}
+
+/**
+ * Single atomic insert: account → user_info → emergency_contacts.
+ * All succeed or all roll back (single statement).
+ */
+async function createAccountUserAndEmergency(params: {
+  displayName: string;
+  email: string;
+  phone: string;
+  passwordHash: string;
+  createdBy: string;
+  firstName: string;
+  lastName: string;
+  address: string;
+  areaId: string;
+  qualification: string;
+  isActive: boolean;
+  activeDate: Date | null;
+  emergencyName: string;
+  emergencyRelationship: string;
+  emergencyPhone: string;
+  emergencyEmail: string;
+  emergencyAddress: string;
+}): Promise<{ error?: string }> {
+  try {
+    await sql`
+      WITH new_account AS (
+        INSERT INTO account (display_name, email, phone, password_hash, created_by)
+        VALUES (${params.displayName}, ${params.email}, ${params.phone}, ${params.passwordHash}, ${params.createdBy})
+        RETURNING id
+      ),
+      new_user AS (
+        INSERT INTO user_info (account_id, first_name, last_name, image_url, address, area_id, role, active, active_date, created_by)
+        SELECT new_account.id, ${params.firstName}, ${params.lastName}, null, ${params.address}, ${params.areaId}, ${params.qualification}, ${params.isActive}, ${params.activeDate}, ${params.createdBy}
+        FROM new_account
+        RETURNING id
+      )
+      INSERT INTO emergency_contacts (user_id, name, relationship, phone, email, address, created_by)
+      SELECT new_user.id, ${params.emergencyName}, ${params.emergencyRelationship}, ${params.emergencyPhone}, ${params.emergencyEmail}, ${params.emergencyAddress}, ${params.createdBy}
+      FROM new_user
+    `;
+    return {};
+  } catch (error) {
+    console.error("Failed to create account, user and emergency contact:", error);
+    return { error: "יצירת המשתמש נכשלה. נא לנסות שוב." };
+  }
+}
+
+export async function submitCreateUserForm(
+  _prevState: CreateUserFormState,
+  formData: FormData
+): Promise<CreateUserFormState> {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return { error: "יש להתחבר כדי ליצור משתמש" };
+  }
+
+  // 1. Validate all fields first (no DB writes)
+  const validated = validateCreateUserForm(formData);
+  if (!("ok" in validated) || !validated.ok) {
+    return validated as CreateUserFormState;
+  }
+
+  const createdBy = session.user.id;
+
+  // 2. Check email uniqueness (single read)
+  const exists = await accountExistsByEmail(validated.email);
   if (exists) {
     return { error: "חשבון עם כתובת דוא״ל זו כבר קיים במערכת" };
   }
 
-  const password = generateRandomPassword();
-  const account: DbAccount = {
-    id: "",
-    email,
-    phone: (formData.get("phone") as string) ?? "",
-    password_hash: password,
-    display_name: `${formData.get("first_name") as string} ${formData.get("last_name") as string}`,
-  };
+  // 3. Single atomic insert: account + user_info + emergency_contacts
+  const activeDate = validated.membershipYear
+    ? new Date(`${validated.membershipYear}-12-31`)
+    : null;
 
-  const accountId = await createAccount(account);
-  if (!accountId) {
-    return { error: "יצירת החשבון נכשלה" };
-  }
+  const result = await createAccountUserAndEmergency({
+    displayName: validated.displayName,
+    email: validated.email,
+    phone: validated.phone,
+    passwordHash: validated.passwordHash,
+    createdBy,
+    firstName: validated.firstName,
+    lastName: validated.lastName,
+    address: validated.address,
+    areaId: validated.areaId,
+    qualification: validated.qualification,
+    isActive: validated.isActive,
+    activeDate,
+    emergencyName: validated.emergencyName,
+    emergencyRelationship: validated.emergencyRelationship,
+    emergencyPhone: validated.emergencyPhone,
+    emergencyEmail: validated.emergencyEmail,
+    emergencyAddress: validated.emergencyAddress,
+  });
 
-  const user: DbUser = {
-    id: "",
-    account_id: accountId,
-    first_name: (formData.get("first_name") as string) ?? "",
-    last_name: (formData.get("last_name") as string) ?? "",
-    role: (formData.get("qualification") as string) ?? "",
-    address: (formData.get("address") as string) ?? "",
-    image_url: null,
-    area_id: (formData.get("home_station") as string) ?? "",
-  };
-
-  const newUser = await createUser(user);
-  if (!newUser) {
-    return { error: "יצירת המשתמש נכשלה" };
-  }
-
-  const emergencyContact: DbEmergencyContact = {
-    id: "",
-    user_id: newUser,
-    name: (formData.get("emergency_name") as string) ?? "",
-    relationship: (formData.get("emergency_relationship") as string) ?? "",
-    phone: (formData.get("emergency_phone") as string) ?? "",
-    email: (formData.get("emergency_email") as string) ?? "",
-    address: (formData.get("emergency_address") as string) ?? "",
-  };
-  const newEmergencyContact = await createEmergencyContact(emergencyContact);
-  if (!newEmergencyContact) {
-    return { error: "יצירת איש קשר לחירום נכשלה" };
-  }
-
-  return {};
+  return result;
 }

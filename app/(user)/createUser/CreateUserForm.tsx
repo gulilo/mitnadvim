@@ -137,6 +137,7 @@ export default function CreateUserForm({ areas, displayTags }: { areas: DbArea[]
           </div>
         </div>
         <div className="flex flex-col gap-1 flex-1">
+          <input type="hidden" name="qualification" value={qualification} />
           <Select value={qualification} onValueChange={setQualification}>
             <SelectTrigger className="w-full border-b-2 border-b-primary bg-transparent rounded-none h-auto py-1">
               <SelectValue placeholder="הכשרה" />
@@ -168,6 +169,7 @@ export default function CreateUserForm({ areas, displayTags }: { areas: DbArea[]
             <Image src="/icon_pin-MDA.svg" alt="" width={10} height={15} />
             <h4 className="text-sm font-medium text-black">תחנת אם:</h4>
 
+            <input type="hidden" name="home_station" value={homeStation} />
             <Select value={homeStation} onValueChange={setHomeStation}>
               <SelectTrigger>
                 <SelectValue placeholder="בחר תחנה" />
@@ -217,6 +219,7 @@ export default function CreateUserForm({ areas, displayTags }: { areas: DbArea[]
       {/* Membership */}
       <div className="py-4 space-y-3">
         <div className="flex flex-row items-center gap-3">
+          <input type="hidden" name="is_active" value={isActive ? "true" : "false"} />
           <Switch
             dir="rtl"
             checked={isActive}
@@ -233,6 +236,7 @@ export default function CreateUserForm({ areas, displayTags }: { areas: DbArea[]
           <p className="text-base font-normal text-black">
             דמי חבר שולמו עד לתאריך: 31 בדצמבר,
           </p>
+          <input type="hidden" name="membership_year" value={membershipYear} />
           <Select
             value={membershipYear}
             onValueChange={setMembershipYear}
@@ -298,6 +302,7 @@ export default function CreateUserForm({ areas, displayTags }: { areas: DbArea[]
           </h5>
         </div>
         <FormRow icon="/icon_family.svg" label="קרבה:">
+          <input type="hidden" name="emergency_relationship" value={emergencyRelationship} />
           <Select
             value={emergencyRelationship}
             onValueChange={setEmergencyRelationship}

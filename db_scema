@@ -20,6 +20,8 @@ userInfo [color:blue] {
   address string
   areaid string fk
   role string
+  active boolean default false 
+  activeDate timestamp nullable
 
   createdAt timestamp
   updatedAt timestamp nullable
