@@ -187,7 +187,7 @@ export default function CreateUserForm({ areas, displayTags }: { areas: DbArea[]
           {/* בחירת קבוצות */}
           <Popover>
             <PopoverTrigger>
-              {selectedTags.length > 0 ? <p>{selectedTags.map((tag) => tag.name).join(", ")}</p> : <p>בחר קבוצות</p>}
+              {selectedTags.length > 0 ? <Tags tags={selectedTags} /> : <p>בחר קבוצות</p>}
             </PopoverTrigger>
             <PopoverContent>
               <div className="flex flex-wrap gap-2 justify-start mb-4">
