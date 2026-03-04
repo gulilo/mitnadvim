@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { getAccountByAccountId, getAreaName, getUserByAccountId, getUserByEmail, getUserTags, getTagName, getTagCategory } from "../data/user";
 import { DbAccount, DbTag, DbUser } from "../data/definitions";
 import { sql } from "@/app/lib/data";
+import bcrypt from "bcrypt";
 
 export type ProfileData = {
   user: DbUser;
@@ -264,4 +265,71 @@ export async function submitCreateUserForm(
   });
 
   return result;
+}
+
+export type ChangePasswordFormState = { error?: string; success?: boolean };
+
+const PASSWORD_MIN_LENGTH = 11;
+
+function validateNewPassword(password: string): string | null {
+  if (password.length < PASSWORD_MIN_LENGTH) {
+    return "על הסיסמא להיות באורך של לפחות 11 תווים";
+  }
+  if (!/\d/.test(password)) return "על הסיסמא להכיל לפחות ספרה אחת";
+  if (!/[A-Z]/.test(password)) return "על הסיסמא להכיל לפחות אות גדולה";
+  if (!/[a-z]/.test(password)) return "על הסיסמא להכיל לפחות אות קטנה";
+  if (!/[^A-Za-z0-9]/.test(password)) return "על הסיסמא להכיל לפחות סימן";
+  return null;
+}
+
+export async function changePassword(
+  _prevState: ChangePasswordFormState,
+  formData: FormData
+): Promise<ChangePasswordFormState> {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return { error: "יש להתחבר כדי לשנות סיסמא" };
+  }
+
+  const currentPassword = (formData.get("current_password") as string)?.trim();
+  const newPassword = (formData.get("new_password") as string)?.trim();
+  const confirmPassword = (formData.get("confirm_password") as string)?.trim();
+
+  if (!currentPassword) {
+    return { error: "נא להזין סיסמא נוכחית" };
+  }
+  if (!newPassword) {
+    return { error: "נא להזין סיסמא חדשה" };
+  }
+  if (newPassword !== confirmPassword) {
+    return { error: "אימות הסיסמא אינו תואם" };
+  }
+
+  const validationError = validateNewPassword(newPassword);
+  if (validationError) {
+    return { error: validationError };
+  }
+
+  const account = await getAccountByAccountId(session.user.id);
+  if (!account?.password_hash) {
+    return { error: "לא נמצא חשבון" };
+  }
+
+  const match = await bcrypt.compare(currentPassword, account.password_hash);
+  if (!match) {
+    return { error: "סיסמא נוכחית שגויה" };
+  }
+
+  const hash = await bcrypt.hash(newPassword, 12);
+  try {
+    await sql`
+      UPDATE account
+      SET password_hash = ${hash}
+      WHERE id = ${session.user.id}
+    `;
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to update password:", error);
+    return { error: "שמירת הסיסמא נכשלה. נא לנסות שוב." };
+  }
 }

@@ -49,6 +49,19 @@ emergencyContacts [color:blue]{
 
 emergencyContacts.userid > userInfo.id
 
+PasswordResetToken [color:blue]{
+  id string pk
+  accountId string fk
+  tokenHash string
+  expiresAt date
+
+  createdAt timestamp
+  updatedAt timestamp nullable
+  createdBy string fk
+  updatedBy string fk nullable
+}
+PasswordResetToken.accountId > account.id
+
 
 
 tag [color:green]{
