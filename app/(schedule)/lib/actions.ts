@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { getShiftsByDate, DisplayShift } from "../data/shift";
 import { DbLaunchPoint, getAllLaunchPoints, getLaunchPointById } from "../data/launchPoint";
 import { getAmbulanceById, getAmbulanceByNumber } from "../data/ambulance";
-import { getUserByAccountId } from "@/app/(user)/data/user";
+import { getUserByAccountId, getUserTags } from "@/app/(user)/data/user";
 import { DbUser } from "@/app/(user)/data/definitions";
 
 /** Map shift_type from DB to schedule column key */
@@ -164,7 +164,7 @@ export async function getDisplayShifts(date: Date): Promise<ScheduleRow[]> {
     );
 
     const groupedByLaunchPointAndType = Map.groupBy(
-      displayShifts,
+      displayShifts as DisplayShift[],
       (s: DisplayShift) => `${s.launch_point.id}:${s.ambulance_type}`
     );
 
@@ -197,3 +197,22 @@ export async function getDisplayShifts(date: Date): Promise<ScheduleRow[]> {
     );
   }
 }
+
+export async function registerShiftSlot(shift: DisplayShift) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      throw new Error("Unauthorized");
+    }
+    const tags = await getUserTags(session.user.id);
+    if (tags.length === 0) {
+      throw new Error("User has no tags");
+    }
+    console.log(tags);
+  } catch (error) {
+    console.error("Failed to register shift slot:", error);
+    throw new Error(
+      error instanceof Error ? error.message : "Failed to register shift slot"
+    );
+  }
+} 

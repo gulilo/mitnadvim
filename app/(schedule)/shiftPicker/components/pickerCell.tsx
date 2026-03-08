@@ -7,6 +7,8 @@ import {
     AccordionTrigger,
 } from "@/app/components/ui/accordion";
 import { HEBREW_MONTHS } from "@/app/lib/date-utils";
+import { registerShiftSlot } from "../../lib/actions";
+import RegisterButton from "./registerButton";
 
 function formatShiftDateTime(date: Date | string, time: string): string {
     const d = typeof date === "string" ? new Date(date) : date;
@@ -20,7 +22,7 @@ export default function PickerCell({ shift }: { shift: DisplayShift }) {
     return (
         <Accordion type="multiple" className="w-full">
             <AccordionItem value={shift.id}>
-                <AccordionTrigger className="flex flex-row h-20 w-full px-2 items-center justify-between gap-4 text-lg font-bold border border-red-500">
+                <AccordionTrigger className="flex flex-row h-20 w-full px-2 items-center justify-between gap-4 text-lg font-bold border border-red-500 data-[state=open]:hidden">
                     <p>{shift.launch_point.name}</p>
                     <div className="flex flex-col">
                         <Image src={"/ambulance icon.svg"} alt="ambulance" width={20} height={20} />
@@ -68,7 +70,7 @@ export default function PickerCell({ shift }: { shift: DisplayShift }) {
                             slot ? (
                                 <div key={slot.id}>{slot.user?.first_name ?? "—"}</div>
                             ) : (
-                                <Image key={`empty-${index}`} src="/Icon.svg" alt="slot" width={40} height={40} />
+                               <RegisterButton shift={shift} />
                             )
                         ))}
                     </div>

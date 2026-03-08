@@ -1,5 +1,5 @@
 import { sql } from "../../lib/data";
-import { DbAccount, DbUser } from "./definitions";
+import { DbAccount, DbTag, DbUser } from "./definitions";
 
 export async function getUserByEmail(email: string): Promise<DbAccount | undefined> {
     try {
@@ -58,12 +58,12 @@ export async function getAreaName(areaId: string): Promise<string | null> {
 export async function getUserTags(accountId: string) {
   try {
     const tags = await sql`
-      SELECT t.id 
+      SELECT t.id, t.name, t.category
       FROM tag t
       INNER JOIN account_tag at ON t.id = at.tag_id
       WHERE at.account_id = ${accountId}
     `;
-    return tags.map((tag) => tag.id);
+    return tags as DbTag[];
   } catch (error) {
     console.error('Failed to fetch user tags:', error);
     return [];
