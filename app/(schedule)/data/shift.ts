@@ -6,6 +6,7 @@ import { sql } from "../../lib/data";
 import { DbLaunchPoint, getAllLaunchPoints } from "./launchPoint";
 import { getAllAmbulances } from "./ambulance";
 import type { DbAmbulance } from "./ambulance";
+import { DbTag } from "@/app/(user)/data/definitions";
 
 export type ShiftType = "day" | "evening" | "night" | "reinforcement" | "over_the_machine" | "security";
 export type AmbulanceType = "white" | "intensive";
@@ -306,13 +307,23 @@ const SHIFT_TYPE_ORDER: ShiftType[] = [
 
 
 
-export async function getShiftsForPickerDay(date: Date): Promise<Map<ShiftType, Map<AmbulanceType, DisplayShift[]>>> {
+export async function getShiftsForPickerDay(date: Date, tags: DbTag[]): Promise<Map<ShiftType, Map<AmbulanceType, DisplayShift[]>>> {
   const displayShifts = await getDisplayShiftsByDate(date);
 
+  const NOAR_TAG_NAME = "נוער";
+  function  isNoar(tags: DbTag[]): boolean {
+    return tags.some((t) => t.name === NOAR_TAG_NAME);
+  }
+  
+
+  const filterShiftsForTag = (shifts: DisplayShift[]) =>
+    isNoar(tags) ? shifts.filter((s) => !s.adult_only) : shifts;
+
+  const filteredDisplayShifts = filterShiftsForTag(displayShifts);
   // Group by shift_type -> ambulance_type -> list of DisplayShift (for location rows)
   const byShiftType = new Map<ShiftType, Map<AmbulanceType, DisplayShift[]>>();
 
-  for (const shift of displayShifts) {
+  for (const shift of filteredDisplayShifts) {
     const st = shift.shift_type;
     if (!byShiftType.has(st)) byShiftType.set(st, new Map());
     const byAmb = byShiftType.get(st)!;
@@ -322,45 +333,6 @@ export async function getShiftsForPickerDay(date: Date): Promise<Map<ShiftType, 
   }
 
   return byShiftType;
-  // const result: PickerShiftType[] = [];
-
-  // for (const shiftType of SHIFT_TYPE_ORDER) {
-  //   const byAmb = byShiftType.get(shiftType);
-  //   if (!byAmb || byAmb.size === 0) continue;
-
-  //   const ambulanceTypes: PickerAmbulanceType[] = [];
-  //   const ambTypeKeys = Array.from(byAmb.keys()).sort();
-
-  //   for (const ambType of ambTypeKeys) {
-  //     const typeShifts = byAmb.get(ambType)!;
-  //     const locations: PickerLocationRow[] = typeShifts.map((s) => ({
-  //       id: s.id,
-  //       label: s.launch_point.name,
-  //       ambulanceNumber: s.ambulance?.number ?? null,
-  //       shiftId: s.id,
-  //     }));
-  //     locations.sort((a, b) => a.label.localeCompare(b.label, "he"));
-
-  //     ambulanceTypes.push({
-  //       id: ambType || "default",
-  //       label: getAmbulanceTypeLabel(ambType),
-  //       count: typeShifts.length,
-  //       locations,
-  //     });
-  //   }
-
-  //   const totalCount = displayShifts.filter((s) => s.shift_type === shiftType).length;
-
-  //   result.push({
-  //     id: shiftType,
-  //     label: SHIFT_TYPE_LABELS[shiftType],
-  //     count: totalCount,
-  //     ambulanceTypes,
-  //   });
-  // }
-
-  // console.log("result", result);
-  // return result;
 }
 
 // Shift Slot functions

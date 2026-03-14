@@ -7,7 +7,7 @@ import { getShiftsByDate, DisplayShift } from "../data/shift";
 import { DbLaunchPoint, getAllLaunchPoints, getLaunchPointById } from "../data/launchPoint";
 import { getAmbulanceById, getAmbulanceByNumber } from "../data/ambulance";
 import { getUserByAccountId, getUserTags } from "@/app/(user)/data/user";
-import { DbUser } from "@/app/(user)/data/definitions";
+import { DbTag, DbUser } from "@/app/(user)/data/definitions";
 
 /** Map shift_type from DB to schedule column key */
 const SHIFT_TYPE_TO_COLUMN: Record<string, "night" | "morning" | "reinforcement" | "evening"> = {
@@ -198,17 +198,23 @@ export async function getDisplayShifts(date: Date): Promise<ScheduleRow[]> {
   }
 }
 
-export async function registerShiftSlot(shift: DisplayShift) {
+export async function registerShiftSlot(shift: DisplayShift, tags: DbTag[], isNoar: boolean) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
       throw new Error("Unauthorized");
     }
-    const tags = await getUserTags(session.user.id);
-    if (tags.length === 0) {
-      throw new Error("User has no tags");
+    if (isNoar) {
+      await sql`
+        INSERT INTO shift_slot (shift_id, user_id, status, created_by)
+        VALUES (${shift.id}, ${session.user.id}, 'pending', ${session.user.id})
+      `;
+    } else {
+      await sql`
+        INSERT INTO shift_slot (shift_id, user_id, status, created_by)
+        VALUES (${shift.id}, ${session.user.id}, 'confirmed', ${session.user.id})
+      `;
     }
-    console.log(tags);
   } catch (error) {
     console.error("Failed to register shift slot:", error);
     throw new Error(

@@ -1,3 +1,5 @@
+"use client";
+
 import type { DisplayShift } from "../../data/shift";
 import Image from "next/image";
 import {
@@ -9,6 +11,8 @@ import {
 import { HEBREW_MONTHS } from "@/app/lib/date-utils";
 import { registerShiftSlot } from "../../lib/actions";
 import RegisterButton from "./registerButton";
+import { DbTag } from "@/app/(user)/data/definitions";
+import { useState } from "react";
 
 function formatShiftDateTime(date: Date | string, time: string): string {
     const d = typeof date === "string" ? new Date(date) : date;
@@ -18,9 +22,10 @@ function formatShiftDateTime(date: Date | string, time: string): string {
     return `${day} ב${month} ${year} בשעה ${time}`;
 }
 
-export default function PickerCell({ shift }: { shift: DisplayShift }) {
+export default function PickerCell({ shift, tags }: { shift: DisplayShift, tags: DbTag[] }) {
+    const [open, setOpen] = useState<string[]>([]);
     return (
-        <Accordion type="multiple" className="w-full">
+        <Accordion type="multiple" className="w-full" value={open} onValueChange={setOpen}>
             <AccordionItem value={shift.id}>
                 <AccordionTrigger className="flex flex-row h-20 w-full px-2 items-center justify-between gap-4 text-lg font-bold border border-red-500 data-[state=open]:hidden">
                     <p>{shift.launch_point.name}</p>
@@ -42,17 +47,19 @@ export default function PickerCell({ shift }: { shift: DisplayShift }) {
                 </AccordionTrigger>
                 <AccordionContent className="flex flex-col w-full px-4 py-6 text-lg font-bold border border-red-500">
 
-                    <div className="flex flex-row justify-center items-center gap-4">
-                        <p>{shift.launch_point.name}</p>
-                        <div className="flex flex-col items-center">
-                            <Image src={"/ambulance icon.svg"} alt="ambulance" width={20} height={20} />
-                            <p>{shift.ambulance?.number}</p>
-                        </div>
+                    <div className="flex flex-col gap-4" onClick={() => setOpen([])}>
+                        <div className="flex flex-row justify-center items-center gap-4">
+                            <p>{shift.launch_point.name}</p>
+                            <div className="flex flex-col items-center">
+                                <Image src={"/ambulance icon.svg"} alt="ambulance" width={20} height={20} />
+                                <p>{shift.ambulance?.number}</p>
+                            </div>
 
-                    </div>
-                    <div className="py-4">
-                        <p>תחילת משמרת: {formatShiftDateTime(shift.start_date, shift.start_time)}</p>
-                        <p>סיום משמרת: {formatShiftDateTime(shift.end_date, shift.end_time)}</p>
+                        </div>
+                        <div className="py-4">
+                            <p>תחילת משמרת: {formatShiftDateTime(shift.start_date, shift.start_time)}</p>
+                            <p>סיום משמרת: {formatShiftDateTime(shift.end_date, shift.end_time)}</p>
+                        </div>
                     </div>
                     {shift.driver ?
                         <div className="flex flex-row items-center gap-4">
@@ -70,15 +77,13 @@ export default function PickerCell({ shift }: { shift: DisplayShift }) {
                             slot ? (
                                 <div key={slot.id}>{slot.user?.first_name ?? "—"}</div>
                             ) : (
-                               <RegisterButton shift={shift} />
+                                <Image key={`empty-${index}`} src="/Icon.svg" alt="slot" width={40} height={40} />
                             )
                         ))}
                     </div>
 
                     <div className="flex flex-row justify-center items-center">
-                        <button className="mt-4 h-12 bg-[#FF0000] text-white rounded-md px-4">
-                            שבץ אותי למשמרת
-                        </button>
+                        <RegisterButton shift={shift} tags={tags} />
                     </div>
                 </AccordionContent>
             </AccordionItem>

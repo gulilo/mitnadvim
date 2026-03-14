@@ -2,6 +2,9 @@ import { HEBREW_MONTHS, parseHebrewDate } from "@/app/lib/date-utils";
 import { getShiftsForPickerDay } from "../data/shift";
 import ShiftPickerContent from "./components/ShiftPickerContent";
 import CalendarComponent from "../shiftMenegment/components/Calendar-component";
+import { getUserTags } from "@/app/(user)/data/user";
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
 
 function getSelectedDateLabel(date: Date): string {
     const d = date.getDate();
@@ -15,10 +18,18 @@ export default async function ShiftPickerPage({
 }: {
     searchParams: Promise<{ date?: string }>;
 }) {
+    const session = await auth();
+    if (!session?.user) {
+        redirect("/login");
+    }
+
+    const tags = await getUserTags(session.user.id);
+
     const { date } = await searchParams;
     const paramDate = date ?? new Date().toLocaleDateString("he-IL");
     const selectedDate = parseHebrewDate(paramDate) ?? new Date();
-    const shiftsData = await getShiftsForPickerDay(selectedDate);
+    const shiftsData = await getShiftsForPickerDay(selectedDate, tags);
+
 
     return (
         <div className="flex flex-col items-center w-full">
@@ -34,7 +45,7 @@ export default async function ShiftPickerPage({
                 {/* TODO: Add Hebrew date (Heb Cal API) and holiday when available */}
             </p>
 
-            <ShiftPickerContent shiftsData={shiftsData} />
+            <ShiftPickerContent shiftsData={shiftsData} tags={tags} />
         </div>
     );
 }
