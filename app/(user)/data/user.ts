@@ -1,5 +1,5 @@
 import { sql } from "../../lib/data";
-import { DbAccount, DbUser } from "./definitions";
+import { DbAccount, DbTag, DbUser, DisplayTag } from "./definitions";
 
 export async function getUserByEmail(email: string): Promise<DbAccount | undefined> {
     try {
@@ -55,18 +55,17 @@ export async function getAreaName(areaId: string): Promise<string | null> {
   }
 }
 
-export async function getUserTags(accountId: string) {
+export async function getUserTags(accountId: string): Promise<DbTag[]> {
   try {
     const tags = await sql`
-      SELECT t.id 
+      SELECT * 
       FROM tag t
       INNER JOIN account_tag at ON t.id = at.tag_id
-      WHERE at.account_id = ${accountId}
-    `;
-    return tags.map((tag) => tag.id);
+      WHERE at.account_id = ${accountId}`;
+    return tags as DbTag[];
   } catch (error) {
     console.error('Failed to fetch user tags:', error);
-    return [];
+    return [] as DbTag[];
   }
 }
 
@@ -90,10 +89,10 @@ export async function getTagCategory(tagId: string): Promise<string | null> {
   }
 }
 
-export async function getUserPermissions(tags_id: string[]): Promise<string[]> {
+export async function getUserPermissions(tags: DbTag[]): Promise<string[]> {
   try {
     // Return empty array if no tags provided
-    if (!tags_id || tags_id.length === 0) {
+    if (!tags || tags.length === 0) {
       return [];
     }
 
@@ -103,7 +102,7 @@ export async function getUserPermissions(tags_id: string[]): Promise<string[]> {
       SELECT DISTINCT p.name
       FROM tag_permission tp
       INNER JOIN permissions p ON tp.permission_id = p.id
-      WHERE tp.tag_id = ANY(${tags_id}::uuid[])
+      WHERE tp.tag_id = ANY(${tags.map((tag) => tag.id)}::uuid[])
     `;
     
     return permissions.map((permission) => permission.name);
@@ -119,6 +118,51 @@ export async function getUsersByPartialName(name: string): Promise<DbUser[]> {
     return users as DbUser[];
   } catch (error) {
     console.error('Failed to fetch users by partial name:', error);
+    return [];
+  }
+}
+
+export async function getAllTags() {
+  try {
+    const tags = await sql`SELECT * FROM tag`;
+    return tags as DbTag[];
+  } catch (error) {
+    console.error('Failed to fetch all tags:', error);
+    return [];
+  }
+}
+
+export async function getDisplayTags(tags: DbTag[]): Promise<DisplayTag[]> {
+  try {
+    const displayTags = [];
+    for (const tag of tags) {
+      if (!tag.name) continue;
+      const displayTag: DisplayTag = {
+        id: tag.id,
+        name: tag.name,
+        bgColor: "",
+        textColor: "text-black",
+        border: "",
+      };
+
+      if (tag.category === "גזרה") {
+        displayTag.bgColor = "bg-tag-gizra";
+      } else if (tag.category === "גיל") {
+        displayTag.bgColor = "bg-tag-age";
+        displayTag.textColor = "text-white";
+      } else if (tag.category === "סאאוס") {
+        displayTag.bgColor = "bg-tag-status";
+      } else if (tag.category === "אטן") {
+        displayTag.bgColor = "bg-tag-atn";
+      } else if (tag.category === "ניהול") {
+        displayTag.border = "border-2 border-tag-gizra";
+      }
+
+      displayTags.push(displayTag);
+    }
+    return displayTags as DisplayTag[];
+  } catch (error) {
+    console.error('Failed to fetch display tags:', error);
     return [];
   }
 }

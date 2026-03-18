@@ -15,4 +15,30 @@ export type DbUser = {
   address: string;
   area_id: string;
   role: string;
+  active: boolean;
+  active_date: Date | null;
 };
+
+export type DbTag = {
+  id: string;
+  name: string;
+  category: string;
+};
+
+export type DisplayTag ={
+  id: string;
+  name: string;
+  bgColor: string;
+  textColor: string;
+  border: string;
+}
+
+export type DbEmergencyContact = {
+  id: string;
+  user_id: string;
+  name: string;
+  relationship: string;
+  phone: string;
+  email: string;
+  address: string;
+}

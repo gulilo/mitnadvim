@@ -91,7 +91,24 @@ CREATE TABLE emergency_contacts (
     CONSTRAINT fk_emergency_contacts_updated_by FOREIGN KEY (updated_by) REFERENCES account(id) ON DELETE CASCADE
 );
 
--- 5. Permissions table
+-- 5. Password Reset Token table
+CREATE TABLE password_reset_token (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    account_id UUID NOT NULL,
+    token_hash TEXT NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE,
+    created_by UUID NOT NULL,
+    updated_by UUID,
+
+    -- Foreign key constraints
+    CONSTRAINT fk_password_reset_token_account FOREIGN KEY (account_id) REFERENCES account(id) ON DELETE CASCADE,
+    CONSTRAINT fk_password_reset_token_created_by FOREIGN KEY (created_by) REFERENCES account(id) ON DELETE CASCADE,
+    CONSTRAINT fk_password_reset_token_updated_by FOREIGN KEY (updated_by) REFERENCES account(id) ON DELETE CASCADE
+);
+
+-- 6. Permissions table
 CREATE TABLE permissions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(255) NOT NULL UNIQUE,
@@ -105,7 +122,7 @@ CREATE TABLE permissions (
     CONSTRAINT fk_permissions_updated_by FOREIGN KEY (updated_by) REFERENCES account(id) ON DELETE CASCADE
 );
 
--- 6. Tag table
+-- 7. Tag table
 CREATE TABLE tag (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(255) NOT NULL,
@@ -120,7 +137,7 @@ CREATE TABLE tag (
     CONSTRAINT fk_tag_updated_by FOREIGN KEY (updated_by) REFERENCES account(id) ON DELETE CASCADE
 );
 
--- 7. Tag Permission junction table
+-- 8. Tag Permission junction table
 CREATE TABLE tag_permission (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tag_id UUID NOT NULL,
@@ -140,7 +157,7 @@ CREATE TABLE tag_permission (
     CONSTRAINT uk_tag_permission UNIQUE (tag_id, permission_id)
 );
 
--- 8. Account Tag junction table
+-- 9. Account Tag junction table
 CREATE TABLE account_tag (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     account_id UUID NOT NULL,
@@ -160,7 +177,7 @@ CREATE TABLE account_tag (
     CONSTRAINT uk_account_tag UNIQUE (account_id, tag_id)
 );
 
--- 9. Launch Point table
+-- 10. Launch Point table
 CREATE TABLE launch_point (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     area_id UUID NOT NULL,
@@ -176,7 +193,7 @@ CREATE TABLE launch_point (
     CONSTRAINT fk_launch_point_updated_by FOREIGN KEY (updated_by) REFERENCES account(id) ON DELETE CASCADE
 );
 
--- 10. Ambulance table
+-- 11. Ambulance table
 CREATE TABLE ambulance (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     number VARCHAR(255) NOT NULL,
@@ -191,7 +208,7 @@ CREATE TABLE ambulance (
     CONSTRAINT fk_ambulance_updated_by FOREIGN KEY (updated_by) REFERENCES account(id) ON DELETE CASCADE
 );
 
--- 11. Permanent Shift table
+-- 12. Permanent Shift table
 CREATE TABLE permanent_shift (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     area_id UUID NOT NULL,
@@ -218,7 +235,7 @@ CREATE TABLE permanent_shift (
     CONSTRAINT chk_permanent_shift_times CHECK (end_time > start_time)
 );
 
--- 12. Shift table
+-- 13. Shift table
 CREATE TABLE shift (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     permanent_shift_id UUID,
@@ -249,7 +266,7 @@ CREATE TABLE shift (
     CONSTRAINT chk_shift_times CHECK (start_time IS NULL OR end_time IS NULL OR end_time > start_time)
 );
 
--- 13. Shift Slot table
+-- 14. Shift Slot table
 CREATE TABLE shift_slot (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     shift_id UUID NOT NULL,
@@ -270,7 +287,7 @@ CREATE TABLE shift_slot (
     CONSTRAINT uk_shift_slot UNIQUE (shift_id, user_id)
 );
 
--- 14. Notification table
+-- 15. Notification table
 CREATE TABLE notification (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL,
@@ -295,6 +312,8 @@ CREATE INDEX idx_account_display_name ON account(display_name);
 CREATE INDEX idx_user_info_account_id ON user_info(account_id);
 CREATE INDEX idx_user_info_area_id ON user_info(area_id);
 CREATE INDEX idx_emergency_contacts_user_id ON emergency_contacts(user_id);
+CREATE INDEX idx_password_reset_token_account_id ON password_reset_token(account_id);
+CREATE INDEX idx_password_reset_token_expires_at ON password_reset_token(expires_at);
 CREATE INDEX idx_tag_permission_tag_id ON tag_permission(tag_id);
 CREATE INDEX idx_tag_permission_permission_id ON tag_permission(permission_id);
 CREATE INDEX idx_account_tag_account_id ON account_tag(account_id);
@@ -329,6 +348,7 @@ $$ language 'plpgsql';
 CREATE TRIGGER update_account_updated_at BEFORE UPDATE ON account FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_user_info_updated_at BEFORE UPDATE ON user_info FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_emergency_contacts_updated_at BEFORE UPDATE ON emergency_contacts FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_password_reset_token_updated_at BEFORE UPDATE ON password_reset_token FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_permissions_updated_at BEFORE UPDATE ON permissions FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_tag_updated_at BEFORE UPDATE ON tag FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_tag_permission_updated_at BEFORE UPDATE ON tag_permission FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
