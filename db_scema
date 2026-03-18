@@ -54,6 +54,7 @@ PasswordResetToken [color:blue]{
   accountId string fk
   tokenHash string
   expiresAt date
+  used boolean default false
 
   createdAt timestamp
   updatedAt timestamp nullable

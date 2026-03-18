@@ -12,7 +12,7 @@ export default function SetPasswordPage() {
   async function handleSubmit() {
     await fetch("/api/emailPassword", {
       method: "POST",
-      body: JSON.stringify({ email, tempPassword: "abcd1234" }),
+      body: JSON.stringify({ email, fullName: "John Doe", token: "1234567890" }),
     });
 
     alert("Password set successfully!");

@@ -44,11 +44,23 @@ function PasswordField({
   );
 }
 
-export default function ChangePasswordForm() {
+type Props = {
+  mode: "normal" | "reset";
+  accountIdFromToken?: string;
+  firstName?: string;
+};
+
+export default function ChangePasswordForm({
+  mode,
+  accountIdFromToken,
+  firstName,
+}: Props) {
   const [state, formAction] = useActionState<ChangePasswordFormState, FormData>(
     changePassword,
     {}
   );
+
+  const isResetMode = mode === "reset" && !!accountIdFromToken;
 
   return (
     <div
@@ -71,16 +83,24 @@ export default function ChangePasswordForm() {
 
       {/* Title */}
       <h1 className="text-center text-[18px] font-bold leading-[100%] text-black pt-1 pb-6">
-        החלפת סיסמא
+        {isResetMode
+          ? `הגדרת סיסמא חדשה${firstName ? ` עבור ${firstName}` : ""}`
+          : "החלפת סיסמא"}
       </h1>
 
       <form action={formAction} className="flex flex-col flex-1 pt-4 pb-11 mx-auto">
+        {isResetMode && (
+          <input type="hidden" name="account_id" value={accountIdFromToken} />
+        )}
+
         <div className="flex flex-col gap-5">
-          <PasswordField
-            id="current_password"
-            name="current_password"
-            label="סיסמא נוכחית:"
-          />
+          {!isResetMode && (
+            <PasswordField
+              id="current_password"
+              name="current_password"
+              label="סיסמא נוכחית:"
+            />
+          )}
           <PasswordField
             id="new_password"
             name="new_password"

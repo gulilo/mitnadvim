@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { getAccountByAccountId, getAreaName, getUserByAccountId, getUserByEmail, getUserTags, getTagName, getTagCategory } from "../data/user";
 import { DbAccount, DbTag, DbUser } from "../data/definitions";
 import { sql } from "@/app/lib/data";
+import crypto from "crypto";
 import bcrypt from "bcrypt";
 
 export type ProfileData = {
@@ -191,9 +192,9 @@ async function createAccountUserAndEmergency(params: {
   emergencyPhone: string;
   emergencyEmail: string;
   emergencyAddress: string;
-}): Promise<{ error?: string }> {
+}): Promise<{ error?: string; accountId?: string }> {
   try {
-    await sql`
+    const new_account = await sql`
       WITH new_account AS (
         INSERT INTO account (display_name, email, phone, password_hash, created_by)
         VALUES (${params.displayName}, ${params.email}, ${params.phone}, ${params.passwordHash}, ${params.createdBy})
@@ -204,12 +205,16 @@ async function createAccountUserAndEmergency(params: {
         SELECT new_account.id, ${params.firstName}, ${params.lastName}, null, ${params.address}, ${params.areaId}, ${params.qualification}, ${params.isActive}, ${params.activeDate}, ${params.createdBy}
         FROM new_account
         RETURNING id
+      ),
+      new_emergency AS (
+        INSERT INTO emergency_contacts (user_id, name, relationship, phone, email, address, created_by)
+        SELECT new_user.id, ${params.emergencyName}, ${params.emergencyRelationship}, ${params.emergencyPhone}, ${params.emergencyEmail}, ${params.emergencyAddress}, ${params.createdBy}
+        FROM new_user
+        RETURNING user_id
       )
-      INSERT INTO emergency_contacts (user_id, name, relationship, phone, email, address, created_by)
-      SELECT new_user.id, ${params.emergencyName}, ${params.emergencyRelationship}, ${params.emergencyPhone}, ${params.emergencyEmail}, ${params.emergencyAddress}, ${params.createdBy}
-      FROM new_user
+      SELECT id FROM new_account
     `;
-    return {};
+    return { accountId: new_account[0]?.id };
   } catch (error) {
     console.error("Failed to create account, user and emergency contact:", error);
     return { error: "יצירת המשתמש נכשלה. נא לנסות שוב." };
@@ -264,7 +269,35 @@ export async function submitCreateUserForm(
     emergencyAddress: validated.emergencyAddress,
   });
 
+  if (result.error) {
+    return { error: result.error };
+  }
+
+
+  const token = await generateToken();
+  const hashedToken = await hashToken(token);
+  console.log("token", token);
+  console.log("hashedToken", hashedToken);
+ const accountId = result.accountId;
+  await sql`
+    INSERT INTO password_reset_token (account_id, token_hash, expires_at, created_by)
+    VALUES (${accountId}, ${hashedToken}, ${new Date(Date.now() + 1000 * 60 * 60 * 24)}, ${createdBy})
+  `;
+
+  await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/emailWelcome`, {
+    method: "POST",
+    body: JSON.stringify({ email: validated.email, fullName: validated.displayName, token }),
+  });
+
   return result;
+}
+
+function generateToken() {
+  return crypto.randomBytes(32).toString("hex");
+}
+
+export async function hashToken(token: string) {
+  return crypto.createHash("sha256").update(token).digest("hex");
 }
 
 export type ChangePasswordFormState = { error?: string; success?: boolean };
@@ -286,18 +319,13 @@ export async function changePassword(
   _prevState: ChangePasswordFormState,
   formData: FormData
 ): Promise<ChangePasswordFormState> {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return { error: "יש להתחבר כדי לשנות סיסמא" };
-  }
+  const formaccountId = (formData.get("account_id") as string)?.trim() || "";
 
-  const currentPassword = (formData.get("current_password") as string)?.trim();
+  const currentPassword = (formData.get("current_password") as string | null)?.trim() || "";
   const newPassword = (formData.get("new_password") as string)?.trim();
   const confirmPassword = (formData.get("confirm_password") as string)?.trim();
 
-  if (!currentPassword) {
-    return { error: "נא להזין סיסמא נוכחית" };
-  }
+  // Common validations
   if (!newPassword) {
     return { error: "נא להזין סיסמא חדשה" };
   }
@@ -310,22 +338,41 @@ export async function changePassword(
     return { error: validationError };
   }
 
-  const account = await getAccountByAccountId(session.user.id);
+  // If we have an account id from a reset token, skip current password + session.
+  const targetAccountId = formaccountId || (await (async () => {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return "";
+    }
+    return session.user.id;
+  })());
+
+  if (!targetAccountId) {
+    return { error: "יש להתחבר כדי לשנות סיסמא" };
+  }
+
+  console.log("targetAccountId", targetAccountId);
+
+  const account = await getAccountByAccountId(targetAccountId);
   if (!account?.password_hash) {
     return { error: "לא נמצא חשבון" };
   }
-
-  const match = await bcrypt.compare(currentPassword, account.password_hash);
-  if (!match) {
-    return { error: "סיסמא נוכחית שגויה" };
+  // Only require current password when not using a reset token
+  if (formaccountId !== "") {
+    if (currentPassword) {
+    const match = await bcrypt.compare(currentPassword, account.password_hash);
+    if (!match) {
+      return { error: "סיסמא נוכחית שגויה" };
+    }
   }
+}
 
   const hash = await bcrypt.hash(newPassword, 12);
   try {
     await sql`
       UPDATE account
       SET password_hash = ${hash}
-      WHERE id = ${session.user.id}
+      WHERE id = ${targetAccountId}
     `;
     return { success: true };
   } catch (error) {
