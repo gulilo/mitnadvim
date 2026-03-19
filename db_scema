@@ -20,6 +20,8 @@ userInfo [color:blue] {
   address string
   areaid string fk
   role string
+  active boolean default false 
+  activeDate timestamp nullable
 
   createdAt timestamp
   updatedAt timestamp nullable
@@ -46,6 +48,20 @@ emergencyContacts [color:blue]{
 }
 
 emergencyContacts.userid > userInfo.id
+
+PasswordResetToken [color:blue]{
+  id string pk
+  accountId string fk
+  tokenHash string
+  expiresAt date
+  used boolean default false
+
+  createdAt timestamp
+  updatedAt timestamp nullable
+  createdBy string fk
+  updatedBy string fk nullable
+}
+PasswordResetToken.accountId > account.id
 
 
 

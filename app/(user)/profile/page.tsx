@@ -6,6 +6,7 @@ import {
   getEmergencyContactByUserId,
   getAreaName,
   getUserTags,
+  getDisplayTags,
 } from "../data/user";
 import Image from "next/image";
 import { Camera, User, Cross } from "lucide-react";
@@ -31,7 +32,7 @@ export default async function Profile() {
   const emergencyContact = await getEmergencyContactByUserId(user.id);
   const areaName = await getAreaName(user.area_id);
   const tags = await getUserTags(session.user.id);
-
+  const displayTags = await getDisplayTags(tags);
   return (
     <div
       dir="rtl"
@@ -78,7 +79,7 @@ export default async function Profile() {
          <HomeStation areaName={areaName || ""} />
 
           {/* Tags */}
-          <Tags tagsids={tags.map((tag) => tag.id)} />
+          <Tags tags={displayTags} /> 
         </div>
       </div>
 
