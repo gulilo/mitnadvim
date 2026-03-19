@@ -78,7 +78,7 @@ export default async function Profile() {
          <HomeStation areaName={areaName || ""} />
 
           {/* Tags */}
-          <Tags tagsids={tags} />
+          <Tags tagsids={tags.map((tag) => tag.id)} />
         </div>
       </div>
 

@@ -49,7 +49,7 @@ export default function SchedualCell({
             </div>
           </div>
           {
-            shift.ambulance_type === "atan" && (
+            shift.ambulance_type === "intensive" && (
               <div className="flex flex-row items-center justify-between">
                 <Image
                   src={"/Paramedic Icon.svg"}
