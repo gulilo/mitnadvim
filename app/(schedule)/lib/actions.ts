@@ -108,6 +108,26 @@ export async function updateShiftDriver(shiftId: string, driverAccountId: string
   }
 }
 
+export async function removedriverfromshift(shiftId: string) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      throw new Error("Unauthorized");
+    }
+    await sql`
+      UPDATE shift 
+      SET driver_id = NULL, updated_by = ${session.user.id}
+      WHERE id = ${shiftId}
+    `;
+  }
+  catch (error) {
+    console.error("Failed to remove driver from shift:", error);
+    throw new Error(
+      error instanceof Error ? error.message : "Failed to remove driver from shift"
+    );
+  }
+}
+
 export async function updateShiftAmbulance(shiftId: string, ambulanceNumber: string | null) {
   try {
     const session = await auth();
@@ -222,3 +242,52 @@ export async function registerShiftSlot(shift: DisplayShift, tags: DbTag[], isNo
     );
   }
 } 
+
+async function assertShiftManager(userId: string) {
+  const tags = await getUserTags(userId);
+  const isShiftManager = tags.some((tag) => tag.name === "רכז שיבוצים");
+  if (!isShiftManager) {
+    throw new Error("Unauthorized");
+  }
+}
+
+async function updateShiftSlotStatus(shiftSlotId: string, status: "confirmed" | "cancelled") {
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized");
+  }
+  if (!shiftSlotId) {
+    throw new Error("Shift slot ID is required");
+  }
+
+  await assertShiftManager(session.user.id);
+
+  await sql`
+    UPDATE shift_slot
+    SET status = ${status}, updated_by = ${session.user.id}
+    WHERE id = ${shiftSlotId}
+  `;
+  revalidatePath("/shiftPicker");
+}
+
+export async function approveShiftSlot(shiftSlotId: string) {
+  try {
+    await updateShiftSlotStatus(shiftSlotId, "confirmed");
+  } catch (error) {
+    console.error("Failed to approve shift slot:", error);
+    throw new Error(
+      error instanceof Error ? error.message : "Failed to approve shift slot"
+    );
+  }
+}
+
+export async function denyShiftSlot(shiftSlotId: string) {
+  try {
+    await updateShiftSlotStatus(shiftSlotId, "cancelled");
+  } catch (error) {
+    console.error("Failed to deny shift slot:", error);
+    throw new Error(
+      error instanceof Error ? error.message : "Failed to deny shift slot"
+    );
+  }
+}

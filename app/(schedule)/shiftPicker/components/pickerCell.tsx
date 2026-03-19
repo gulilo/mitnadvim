@@ -9,10 +9,12 @@ import {
     AccordionTrigger,
 } from "@/app/components/ui/accordion";
 import { HEBREW_MONTHS } from "@/app/lib/date-utils";
-import { registerShiftSlot } from "../../lib/actions";
 import RegisterButton from "./registerButton";
 import { DbTag } from "@/app/(user)/data/definitions";
 import { useState } from "react";
+import { approveShiftSlot, denyShiftSlot, removedriverfromshift } from "../../lib/actions";
+import { ButtonGroup } from "@/app/components/ui/button-group";
+import { Button } from "@/app/components/ui/button";
 
 function formatShiftDateTime(date: Date | string, time: string): string {
     const d = typeof date === "string" ? new Date(date) : date;
@@ -37,7 +39,7 @@ export default function PickerCell({ shift, tags }: { shift: DisplayShift, tags:
                         (<Image src={"/icon_avatar-driver dafault (no assignment).svg"} alt="driver" width={20} height={20} />)
                         : (<Image src={"/Driver icon.svg"} alt="driver" width={20} height={20} />)}
 
-                    {shift.slots.map((slot, index) => (
+                    {shift.confirmed_slots.map((slot, index) => (
                         slot ? (
                             <div key={slot.id}>{slot.user?.first_name ?? "—"}</div>
                         ) : (
@@ -62,9 +64,15 @@ export default function PickerCell({ shift, tags }: { shift: DisplayShift, tags:
                         </div>
                     </div>
                     {shift.driver ?
-                        <div className="flex flex-row items-center gap-4">
-                            <Image src={"/icon_avatar-driver dafault (no assignment).svg"} alt="driver" width={20} height={20} />
-                            <p>{shift.driver?.first_name} {shift.driver?.last_name}</p>
+                        <div className="flex flex-col items-center justify-center">
+                            <div className="flex flex-row items-center gap-4">
+                                <Image src={"/icon_avatar-driver dafault (no assignment).svg"} alt="driver" width={20} height={20} />
+                                <p>{shift.driver?.first_name} {shift.driver?.last_name}</p>
+                            </div>
+                            {tags.some((tag) => tag.name === "רכז שיבוצים") ?
+                                (<button onClick={() => removedriverfromshift(shift.id)} className="border-3 border-red-500 px-4 text-red-500 py-2 rounded-md">ביטול שיבוץ</button>)
+                                : null
+                            }
                         </div>
                         : (<Image src={"/Driver icon.svg"} alt="driver" width={20} height={20} />)
                     }
@@ -73,13 +81,33 @@ export default function PickerCell({ shift, tags }: { shift: DisplayShift, tags:
                     ) : null}
 
                     <div className="flex flex-col gap-4">
-                        {shift.slots.map((slot, index) => (
+                        {shift.confirmed_slots.map((slot, index) => (
                             slot ? (
-                                <div key={slot.id}>{slot.user?.first_name ?? "—"}</div>
+                                <div key={slot.id}>
+                                    <div key={slot.id}>{slot.user?.first_name ?? "—"}</div>
+                                    {tags.some((tag) => tag.name === "רכז שיבוצים") ? (
+                                        <button onClick={() => denyShiftSlot(slot.id) } className="border-3 border-red-500 px-4 text-red-500 py-2 rounded-md">ביטול שיבוץ</button>
+                                    ) : null}
+                                </div>
                             ) : (
                                 <Image key={`empty-${index}`} src="/Icon.svg" alt="slot" width={40} height={40} />
                             )
                         ))}
+                        <p>מתנה:</p>
+                        {tags.some((tag) => tag.name === "רכז שיבוצים") ?
+                            shift.pending_slots.map((slot, index) => (
+                                slot ? (
+                                    <div key={slot.id}>
+                                        <div key={slot.id}>{slot.user?.first_name ?? "—"}</div>
+                                        <ButtonGroup dir="ltr">
+                                            <Button variant="destructive" className="bg-red-500 text-white" onClick={() => approveShiftSlot(slot.id)}>אישור</Button>
+                                            <Button variant="outline" className=" bg-transparent" onClick={() => denyShiftSlot(slot.id)}>ביטול</Button>
+                                        </ButtonGroup>
+                                    </div>
+                                ) : (
+                                    <Image key={`empty-${index}`} src="/Icon.svg" alt="slot" width={40} height={40} />
+                                )
+                            )) : null}
                     </div>
 
                     <div className="flex flex-row justify-center items-center">

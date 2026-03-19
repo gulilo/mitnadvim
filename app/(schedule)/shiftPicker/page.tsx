@@ -29,7 +29,7 @@ export default async function ShiftPickerPage({
     const paramDate = date ?? new Date().toLocaleDateString("he-IL");
     const selectedDate = parseHebrewDate(paramDate) ?? new Date();
     const shiftsData = await getShiftsForPickerDay(selectedDate, tags);
-
+    console.log("shiftsData", shiftsData);
 
     return (
         <div className="flex flex-col items-center w-full">

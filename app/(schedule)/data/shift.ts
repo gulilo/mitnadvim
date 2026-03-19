@@ -61,7 +61,8 @@ export type DisplayShift = {
   shift_type: ShiftType;
   adult_only: boolean;
   number_of_slots: number;
-  slots: (DisplayShiftSlot | null)[];
+  confirmed_slots: (DisplayShiftSlot | null)[];
+  pending_slots: (DisplayShiftSlot | null)[];
 };
 
 export type DisplayShiftSlot = {
@@ -169,12 +170,11 @@ export async function getShiftsByDate(date: Date): Promise<DbShift[]> {
 /** Returns shifts for a date enriched as DisplayShift (launch_point, ambulance, driver, slots). */
 export async function getDisplayShiftsByDate(date: Date): Promise<DisplayShift[]> {
   const shifts = await getShiftsByDate(date);
-  const active = shifts.filter((s) => s.status === "active");
   const launchPoints = await getAllLaunchPoints();
   const ambulances = await getAllAmbulances();
   const lpMap = new Map(launchPoints.map((lp) => [lp.id, lp]));
   const ambMap = new Map(ambulances.map((a) => [a.id, a]));
-  const driverIds = [...new Set(active.map((s) => s.driver_id).filter(Boolean))] as string[];
+  const driverIds = [...new Set(shifts.map((s) => s.driver_id).filter(Boolean))] as string[];
   const driverMap = new Map<string, DbUser>();
   await Promise.all(
     driverIds.map(async (id) => {
@@ -182,7 +182,7 @@ export async function getDisplayShiftsByDate(date: Date): Promise<DisplayShift[]
       if (user) driverMap.set(id, user);
     })
   );
-  const slotsPerShift = await Promise.all(active.map((s) => getShiftSlotsByShift(s.id)));
+  const slotsPerShift = await Promise.all(shifts.map((s) => getShiftSlotsByShift(s.id)));
   const slotUserIds = [...new Set(slotsPerShift.flat().map((slot) => slot.user_id).filter(Boolean))];
   const slotUserMap = new Map<string, DbUser>();
   await Promise.all(
@@ -191,23 +191,40 @@ export async function getDisplayShiftsByDate(date: Date): Promise<DisplayShift[]
       if (user) slotUserMap.set(id, user);
     })
   );
-  const displayShifts: DisplayShift[] = active.map((s, i) => {
+  const displayShifts: DisplayShift[] = shifts.map((s, i) => {
     const launch_point = lpMap.get(s.launch_point_id);
     if (!launch_point) throw new Error(`Launch point not found: ${s.launch_point_id}`);
     const rawSlots = slotsPerShift[i];
-    const slots: (DisplayShiftSlot | null)[] = Array.from(
+    const confirmedSlots = rawSlots.filter((slot) => slot.status === "confirmed");
+    const confirmed_slots: (DisplayShiftSlot | null)[] = Array.from(
       { length: s.number_of_slots },
       (_, j) => {
-        if (j >= rawSlots.length) return null;
-        const slot = rawSlots[j];
-        return {
-          id: slot.id,
-          shift_id: slot.shift_id,
-          user: slotUserMap.get(slot.user_id) ?? null,
-          status: slot.status,
-        };
+        if (j >= confirmedSlots.length) return null;
+        const slot = confirmedSlots[j];
+        if (slot.status === "confirmed") {
+          return {
+            id: slot.id,
+            shift_id: slot.shift_id,
+            user: slotUserMap.get(slot.user_id) ?? null, 
+            status: slot.status,
+          } as DisplayShiftSlot;
+        }
+        return null;
       }
     );
+    const pendingSlots = rawSlots.filter((slot) => slot.status === "pending");
+    const pending_slots: (DisplayShiftSlot | null)[] = Array.from(
+      { length: pendingSlots.length },
+       (_, j) => {
+      if (j >= pendingSlots.length) return null;
+      const slot = pendingSlots[j];
+      return {
+        id: slot.id,
+        shift_id: slot.shift_id,
+        user: slotUserMap.get(slot.user_id) ?? null, 
+        status: slot.status,
+      } as DisplayShiftSlot;
+    });
     return {
       id: s.id,
       launch_point,
@@ -221,7 +238,8 @@ export async function getDisplayShiftsByDate(date: Date): Promise<DisplayShift[]
       shift_type: s.shift_type,
       adult_only: s.adult_only,
       number_of_slots: s.number_of_slots,
-      slots,
+      confirmed_slots,
+      pending_slots,
     };
   });
   return displayShifts;
