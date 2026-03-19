@@ -6,8 +6,8 @@ import { revalidatePath } from "next/cache";
 import { getShiftsByDate, DisplayShift } from "../data/shift";
 import { DbLaunchPoint, getAllLaunchPoints, getLaunchPointById } from "../data/launchPoint";
 import { getAmbulanceById, getAmbulanceByNumber } from "../data/ambulance";
-import { getUserByAccountId } from "@/app/(user)/data/user";
-import { DbUser } from "@/app/(user)/data/definitions";
+import { getUserByAccountId, getUserTags } from "@/app/(user)/data/user";
+import { DbTag, DbUser } from "@/app/(user)/data/definitions";
 
 /** Map shift_type from DB to schedule column key */
 const SHIFT_TYPE_TO_COLUMN: Record<string, "night" | "morning" | "reinforcement" | "evening"> = {
@@ -108,6 +108,26 @@ export async function updateShiftDriver(shiftId: string, driverAccountId: string
   }
 }
 
+export async function removedriverfromshift(shiftId: string) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      throw new Error("Unauthorized");
+    }
+    await sql`
+      UPDATE shift 
+      SET driver_id = NULL, updated_by = ${session.user.id}
+      WHERE id = ${shiftId}
+    `;
+  }
+  catch (error) {
+    console.error("Failed to remove driver from shift:", error);
+    throw new Error(
+      error instanceof Error ? error.message : "Failed to remove driver from shift"
+    );
+  }
+}
+
 export async function updateShiftAmbulance(shiftId: string, ambulanceNumber: string | null) {
   try {
     const session = await auth();
@@ -164,7 +184,7 @@ export async function getDisplayShifts(date: Date): Promise<ScheduleRow[]> {
     );
 
     const groupedByLaunchPointAndType = Map.groupBy(
-      displayShifts,
+      displayShifts as DisplayShift[],
       (s: DisplayShift) => `${s.launch_point.id}:${s.ambulance_type}`
     );
 
@@ -194,6 +214,80 @@ export async function getDisplayShifts(date: Date): Promise<ScheduleRow[]> {
     console.error("Failed to fetch display shifts:", error);
     throw new Error(
       error instanceof Error ? error.message : "Failed to fetch display shifts"
+    );
+  }
+}
+
+export async function registerShiftSlot(shift: DisplayShift, tags: DbTag[], isNoar: boolean) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      throw new Error("Unauthorized");
+    }
+    if (isNoar) {
+      await sql`
+        INSERT INTO shift_slot (shift_id, user_id, status, created_by)
+        VALUES (${shift.id}, ${session.user.id}, 'pending', ${session.user.id})
+      `;
+    } else {
+      await sql`
+        INSERT INTO shift_slot (shift_id, user_id, status, created_by)
+        VALUES (${shift.id}, ${session.user.id}, 'confirmed', ${session.user.id})
+      `;
+    }
+  } catch (error) {
+    console.error("Failed to register shift slot:", error);
+    throw new Error(
+      error instanceof Error ? error.message : "Failed to register shift slot"
+    );
+  }
+} 
+
+async function assertShiftManager(userId: string) {
+  const tags = await getUserTags(userId);
+  const isShiftManager = tags.some((tag) => tag.name === "רכז שיבוצים");
+  if (!isShiftManager) {
+    throw new Error("Unauthorized");
+  }
+}
+
+async function updateShiftSlotStatus(shiftSlotId: string, status: "confirmed" | "cancelled") {
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized");
+  }
+  if (!shiftSlotId) {
+    throw new Error("Shift slot ID is required");
+  }
+
+  await assertShiftManager(session.user.id);
+
+  await sql`
+    UPDATE shift_slot
+    SET status = ${status}, updated_by = ${session.user.id}
+    WHERE id = ${shiftSlotId}
+  `;
+  revalidatePath("/shiftPicker");
+}
+
+export async function approveShiftSlot(shiftSlotId: string) {
+  try {
+    await updateShiftSlotStatus(shiftSlotId, "confirmed");
+  } catch (error) {
+    console.error("Failed to approve shift slot:", error);
+    throw new Error(
+      error instanceof Error ? error.message : "Failed to approve shift slot"
+    );
+  }
+}
+
+export async function denyShiftSlot(shiftSlotId: string) {
+  try {
+    await updateShiftSlotStatus(shiftSlotId, "cancelled");
+  } catch (error) {
+    console.error("Failed to deny shift slot:", error);
+    throw new Error(
+      error instanceof Error ? error.message : "Failed to deny shift slot"
     );
   }
 }

@@ -34,7 +34,7 @@ export async function getProfileData() {
       user,
       account,
       areaName,
-      tags,
+      tags: tags.map((tag) => tag.id),
     } as ProfileData;
   } catch (error) {
     console.error('Failed to fetch profile data:', error);

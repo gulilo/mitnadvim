@@ -1,11 +1,16 @@
 'use server';
 
 import { DbUser } from "@/app/(user)/data/definitions";
+import { getUserByAccountId } from "@/app/(user)/data/user";
 import { sql } from "../../lib/data";
-import { DbLaunchPoint } from "./launchPoint";
+import { DbLaunchPoint, getAllLaunchPoints } from "./launchPoint";
+import { getAllAmbulances } from "./ambulance";
 import type { DbAmbulance } from "./ambulance";
+import { DbTag } from "@/app/(user)/data/definitions";
 
 export type ShiftType = "day" | "evening" | "night" | "reinforcement" | "over_the_machine" | "security";
+export type AmbulanceType = "white" | "intensive";
+
 
 export type DbPermanentShift = {
   id: string;
@@ -46,7 +51,7 @@ export type DbShiftSlot = {
 export type DisplayShift = {
   id: string;
   launch_point: DbLaunchPoint;
-  ambulance_type: string;
+  ambulance_type: AmbulanceType;
   ambulance: DbAmbulance | null;
   driver: DbUser | null;
   start_date: Date;
@@ -56,6 +61,15 @@ export type DisplayShift = {
   shift_type: ShiftType;
   adult_only: boolean;
   number_of_slots: number;
+  confirmed_slots: (DisplayShiftSlot | null)[];
+  pending_slots: (DisplayShiftSlot | null)[];
+};
+
+export type DisplayShiftSlot = {
+  id: string;
+  shift_id: string;
+  user: DbUser | null;
+  status: "pending" | "confirmed" | "cancelled";
 };
 
 // Permanent Shift functions
@@ -153,6 +167,84 @@ export async function getShiftsByDate(date: Date): Promise<DbShift[]> {
   }
 }
 
+/** Returns shifts for a date enriched as DisplayShift (launch_point, ambulance, driver, slots). */
+export async function getDisplayShiftsByDate(date: Date): Promise<DisplayShift[]> {
+  const shifts = await getShiftsByDate(date);
+  const launchPoints = await getAllLaunchPoints();
+  const ambulances = await getAllAmbulances();
+  const lpMap = new Map(launchPoints.map((lp) => [lp.id, lp]));
+  const ambMap = new Map(ambulances.map((a) => [a.id, a]));
+  const driverIds = [...new Set(shifts.map((s) => s.driver_id).filter(Boolean))] as string[];
+  const driverMap = new Map<string, DbUser>();
+  await Promise.all(
+    driverIds.map(async (id) => {
+      const user = await getUserByAccountId(id);
+      if (user) driverMap.set(id, user);
+    })
+  );
+  const slotsPerShift = await Promise.all(shifts.map((s) => getShiftSlotsByShift(s.id)));
+  const slotUserIds = [...new Set(slotsPerShift.flat().map((slot) => slot.user_id).filter(Boolean))];
+  const slotUserMap = new Map<string, DbUser>();
+  await Promise.all(
+    slotUserIds.map(async (id) => {
+      const user = await getUserByAccountId(id);
+      if (user) slotUserMap.set(id, user);
+    })
+  );
+  const displayShifts: DisplayShift[] = shifts.map((s, i) => {
+    const launch_point = lpMap.get(s.launch_point_id);
+    if (!launch_point) throw new Error(`Launch point not found: ${s.launch_point_id}`);
+    const rawSlots = slotsPerShift[i];
+    const confirmedSlots = rawSlots.filter((slot) => slot.status === "confirmed");
+    const confirmed_slots: (DisplayShiftSlot | null)[] = Array.from(
+      { length: s.number_of_slots },
+      (_, j) => {
+        if (j >= confirmedSlots.length) return null;
+        const slot = confirmedSlots[j];
+        if (slot.status === "confirmed") {
+          return {
+            id: slot.id,
+            shift_id: slot.shift_id,
+            user: slotUserMap.get(slot.user_id) ?? null, 
+            status: slot.status,
+          } as DisplayShiftSlot;
+        }
+        return null;
+      }
+    );
+    const pendingSlots = rawSlots.filter((slot) => slot.status === "pending");
+    const pending_slots: (DisplayShiftSlot | null)[] = Array.from(
+      { length: pendingSlots.length },
+       (_, j) => {
+      if (j >= pendingSlots.length) return null;
+      const slot = pendingSlots[j];
+      return {
+        id: slot.id,
+        shift_id: slot.shift_id,
+        user: slotUserMap.get(slot.user_id) ?? null, 
+        status: slot.status,
+      } as DisplayShiftSlot;
+    });
+    return {
+      id: s.id,
+      launch_point,
+      ambulance_type: s.ambulance_type as AmbulanceType,
+      ambulance: s.ambulance_id ? ambMap.get(s.ambulance_id) ?? null : null,
+      driver: s.driver_id ? (driverMap.get(s.driver_id) ?? null) : null,
+      start_date: s.start_date,
+      end_date: s.end_date,
+      start_time: s.start_time,
+      end_time: s.end_time,
+      shift_type: s.shift_type,
+      adult_only: s.adult_only,
+      number_of_slots: s.number_of_slots,
+      confirmed_slots,
+      pending_slots,
+    };
+  });
+  return displayShifts;
+}
+
 export async function getShiftsByDateRange(startDate: Date, endDate: Date): Promise<DbShift[]> {
   try {
     const shifts = await sql`
@@ -193,6 +285,72 @@ export async function getShiftsByDriver(driverId: string): Promise<DbShift[]> {
     console.error('Failed to fetch shifts by driver:', error);
     throw new Error('Failed to fetch shifts by driver.');
   }
+}
+
+// Picker: grouped by shift_type, then ambulance_type, then location (launch point)
+
+
+
+
+
+export type PickerLocationRow = {
+  id: string;
+  label: string;
+  ambulanceNumber: string | null;
+  shiftId: string;
+};
+
+export type PickerAmbulanceType = {
+  id: string;
+  label: string;
+  count: number;
+  locations: PickerLocationRow[];
+};
+
+export type PickerShiftType = {
+  id: ShiftType;
+  label: string;
+  count: number;
+  ambulanceTypes: PickerAmbulanceType[];
+};
+
+const SHIFT_TYPE_ORDER: ShiftType[] = [
+  "day",
+  "reinforcement",
+  "evening",
+  "night",
+  "over_the_machine",
+  "security",
+];
+
+
+
+export async function getShiftsForPickerDay(date: Date, tags: DbTag[]): Promise<Map<ShiftType, Map<AmbulanceType, DisplayShift[]>>> {
+  const displayShifts = await getDisplayShiftsByDate(date);
+
+  const NOAR_TAG_NAME = "נוער";
+  function  isNoar(tags: DbTag[]): boolean {
+    return tags.some((t) => t.name === NOAR_TAG_NAME);
+  }
+  
+
+  const filterShiftsForTag = (shifts: DisplayShift[]) =>
+    isNoar(tags) ? shifts.filter((s) => !s.adult_only) : shifts;
+
+  const filteredDisplayShifts = filterShiftsForTag(displayShifts);
+  // Group by shift_type -> ambulance_type -> list of DisplayShift (for location rows)
+  const byShiftType = new Map<ShiftType, Map<AmbulanceType, DisplayShift[]>>();
+
+  for (const shift of filteredDisplayShifts) {
+    const st = shift.shift_type;
+    if (!byShiftType.has(st)) byShiftType.set(st, new Map());
+    const byAmb = byShiftType.get(st)!;
+    const ambType = shift.ambulance_type as AmbulanceType;
+    if (!byAmb.has(ambType as AmbulanceType)) byAmb.set(ambType as AmbulanceType, []);
+    byAmb.get(ambType as AmbulanceType)!.push(shift);
+  }
+
+  return byShiftType;
 }
 
 // Shift Slot functions
