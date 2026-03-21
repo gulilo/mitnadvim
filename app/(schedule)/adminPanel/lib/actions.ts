@@ -1,11 +1,10 @@
 "use server";
 
 import { auth } from "@/auth";
-import { sql } from "@/app/lib/data";
 import { revalidatePath } from "next/cache";
-import { DbPermanentShift, DbShift } from "../../data/shift";
+import { createPermanentShiftRecord, createShiftRecord, PermanentShift, ShiftRecord } from "../../data/shift";
 
-export async function createPermanentShift(permanentShift: DbPermanentShift) {
+export async function createPermanentShift(permanentShift: PermanentShift) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -48,11 +47,17 @@ export async function createPermanentShift(permanentShift: DbPermanentShift) {
     }
 
 
-    await sql`
-      INSERT INTO permanent_shift (launch_point_id, shift_type, week_day, start_time, end_time, adult_only, number_of_slots, ambulance_type, created_by)
-      VALUES (${launchPointId}, ${shiftType}, ${weekDay}, ${startTime}, ${endTime}, ${adultOnly}, ${numberOfSlots}, ${ambulanceType}, ${session.user.id})
-      RETURNING id
-    `;
+    await createPermanentShiftRecord({
+      launchPointId,
+      shiftType: shiftType as "day" | "evening" | "night",
+      weekDay,
+      startTime,
+      endTime,
+      adultOnly,
+      numberOfSlots,
+      ambulanceType: ambulanceType as "white" | "atan",
+      createdBy: session.user.id,
+    });
 
     revalidatePath('/adminPanel');
   } catch (error) {
@@ -61,7 +66,7 @@ export async function createPermanentShift(permanentShift: DbPermanentShift) {
   }
 } 
 
-export async function createShift(shift: DbShift) {
+export async function createShift(shift: ShiftRecord) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -110,10 +115,21 @@ export async function createShift(shift: DbShift) {
       throw new Error('סוג אמבולנס נדרש');
     }
 
-    await sql`
-      INSERT INTO shift (launch_point_id, ambulance_type, ambulance_id, driver_id, start_date, end_date, start_time, end_time, shift_type, adult_only, number_of_slots, status, created_by)
-      VALUES (${launchPointId}, ${ambulanceType}, ${ambulanceId}, ${driverId}, ${startDate}, ${endDate}, ${startTime}, ${endTime}, ${shiftType}, ${adultOnly}, ${numberOfSlots}, ${status}, ${session.user.id})
-    `;
+    await createShiftRecord({
+      launchPointId,
+      ambulanceType: ambulanceType as "white" | "atan",
+      ambulanceId,
+      driverId,
+      startDate,
+      endDate,
+      startTime,
+      endTime,
+      shiftType,
+      adultOnly,
+      numberOfSlots,
+      status,
+      createdBy: session.user.id,
+    });
 
     revalidatePath('/adminPanel');
   } catch (error) {

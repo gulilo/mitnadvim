@@ -1,1 +1,12 @@
-export type DBNotifiction = {id: string; user_id: string; title: string; message: string; timestamp: Date; read: boolean };
+import type { Prisma } from "@prisma/client";
+
+export type Notification = Prisma.notificationGetPayload<{
+  select: {
+    id: true;
+    user_id: true;
+    title: true;
+    message: true;
+    timestamp: true;
+    read: true;
+  };
+}>;

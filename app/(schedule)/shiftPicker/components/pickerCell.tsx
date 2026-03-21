@@ -10,7 +10,7 @@ import {
 } from "@/app/components/ui/accordion";
 import { HEBREW_MONTHS } from "@/app/lib/date-utils";
 import RegisterButton from "./registerButton";
-import { DbTag } from "@/app/(user)/data/definitions";
+import { Tag } from "@/app/(user)/data/definitions";
 import { useState } from "react";
 import { approveShiftSlot, denyShiftSlot, removedriverfromshift } from "../../lib/actions";
 import { ButtonGroup } from "@/app/components/ui/button-group";
@@ -24,7 +24,7 @@ function formatShiftDateTime(date: Date | string, time: string): string {
     return `${day} ב${month} ${year} בשעה ${time}`;
 }
 
-export default function PickerCell({ shift, tags }: { shift: DisplayShift, tags: DbTag[] }) {
+export default function PickerCell({ shift, tags }: { shift: DisplayShift, tags: Tag[] }) {
     const [open, setOpen] = useState<string[]>([]);
     return (
         <Accordion type="multiple" className="w-full" value={open} onValueChange={setOpen}>
@@ -76,7 +76,7 @@ export default function PickerCell({ shift, tags }: { shift: DisplayShift, tags:
                         </div>
                         : (<Image src={"/Driver icon.svg"} alt="driver" width={20} height={20} />)
                     }
-                    {shift.ambulance_type === "intensive" ? (
+                    {shift.ambulance_type === "atan" ? (
                         <Image src={"/Paramedic Icon.svg"} alt="paramedic" width={20} height={20} />
                     ) : null}
 

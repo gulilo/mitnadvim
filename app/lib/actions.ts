@@ -2,11 +2,9 @@
 
 import { signIn, signOut } from "@/auth";
 import { AuthError } from 'next-auth';
-import {sql} from "./data";
+import { createAccountRecord, getUserByEmail } from "@/app/(user)/data/user";
 import bcrypt from "bcrypt";
 import { redirect } from 'next/navigation';
-import { auth } from "@/auth";
-import { getAccountByAccountId, getUserTags, getAreaName, getUserByAccountId } from "@/app/(user)/data/user";
 
 export async function authenticate(formData: FormData) {
     try {
@@ -44,18 +42,19 @@ export async function registerUser(formData: FormData) {
     }
 
     // Check if user already exists
-    const existingUser = await sql`SELECT id FROM account WHERE email = ${data.email}`;
-    if (existingUser.length > 0) {
+    const existingUser = await getUserByEmail(data.email);
+    if (existingUser) {
       throw new Error('User with this email already exists');
     }
 
     const hash = await bcrypt.hash(data.password, 12);
 
-    await sql`
-      INSERT INTO account (name, email, password_hash, user_group_id, created_by)
-      VALUES (${data.displayName}, ${data.email}, ${hash}, ${data.userGroupId}, '00000000-0000-0000-0000-000000000001')
-      RETURNING id
-    `;
+    await createAccountRecord({
+      displayName: data.displayName,
+      email: data.email,
+      passwordHash: hash,
+      createdBy: "00000000-0000-0000-0000-000000000001",
+    });
 
   } catch (error) {
     console.error('Registration error:', error);

@@ -2,11 +2,11 @@
 
 import { ColumnDef } from "@tanstack/react-table"
 import { ScheduleRow } from "../../../lib/actions"
-import type { DbUser } from "@/app/(user)/data/definitions"
+import type { User } from "@/app/(user)/data/definitions"
 import SchedualCell from "./schedualCell"
 
 export function getColumns(
-  onDriverAssigned: (shiftId: string, driver: DbUser) => void,
+  onDriverAssigned: (shiftId: string, driver: User) => void,
   onAmbulanceBlur: (shiftId: string, ambulanceNumber: string) => void
 ): ColumnDef<ScheduleRow>[] {
   return [

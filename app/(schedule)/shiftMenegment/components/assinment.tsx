@@ -1,7 +1,7 @@
 "use client"
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
-import { DbUser } from "@/app/(user)/data/definitions";
+import { User } from "@/app/(user)/data/definitions";
 import { DisplayShift } from "../../data/shift";
 import { updateShiftDriver } from "../../lib/actions";
 
@@ -10,10 +10,10 @@ export default function Assinment({
   onDriverAssigned,
 }: {
   shift: DisplayShift;
-  onDriverAssigned: (shiftId: string, driver: DbUser) => void;
+  onDriverAssigned: (shiftId: string, driver: User) => void;
 }) {
   const [search, setSearch] = useState("");
-  const [result, setResult] = useState<DbUser[]>([]);
+  const [result, setResult] = useState<User[]>([]);
 
   const [isSearchLoading, setIsSearchLoading] = useState(false);
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
@@ -40,7 +40,7 @@ export default function Assinment({
     };
   }, [search]);
 
-  const handleAssign = async (user: DbUser) => {
+  const handleAssign = async (user: User) => {
     setUpdatingUserId(user.id);
     try {
       await updateShiftDriver(shift.id, user.account_id);

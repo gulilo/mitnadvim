@@ -1,29 +1,37 @@
-export type DbAccount = {
-  id: string;
-  display_name: string;
-  email: string;
-  phone: string | null;
-  password_hash: string | null;
-};
+import type { Prisma } from "@prisma/client";
 
-export type DbUser = {
-  id: string;
-  account_id: string;
-  first_name: string;
-  last_name: string;
-  image_url: string | null;
-  address: string;
-  area_id: string;
-  role: string;
-  active: boolean;
-  active_date: Date | null;
-};
+export type Account = Prisma.accountGetPayload<{
+  select: {
+    id: true;
+    display_name: true;
+    email: true;
+    phone: true;
+    password_hash: true;
+  };
+}>;
 
-export type DbTag = {
-  id: string;
-  name: string;
-  category: string;
-};
+export type User = Prisma.user_infoGetPayload<{
+  select: {
+    id: true;
+    account_id: true;
+    first_name: true;
+    last_name: true;
+    image_url: true;
+    address: true;
+    area_id: true;
+    role: true;
+    active: true;
+    active_date: true;
+  };
+}>;
+
+export type Tag = Prisma.tagGetPayload<{
+  select: {
+    id: true;
+    name: true;
+    category: true;
+  };
+}>;
 
 export type DisplayTag ={
   id: string;
@@ -33,12 +41,14 @@ export type DisplayTag ={
   border: string;
 }
 
-export type DbEmergencyContact = {
-  id: string;
-  user_id: string;
-  name: string;
-  relationship: string;
-  phone: string;
-  email: string;
-  address: string;
-}
+export type EmergencyContact = Prisma.emergency_contactsGetPayload<{
+  select: {
+    id: true;
+    user_id: true;
+    name: true;
+    relationship: true;
+    phone: true;
+    email: true;
+    address: true;
+  };
+}>;

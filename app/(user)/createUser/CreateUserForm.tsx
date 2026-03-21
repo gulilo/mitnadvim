@@ -18,7 +18,7 @@ import {
 import { Button } from "@/app/components/ui/button";
 import { Separator } from "@/app/components/ui/separator";
 import { cn } from "@/app/lib/utils";
-import type { DbArea } from "@/app/(schedule)/data/launchPoint";
+import type { Area } from "@/app/(schedule)/data/launchPoint";
 import { Camera, PlusIcon } from "lucide-react";
 import { Switch } from "@/app/components/ui/switch";
 import Tags from "../components/tags";
@@ -97,7 +97,7 @@ function FormRow({
   );
 }
 
-export default function CreateUserForm({ areas, displayTags }: { areas: DbArea[], displayTags: DisplayTag[] }) {
+export default function CreateUserForm({ areas, displayTags }: { areas: Area[], displayTags: DisplayTag[] }) {
   const [formState, formAction] = useActionState(submitCreateUserForm, {});
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");

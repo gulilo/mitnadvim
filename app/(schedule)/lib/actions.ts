@@ -1,13 +1,24 @@
 "use server";
 
 import { auth } from "@/auth";
-import { sql } from "@/app/lib/data";
 import { revalidatePath } from "next/cache";
-import { getShiftsByDate, DisplayShift } from "../data/shift";
-import { DbLaunchPoint, getAllLaunchPoints, getLaunchPointById } from "../data/launchPoint";
-import { getAmbulanceById, getAmbulanceByNumber } from "../data/ambulance";
-import { getUserByAccountId, getUserTags } from "@/app/(user)/data/user";
-import { DbTag, DbUser } from "@/app/(user)/data/definitions";
+import {
+  createShiftSlotRecord,
+  getDisplayShiftsByDate,
+  DisplayShift,
+  updateShiftAmbulanceRecord,
+  updateShiftDriverRecord,
+  updateShiftSlotStatusRecord,
+} from "../data/shift";
+import {
+  createLaunchPointRecord,
+  LaunchPoint,
+  deleteLaunchPointRecord,
+  getAllLaunchPoints,
+} from "../data/launchPoint";
+import { getAmbulanceByNumber } from "../data/ambulance";
+import { getUserTags } from "@/app/(user)/data/user";
+import { Tag } from "@/app/(user)/data/definitions";
 
 /** Map shift_type from DB to schedule column key */
 const SHIFT_TYPE_TO_COLUMN: Record<string, "night" | "morning" | "reinforcement" | "evening"> = {
@@ -27,7 +38,7 @@ export type ShiftsByType = {
 };
 
 export type ScheduleRow = {
-  launch_point: DbLaunchPoint;
+  launch_point: LaunchPoint;
   ambulance_type: "white" | "atan";
   shiftsByType: ShiftsByType;
 };
@@ -46,11 +57,11 @@ export async function createLaunchPoint(formData: FormData) {
       throw new Error('Name and area are required');
     }
 
-    await sql`
-      INSERT INTO launch_point (name, area_id, created_by)
-      VALUES (${name}, ${areaId}, ${session.user.id})
-      RETURNING id
-    `;
+    await createLaunchPointRecord({
+      name,
+      areaId,
+      createdBy: session.user.id,
+    });
 
     // Revalidate the page to show the new launch point
     revalidatePath('/createLP');
@@ -72,10 +83,7 @@ export async function deleteLaunchPoint(launchPointId: string) {
     }
 
     // TODO: change to inactive instead of deleting
-    await sql`
-      DELETE FROM launch_point 
-      WHERE id = ${launchPointId}
-    `;
+    await deleteLaunchPointRecord(launchPointId);
 
     // Revalidate the page to remove the deleted launch point
     revalidatePath('/createLP');
@@ -93,11 +101,11 @@ export async function updateShiftDriver(shiftId: string, driverAccountId: string
       throw new Error("Unauthorized");
     }
 
-    await sql`
-      UPDATE shift 
-      SET driver_id = ${driverAccountId}, updated_by = ${session.user.id}
-      WHERE id = ${shiftId}
-    `;
+    await updateShiftDriverRecord({
+      shiftId,
+      driverAccountId,
+      updatedBy: session.user.id,
+    });
 
     revalidatePath("/shiftMenegment");
   } catch (error) {
@@ -114,11 +122,11 @@ export async function removedriverfromshift(shiftId: string) {
     if (!session?.user?.id) {
       throw new Error("Unauthorized");
     }
-    await sql`
-      UPDATE shift 
-      SET driver_id = NULL, updated_by = ${session.user.id}
-      WHERE id = ${shiftId}
-    `;
+    await updateShiftDriverRecord({
+      shiftId,
+      driverAccountId: null,
+      updatedBy: session.user.id,
+    });
   }
   catch (error) {
     console.error("Failed to remove driver from shift:", error);
@@ -140,11 +148,11 @@ export async function updateShiftAmbulance(shiftId: string, ambulanceNumber: str
     if (ambulanceNumber?.trim() && !ambulanceId) {
       throw new Error("Ambulance not found");
     }
-    await sql`
-      UPDATE shift 
-      SET ambulance_id = ${ambulanceId}, updated_by = ${session.user.id}
-      WHERE id = ${shiftId}
-    `;
+    await updateShiftAmbulanceRecord({
+      shiftId,
+      ambulanceId,
+      updatedBy: session.user.id,
+    });
 
     // revalidatePath("/shiftMenegment");
   } catch (error) {
@@ -157,34 +165,13 @@ export async function updateShiftAmbulance(shiftId: string, ambulanceNumber: str
 
 export async function getDisplayShifts(date: Date): Promise<ScheduleRow[]> {
   try {
-    const [launchPoints, rawShifts] = await Promise.all([
+    const [launchPoints, displayShifts] = await Promise.all([
       getAllLaunchPoints(),
-      getShiftsByDate(date),
+      getDisplayShiftsByDate(date),
     ]);
 
-    const displayShifts = await Promise.all(
-      rawShifts.map(async (shift) => ({
-        id: shift.id,
-        launch_point: (await getLaunchPointById(shift.launch_point_id)) as DbLaunchPoint,
-        ambulance_type: shift.ambulance_type,
-        ambulance: shift.ambulance_id
-          ? ((await getAmbulanceById(shift.ambulance_id)) ?? null)
-          : null,
-        driver: shift.driver_id
-          ? ((await getUserByAccountId(shift.driver_id)) as DbUser | null)
-          : null,
-        start_date: shift.start_date,
-        end_date: shift.end_date,
-        start_time: shift.start_time,
-        end_time: shift.end_time,
-        shift_type: shift.shift_type,
-        adult_only: shift.adult_only,
-        number_of_slots: shift.number_of_slots,
-      }))
-    );
-
     const groupedByLaunchPointAndType = Map.groupBy(
-      displayShifts as DisplayShift[],
+      displayShifts,
       (s: DisplayShift) => `${s.launch_point.id}:${s.ambulance_type}`
     );
 
@@ -218,22 +205,26 @@ export async function getDisplayShifts(date: Date): Promise<ScheduleRow[]> {
   }
 }
 
-export async function registerShiftSlot(shift: DisplayShift, tags: DbTag[], isNoar: boolean) {
+export async function registerShiftSlot(shift: DisplayShift, tags: Tag[], isNoar: boolean) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
       throw new Error("Unauthorized");
     }
     if (isNoar) {
-      await sql`
-        INSERT INTO shift_slot (shift_id, user_id, status, created_by)
-        VALUES (${shift.id}, ${session.user.id}, 'pending', ${session.user.id})
-      `;
+      await createShiftSlotRecord({
+        shiftId: shift.id,
+        userId: session.user.id,
+        status: "pending",
+        createdBy: session.user.id,
+      });
     } else {
-      await sql`
-        INSERT INTO shift_slot (shift_id, user_id, status, created_by)
-        VALUES (${shift.id}, ${session.user.id}, 'confirmed', ${session.user.id})
-      `;
+      await createShiftSlotRecord({
+        shiftId: shift.id,
+        userId: session.user.id,
+        status: "confirmed",
+        createdBy: session.user.id,
+      });
     }
   } catch (error) {
     console.error("Failed to register shift slot:", error);
@@ -262,11 +253,11 @@ async function updateShiftSlotStatus(shiftSlotId: string, status: "confirmed" | 
 
   await assertShiftManager(session.user.id);
 
-  await sql`
-    UPDATE shift_slot
-    SET status = ${status}, updated_by = ${session.user.id}
-    WHERE id = ${shiftSlotId}
-  `;
+  await updateShiftSlotStatusRecord({
+    shiftSlotId,
+    status,
+    updatedBy: session.user.id,
+  });
   revalidatePath("/shiftPicker");
 }
 

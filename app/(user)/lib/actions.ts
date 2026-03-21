@@ -1,17 +1,27 @@
 "use server";
 
 import { auth } from "@/auth";
-import { getAccountByAccountId, getAreaName, getUserByAccountId, getUserByEmail, getUserTags, getTagName, getTagCategory } from "../data/user";
-import { DbAccount, DbTag, DbUser } from "../data/definitions";
-import { sql } from "@/app/lib/data";
+import {
+  createAccountUserAndEmergencyRecords,
+  getAccountByAccountId,
+  getAreaName,
+  getUserByAccountId,
+  getUserByEmail,
+  getUserTags,
+  getTagName,
+  getTagCategory,
+  updateAccountPassword,
+} from "../data/user";
+import { Account, Tag, User } from "../data/definitions";
+import { createPasswordResetTokenRecord } from "../data/passwordReset";
 import crypto from "crypto";
 import bcrypt from "bcrypt";
 
 export type ProfileData = {
-  user: DbUser;
-  account: DbAccount;
+  user: User;
+  account: Account;
   areaName: string;
-  tags: DbTag[];
+  tags: Tag[];
 }
 
 export async function getProfileData() {
@@ -27,15 +37,19 @@ export async function getProfileData() {
     }
 
     const account = await getAccountByAccountId(session.user.id);
-    const areaName = await getAreaName(user.area_id);
+    if (!account) {
+      return null;
+    }
+
+    const areaName = user.area_id ? await getAreaName(user.area_id) : null;
     const tags = await getUserTags(session.user.id);
 
     return {
       user,
       account,
-      areaName,
+      areaName: areaName ?? "",
       tags,
-    } as ProfileData;
+    };
   } catch (error) {
     console.error('Failed to fetch profile data:', error);
     return null;
@@ -67,15 +81,6 @@ export async function getTagsData(tagIds: string[]) {
   } catch (error) {
     console.error('Failed to fetch tags data:', error);
     return [];
-  }
-}
-
-export async function accountExistsByEmail(email: string): Promise<boolean> {
-  try {
-    const account = await getUserByEmail(email);
-    return !!account;
-  } catch {
-    return false;
   }
 }
 
@@ -194,27 +199,8 @@ async function createAccountUserAndEmergency(params: {
   emergencyAddress: string;
 }): Promise<{ error?: string; accountId?: string }> {
   try {
-    const new_account = await sql`
-      WITH new_account AS (
-        INSERT INTO account (display_name, email, phone, password_hash, created_by)
-        VALUES (${params.displayName}, ${params.email}, ${params.phone}, ${params.passwordHash}, ${params.createdBy})
-        RETURNING id
-      ),
-      new_user AS (
-        INSERT INTO user_info (account_id, first_name, last_name, image_url, address, area_id, role, active, active_date, created_by)
-        SELECT new_account.id, ${params.firstName}, ${params.lastName}, null, ${params.address}, ${params.areaId}, ${params.qualification}, ${params.isActive}, ${params.activeDate}, ${params.createdBy}
-        FROM new_account
-        RETURNING id
-      ),
-      new_emergency AS (
-        INSERT INTO emergency_contacts (user_id, name, relationship, phone, email, address, created_by)
-        SELECT new_user.id, ${params.emergencyName}, ${params.emergencyRelationship}, ${params.emergencyPhone}, ${params.emergencyEmail}, ${params.emergencyAddress}, ${params.createdBy}
-        FROM new_user
-        RETURNING user_id
-      )
-      SELECT id FROM new_account
-    `;
-    return { accountId: new_account[0]?.id };
+    const created = await createAccountUserAndEmergencyRecords(params);
+    return { accountId: created.accountId };
   } catch (error) {
     console.error("Failed to create account, user and emergency contact:", error);
     return { error: "יצירת המשתמש נכשלה. נא לנסות שוב." };
@@ -239,7 +225,7 @@ export async function submitCreateUserForm(
   const createdBy = session.user.id;
 
   // 2. Check email uniqueness (single read)
-  const exists = await accountExistsByEmail(validated.email);
+  const exists = await getUserByEmail(validated.email);
   if (exists) {
     return { error: "חשבון עם כתובת דוא״ל זו כבר קיים במערכת" };
   }
@@ -279,10 +265,12 @@ export async function submitCreateUserForm(
   console.log("token", token);
   console.log("hashedToken", hashedToken);
  const accountId = result.accountId;
-  await sql`
-    INSERT INTO password_reset_token (account_id, token_hash, expires_at, created_by)
-    VALUES (${accountId}, ${hashedToken}, ${new Date(Date.now() + 1000 * 60 * 60 * 24)}, ${createdBy})
-  `;
+  await createPasswordResetTokenRecord({
+    accountId: accountId!,
+    tokenHash: hashedToken,
+    expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24),
+    createdBy,
+  });
 
   await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/emailWelcome`, {
     method: "POST",
@@ -369,11 +357,7 @@ export async function changePassword(
 
   const hash = await bcrypt.hash(newPassword, 12);
   try {
-    await sql`
-      UPDATE account
-      SET password_hash = ${hash}
-      WHERE id = ${targetAccountId}
-    `;
+    await updateAccountPassword(targetAccountId, hash);
     return { success: true };
   } catch (error) {
     console.error("Failed to update password:", error);

@@ -1,13 +1,29 @@
-import { sql } from "../../lib/data";
-import { DBNotifiction } from "./definitions";
+import { prisma } from "../../lib/data";
+import { Notification } from "./definitions";
 import { ReactNode } from "react";
 
 export async function getNotification(userid: string) {
   console.log(userid);
   try {
-    const DbNotifications =
-      await sql`SELECT * FROM notification WHERE user_id = ${userid}`;
-    return DbNotifications as DBNotifiction[];
+    const notifications = await prisma.notification.findMany({
+      where: { user_id: userid },
+      select: {
+        id: true,
+        user_id: true,
+        title: true,
+        message: true,
+        timestamp: true,
+        read: true,
+      },
+    });
+    return notifications.map((notification): Notification => ({
+      id: notification.id,
+      user_id: notification.user_id,
+      title: notification.title,
+      message: notification.message,
+      timestamp: notification.timestamp,
+      read: notification.read,
+    }));
   } catch (error) {
     console.error("Failed to fetch notifications:", error);
     throw new Error("Failed to fetch notifications.");

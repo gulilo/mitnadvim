@@ -1,29 +1,48 @@
-import { sql } from "../../lib/data";
+import { prisma } from "../../lib/data";
+import type { Prisma } from "@prisma/client";
 
-export type DbAmbulance = {
-  id: string;
-  number: string;
-  atan: boolean;
-};
+export type Ambulance = Prisma.ambulanceGetPayload<{
+  select: {
+    id: true;
+    number: true;
+    type: true;
+  };
+}> & { atan: boolean };
 
-export async function getAllAmbulances(): Promise<DbAmbulance[]> {
+export async function getAllAmbulances(): Promise<Ambulance[]> {
   try {
-    const ambulances = await sql`
-      SELECT * FROM ambulance ORDER BY number ASC
-    `;
-    return ambulances as DbAmbulance[];
+    const ambulances = await prisma.ambulance.findMany({
+      orderBy: { number: "asc" },
+      select: {
+        id: true,
+        number: true,
+        type: true,
+      },
+    });
+    return ambulances.map((ambulance) => ({
+      id: ambulance.id,
+      number: ambulance.number,
+      type: ambulance.type,
+      atan: ambulance.type === "atan",
+    }));
   } catch (error) {
     console.error("Failed to get all ambulances:", error);
     throw new Error("Failed to get all ambulances.");
   }
 }
 
-export async function getAmbulanceById(id: string): Promise<DbAmbulance | null> {
+export async function getAmbulanceById(id: string): Promise<Ambulance | null> {
   try {
-    const ambulance = await sql`
-      SELECT * FROM ambulance WHERE id = ${id}
-    `;
-    return ambulance[0] as DbAmbulance | null;
+    const ambulance = await prisma.ambulance.findUnique({ where: { id } });
+    if (!ambulance) {
+      return null;
+    }
+    return {
+      id: ambulance.id,
+      number: ambulance.number,
+      type: ambulance.type,
+      atan: ambulance.type === "atan",
+    };
   } catch (error) {
     console.error("Failed to get ambulance by id:", error);
     throw new Error(
@@ -34,12 +53,20 @@ export async function getAmbulanceById(id: string): Promise<DbAmbulance | null> 
 
 export async function getAmbulanceByNumber(
   ambulanceNumber: string
-): Promise<DbAmbulance | null> {
+): Promise<Ambulance | null> {
   try {
-    const ambulance = await sql`
-      SELECT * FROM ambulance WHERE number = ${ambulanceNumber}
-    `;
-    return ambulance[0] as DbAmbulance | null;
+    const ambulance = await prisma.ambulance.findFirst({
+      where: { number: ambulanceNumber },
+    });
+    if (!ambulance) {
+      return null;
+    }
+    return {
+      id: ambulance.id,
+      number: ambulance.number,
+      type: ambulance.type,
+      atan: ambulance.type === "atan",
+    };
   } catch (error) {
     console.error("Failed to get ambulance by number:", error);
     throw new Error(

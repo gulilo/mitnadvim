@@ -8,13 +8,13 @@ import {
   SelectValue,
 } from "@/app/components/ui/select";
 import { useState } from "react";
-import { DbLaunchPoint } from "../../data/launchPoint";
+import { LaunchPoint } from "../../data/launchPoint";
 import { RadioGroup, RadioGroupItem } from "@/app/components/ui/radio-group";
 import { Label } from "@/app/components/ui/label";
 import { Checkbox } from "@/app/components/ui/checkbox";
 import { Button } from "@/app/components/ui/button";
 import { createPermanentShift, createShift } from "../lib/actions";
-import { DbPermanentShift, DbShift, ShiftType } from "../../data/shift";
+import { PermanentShift, ShiftRecord, ShiftType } from "../../data/shift";
 
 
 const SHIFT_TYPES: readonly { key: ShiftType; label: string }[] = [
@@ -40,7 +40,7 @@ const daysOfWeek = [
 export default function Form({
   launchPoints,
 }: {
-  launchPoints: DbLaunchPoint[];
+  launchPoints: LaunchPoint[];
 }) {
   const [shiftTypeValue, setShiftTypeValue] = useState<ShiftType>("night");
   const [shiftFrequency, setShiftFrequency] = useState<"permanent" | "one-time">();
@@ -113,7 +113,7 @@ export default function Form({
 
       for (const dayObj of daysOfWeek) {
         if (selectedDays[dayObj.key]) {
-          const permanentShift: DbPermanentShift = {
+          const permanentShift: PermanentShift = {
             id: "",
             area_id: selectedLaunchPoint.area_id,
             launch_point_id: launchPoint,
@@ -130,7 +130,7 @@ export default function Form({
       }
     }
     if (shiftFrequency === "one-time") {
-      const shift: DbShift = {
+      const shift: ShiftRecord = {
         id: "",
         launch_point_id: launchPoint,
         start_date: new Date(startDate),
