@@ -12,12 +12,13 @@ export async function authenticate(formData: FormData) {
     try {
         const redirectTo = formData.get("redirectTo") as string || "/";
         await signIn("credentials", {
-            email: formData.get("email"),
+            phone: formData.get("phone"),
             password: formData.get("password"),
             redirectTo: redirectTo
         });
     }
     catch(error) {
+        console.error('Authentication error:', error);
         if (error instanceof AuthError) {
             switch (error.type) {
               case 'CredentialsSignin':

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Mdadan</string>
+    <string name="title_activity_main">Mdadan</string>
+    <string name="package_name">il.co.mdadan.app</string>
+    <string name="custom_url_scheme">il.co.mdadan.app</string>
+</resources>

@@ -29,7 +29,7 @@ export default function LoginForm() {
               className="w-full bg-transparent text-white placeholder-white/70 py-2 px-0 border-0 outline-none text-center"
               type="tel"
               placeholder=""
-              name="email"
+              name="phone"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               required

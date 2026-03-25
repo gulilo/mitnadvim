@@ -11,6 +11,16 @@ export async function getUserByEmail(email: string): Promise<DbAccount | undefin
     }
 }
 
+export async function getUserByPhone(phone: string): Promise<DbAccount | undefined> {
+  try {
+    const user = await sql`SELECT * FROM account WHERE phone = ${phone}`;
+    return user[0] as DbAccount;
+  } catch (error) {
+    console.error('Failed to fetch user by phone:', error);
+    throw new Error('Failed to fetch user by phone.');
+  }
+}
+
 export async function getUserByAccountId(accountId: string): Promise<DbUser | undefined> {
   try {
     const user = await sql`SELECT * FROM user_info WHERE account_id = ${accountId}`;
