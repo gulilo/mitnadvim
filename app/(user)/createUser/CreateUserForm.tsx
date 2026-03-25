@@ -2,7 +2,6 @@
 
 import { useActionState, useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import {
   Select,
   SelectContent,
@@ -19,7 +18,7 @@ import { Button } from "@/app/components/ui/button";
 import { Separator } from "@/app/components/ui/separator";
 import { cn } from "@/app/lib/utils";
 import type { Area } from "@/app/(schedule)/data/launchPoint";
-import { Camera, PlusIcon } from "lucide-react";
+import { Camera } from "lucide-react";
 import { Switch } from "@/app/components/ui/switch";
 import Tags from "../components/tags";
 import { DisplayTag } from "../data/definitions";

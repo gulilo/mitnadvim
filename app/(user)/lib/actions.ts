@@ -2,7 +2,7 @@
 
 import { auth } from "@/auth";
 import {
-  createAccountUserAndEmergencyRecords,
+  createAccountUserAndEmergency,
   getAccountByAccountId,
   getAreaName,
   getUserByAccountId,
@@ -12,17 +12,17 @@ import {
   getTagCategory,
   updateAccountPassword,
 } from "../data/user";
-import { Account, Tag, User } from "../data/definitions";
 import { createPasswordResetTokenRecord } from "../data/passwordReset";
 import crypto from "crypto";
 import bcrypt from "bcrypt";
+import { account, tag, user_info } from "@prisma/client";
 
 export type ProfileData = {
-  user: User;
-  account: Account;
+  user: user_info;
+  account: account;
   areaName: string;
-  tags: Tag[];
-}
+  tags: tag[];
+};
 
 export async function getProfileData() {
   try {
@@ -51,7 +51,7 @@ export async function getProfileData() {
       tags,
     };
   } catch (error) {
-    console.error('Failed to fetch profile data:', error);
+    console.error("Failed to fetch profile data:", error);
     return null;
   }
 }
@@ -61,13 +61,13 @@ export async function getTagsData(tagIds: string[]) {
     const tagCategories = await Promise.all(
       tagIds.map(async (tagId) => {
         return await getTagCategory(tagId);
-      })
+      }),
     );
 
     const tagNames = await Promise.all(
       tagIds.map(async (tagId) => {
         return await getTagName(tagId);
-      })
+      }),
     );
 
     const tags = tagNames.map((tagName, index) => {
@@ -79,7 +79,7 @@ export async function getTagsData(tagIds: string[]) {
 
     return tags;
   } catch (error) {
-    console.error('Failed to fetch tags data:', error);
+    console.error("Failed to fetch tags data:", error);
     return [];
   }
 }
@@ -87,32 +87,37 @@ export async function getTagsData(tagIds: string[]) {
 export type CreateUserFormState = { error?: string };
 
 function generateRandomPassword() {
-  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+  return (
+    Math.random().toString(36).substring(2, 15) +
+    Math.random().toString(36).substring(2, 15)
+  );
 }
 
 /**
  * Validates all form fields and returns parsed values or an error.
  * No DB writes — run this before any insert.
  */
-function validateCreateUserForm(formData: FormData): CreateUserFormState | {
-  ok: true;
-  email: string;
-  phone: string;
-  displayName: string;
-  firstName: string;
-  lastName: string;
-  areaId: string;
-  qualification: string;
-  address: string;
-  isActive: boolean;
-  membershipYear: string | null;
-  emergencyName: string;
-  emergencyRelationship: string;
-  emergencyPhone: string;
-  emergencyEmail: string;
-  emergencyAddress: string;
-  passwordHash: string;
-} {
+function validateCreateUserForm(formData: FormData):
+  | CreateUserFormState
+  | {
+      ok: true;
+      email: string;
+      phone: string;
+      displayName: string;
+      firstName: string;
+      lastName: string;
+      areaId: string;
+      qualification: string;
+      address: string;
+      isActive: boolean;
+      membershipYear: string | null;
+      emergencyName: string;
+      emergencyRelationship: string;
+      emergencyPhone: string;
+      emergencyEmail: string;
+      emergencyAddress: string;
+      passwordHash: string;
+    } {
   const email = (formData.get("email") as string)?.trim();
   if (!email) {
     return { error: "נא להזין כתובת דוא״ל" };
@@ -134,13 +139,17 @@ function validateCreateUserForm(formData: FormData): CreateUserFormState | {
     return { error: "נא לבחור הכשרה" };
   }
 
-  const emergencyRelationship = (formData.get("emergency_relationship") as string)?.trim();
+  const emergencyRelationship = (
+    formData.get("emergency_relationship") as string
+  )?.trim();
   if (!emergencyRelationship) {
     return { error: "נא לבחור קרבה לאיש קשר בחירום" };
   }
 
-  const emergencyName = (formData.get("emergency_name") as string)?.trim() ?? "";
-  const emergencyPhone = (formData.get("emergency_phone") as string)?.trim() ?? "";
+  const emergencyName =
+    (formData.get("emergency_name") as string)?.trim() ?? "";
+  const emergencyPhone =
+    (formData.get("emergency_phone") as string)?.trim() ?? "";
   if (!emergencyName || !emergencyPhone) {
     return { error: "נא להזין שם ומספר טלפון לאיש קשר בחירום" };
   }
@@ -148,9 +157,12 @@ function validateCreateUserForm(formData: FormData): CreateUserFormState | {
   const phone = (formData.get("phone") as string)?.trim() ?? "";
   const address = (formData.get("address") as string)?.trim() ?? "";
   const isActive = (formData.get("is_active") as string) === "true";
-  const membershipYearRaw = (formData.get("membership_year") as string)?.trim() || null;
-  const emergencyEmail = (formData.get("emergency_email") as string)?.trim() ?? "";
-  const emergencyAddress = (formData.get("emergency_address") as string)?.trim() ?? "";
+  const membershipYearRaw =
+    (formData.get("membership_year") as string)?.trim() || null;
+  const emergencyEmail =
+    (formData.get("emergency_email") as string)?.trim() ?? "";
+  const emergencyAddress =
+    (formData.get("emergency_address") as string)?.trim() ?? "";
   const passwordHash = generateRandomPassword();
   const displayName = `${firstName} ${lastName}`.trim();
 
@@ -179,7 +191,7 @@ function validateCreateUserForm(formData: FormData): CreateUserFormState | {
  * Single atomic insert: account → user_info → emergency_contacts.
  * All succeed or all roll back (single statement).
  */
-async function createAccountUserAndEmergency(params: {
+async function createAccountUserAndEmergencyRecord(params: {
   displayName: string;
   email: string;
   phone: string;
@@ -199,17 +211,20 @@ async function createAccountUserAndEmergency(params: {
   emergencyAddress: string;
 }): Promise<{ error?: string; accountId?: string }> {
   try {
-    const created = await createAccountUserAndEmergencyRecords(params);
+    const created = await createAccountUserAndEmergency(params);
     return { accountId: created.accountId };
   } catch (error) {
-    console.error("Failed to create account, user and emergency contact:", error);
+    console.error(
+      "Failed to create account, user and emergency contact:",
+      error,
+    );
     return { error: "יצירת המשתמש נכשלה. נא לנסות שוב." };
   }
 }
 
 export async function submitCreateUserForm(
   _prevState: CreateUserFormState,
-  formData: FormData
+  formData: FormData,
 ): Promise<CreateUserFormState> {
   const session = await auth();
   if (!session?.user?.id) {
@@ -235,7 +250,7 @@ export async function submitCreateUserForm(
     ? new Date(`${validated.membershipYear}-12-31`)
     : null;
 
-  const result = await createAccountUserAndEmergency({
+  const result = await createAccountUserAndEmergencyRecord({
     displayName: validated.displayName,
     email: validated.email,
     phone: validated.phone,
@@ -259,12 +274,11 @@ export async function submitCreateUserForm(
     return { error: result.error };
   }
 
-
   const token = await generateToken();
   const hashedToken = await hashToken(token);
   console.log("token", token);
   console.log("hashedToken", hashedToken);
- const accountId = result.accountId;
+  const accountId = result.accountId;
   await createPasswordResetTokenRecord({
     accountId: accountId!,
     tokenHash: hashedToken,
@@ -274,7 +288,11 @@ export async function submitCreateUserForm(
 
   await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/emailWelcome`, {
     method: "POST",
-    body: JSON.stringify({ email: validated.email, fullName: validated.displayName, token }),
+    body: JSON.stringify({
+      email: validated.email,
+      fullName: validated.displayName,
+      token,
+    }),
   });
 
   return result;
@@ -305,11 +323,12 @@ function validateNewPassword(password: string): string | null {
 
 export async function changePassword(
   _prevState: ChangePasswordFormState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ChangePasswordFormState> {
   const formaccountId = (formData.get("account_id") as string)?.trim() || "";
 
-  const currentPassword = (formData.get("current_password") as string | null)?.trim() || "";
+  const currentPassword =
+    (formData.get("current_password") as string | null)?.trim() || "";
   const newPassword = (formData.get("new_password") as string)?.trim();
   const confirmPassword = (formData.get("confirm_password") as string)?.trim();
 
@@ -327,13 +346,15 @@ export async function changePassword(
   }
 
   // If we have an account id from a reset token, skip current password + session.
-  const targetAccountId = formaccountId || (await (async () => {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return "";
-    }
-    return session.user.id;
-  })());
+  const targetAccountId =
+    formaccountId ||
+    (await (async () => {
+      const session = await auth();
+      if (!session?.user?.id) {
+        return "";
+      }
+      return session.user.id;
+    })());
 
   if (!targetAccountId) {
     return { error: "יש להתחבר כדי לשנות סיסמא" };
@@ -348,12 +369,15 @@ export async function changePassword(
   // Only require current password when not using a reset token
   if (formaccountId !== "") {
     if (currentPassword) {
-    const match = await bcrypt.compare(currentPassword, account.password_hash);
-    if (!match) {
-      return { error: "סיסמא נוכחית שגויה" };
+      const match = await bcrypt.compare(
+        currentPassword,
+        account.password_hash,
+      );
+      if (!match) {
+        return { error: "סיסמא נוכחית שגויה" };
+      }
     }
   }
-}
 
   const hash = await bcrypt.hash(newPassword, 12);
   try {

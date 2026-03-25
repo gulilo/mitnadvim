@@ -1,7 +1,6 @@
 "use client";
 import { DisplayShift } from "../../data/shift";
 import { registerShiftSlot } from "../../lib/actions";
-import Image from "next/image";
 import { Tag } from "@/app/(user)/data/definitions";
 
 

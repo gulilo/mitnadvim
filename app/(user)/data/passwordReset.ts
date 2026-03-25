@@ -8,7 +8,6 @@ export type PasswordResetTokenRecord = {
   expires_at: Date;
 };
 
-
 /**
  * Validates the token from the set-password link and returns the account id and
  * first name if the token exists and is not expired.
@@ -17,7 +16,7 @@ export type PasswordResetTokenRecord = {
  * into the password_reset_token.token_hash column.
  */
 export async function validatePasswordResetToken(
-  token: string | null | undefined
+  token: string | null | undefined,
 ): Promise<{ accountId: string; firstName: string } | null> {
   if (!token || typeof token !== "string" || token.trim() === "") {
     return null;
@@ -37,7 +36,7 @@ export async function validatePasswordResetToken(
         token_hash: true,
         expires_at: true,
       },
-    })) as PasswordResetTokenRecord | null;
+    })) as PasswordResetTokenRecord;
     if (!row) {
       return null;
     }
@@ -65,7 +64,7 @@ export async function createPasswordResetTokenRecord(params: {
       account_id: params.accountId,
       token_hash: params.tokenHash,
       expires_at: params.expiresAt,
-      created_by: params.createdBy,
+      created_by_id: params.createdBy,
     },
   });
 }

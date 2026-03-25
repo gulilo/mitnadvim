@@ -21,7 +21,10 @@ import { getUserTags } from "@/app/(user)/data/user";
 import { Tag } from "@/app/(user)/data/definitions";
 
 /** Map shift_type from DB to schedule column key */
-const SHIFT_TYPE_TO_COLUMN: Record<string, "night" | "morning" | "reinforcement" | "evening"> = {
+const SHIFT_TYPE_TO_COLUMN: Record<
+  string,
+  "night" | "morning" | "reinforcement" | "evening"
+> = {
   night: "night",
   day: "morning",
   morning: "morning",
@@ -47,14 +50,14 @@ export async function createLaunchPoint(formData: FormData) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      throw new Error('Unauthorized');
+      throw new Error("Unauthorized");
     }
 
     const name = formData.get("name") as string;
     const areaId = formData.get("areaId") as string;
 
     if (!name || !areaId) {
-      throw new Error('Name and area are required');
+      throw new Error("Name and area are required");
     }
 
     await createLaunchPointRecord({
@@ -64,10 +67,12 @@ export async function createLaunchPoint(formData: FormData) {
     });
 
     // Revalidate the page to show the new launch point
-    revalidatePath('/createLP');
+    revalidatePath("/createLP");
   } catch (error) {
-    console.error('Failed to create launch point:', error);
-    throw new Error(error instanceof Error ? error.message : 'Failed to create launch point');
+    console.error("Failed to create launch point:", error);
+    throw new Error(
+      error instanceof Error ? error.message : "Failed to create launch point",
+    );
   }
 }
 
@@ -75,26 +80,30 @@ export async function deleteLaunchPoint(launchPointId: string) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      throw new Error('Unauthorized');
+      throw new Error("Unauthorized");
     }
 
     if (!launchPointId) {
-      throw new Error('Launch point ID is required');
+      throw new Error("Launch point ID is required");
     }
 
     // TODO: change to inactive instead of deleting
     await deleteLaunchPointRecord(launchPointId);
 
     // Revalidate the page to remove the deleted launch point
-    revalidatePath('/createLP');
+    revalidatePath("/createLP");
   } catch (error) {
-    console.error('Failed to delete launch point:', error);
-    throw new Error(error instanceof Error ? error.message : 'Failed to delete launch point');
+    console.error("Failed to delete launch point:", error);
+    throw new Error(
+      error instanceof Error ? error.message : "Failed to delete launch point",
+    );
   }
 }
 
-
-export async function updateShiftDriver(shiftId: string, driverAccountId: string | null) {
+export async function updateShiftDriver(
+  shiftId: string,
+  driverAccountId: string | null,
+) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -111,7 +120,7 @@ export async function updateShiftDriver(shiftId: string, driverAccountId: string
   } catch (error) {
     console.error("Failed to update shift driver:", error);
     throw new Error(
-      error instanceof Error ? error.message : "Failed to update shift driver"
+      error instanceof Error ? error.message : "Failed to update shift driver",
     );
   }
 }
@@ -127,23 +136,27 @@ export async function removedriverfromshift(shiftId: string) {
       driverAccountId: null,
       updatedBy: session.user.id,
     });
-  }
-  catch (error) {
+  } catch (error) {
     console.error("Failed to remove driver from shift:", error);
     throw new Error(
-      error instanceof Error ? error.message : "Failed to remove driver from shift"
+      error instanceof Error
+        ? error.message
+        : "Failed to remove driver from shift",
     );
   }
 }
 
-export async function updateShiftAmbulance(shiftId: string, ambulanceNumber: string | null) {
+export async function updateShiftAmbulance(
+  shiftId: string,
+  ambulanceNumber: string | null,
+) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
       throw new Error("Unauthorized");
     }
     const ambulanceId = ambulanceNumber?.trim()
-      ? (await getAmbulanceByNumber(ambulanceNumber.trim()))?.id ?? null
+      ? ((await getAmbulanceByNumber(ambulanceNumber.trim()))?.id ?? null)
       : null;
     if (ambulanceNumber?.trim() && !ambulanceId) {
       throw new Error("Ambulance not found");
@@ -158,7 +171,9 @@ export async function updateShiftAmbulance(shiftId: string, ambulanceNumber: str
   } catch (error) {
     console.error("Failed to update shift ambulance:", error);
     throw new Error(
-      error instanceof Error ? error.message : "Failed to update shift ambulance"
+      error instanceof Error
+        ? error.message
+        : "Failed to update shift ambulance",
     );
   }
 }
@@ -172,7 +187,7 @@ export async function getDisplayShifts(date: Date): Promise<ScheduleRow[]> {
 
     const groupedByLaunchPointAndType = Map.groupBy(
       displayShifts,
-      (s: DisplayShift) => `${s.launch_point.id}:${s.ambulance_type}`
+      (s: DisplayShift) => `${s.launch_point.id}:${s.ambulance_type}`,
     );
 
     const ambulanceTypes = ["white", "atan"] as const;
@@ -188,11 +203,21 @@ export async function getDisplayShifts(date: Date): Promise<ScheduleRow[]> {
           evening: [],
         };
         for (const s of shifts) {
+          if (s.shift_type == null) continue;
           const col = SHIFT_TYPE_TO_COLUMN[s.shift_type] ?? "morning";
           shiftsByType[col].push(s);
         }
-        if (shiftsByType.night.length > 0 || shiftsByType.morning.length > 0 || shiftsByType.reinforcement.length > 0 || shiftsByType.evening.length > 0) {
-          rows.push({ launch_point: lp, ambulance_type: ambulanceType, shiftsByType });
+        if (
+          shiftsByType.night.length > 0 ||
+          shiftsByType.morning.length > 0 ||
+          shiftsByType.reinforcement.length > 0 ||
+          shiftsByType.evening.length > 0
+        ) {
+          rows.push({
+            launch_point: lp,
+            ambulance_type: ambulanceType,
+            shiftsByType,
+          });
         }
       }
     }
@@ -200,12 +225,16 @@ export async function getDisplayShifts(date: Date): Promise<ScheduleRow[]> {
   } catch (error) {
     console.error("Failed to fetch display shifts:", error);
     throw new Error(
-      error instanceof Error ? error.message : "Failed to fetch display shifts"
+      error instanceof Error ? error.message : "Failed to fetch display shifts",
     );
   }
 }
 
-export async function registerShiftSlot(shift: DisplayShift, tags: Tag[], isNoar: boolean) {
+export async function registerShiftSlot(
+  shift: DisplayShift,
+  tags: Tag[],
+  isNoar: boolean,
+) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -229,10 +258,10 @@ export async function registerShiftSlot(shift: DisplayShift, tags: Tag[], isNoar
   } catch (error) {
     console.error("Failed to register shift slot:", error);
     throw new Error(
-      error instanceof Error ? error.message : "Failed to register shift slot"
+      error instanceof Error ? error.message : "Failed to register shift slot",
     );
   }
-} 
+}
 
 async function assertShiftManager(userId: string) {
   const tags = await getUserTags(userId);
@@ -242,7 +271,10 @@ async function assertShiftManager(userId: string) {
   }
 }
 
-async function updateShiftSlotStatus(shiftSlotId: string, status: "confirmed" | "cancelled") {
+async function updateShiftSlotStatus(
+  shiftSlotId: string,
+  status: "confirmed" | "cancelled",
+) {
   const session = await auth();
   if (!session?.user?.id) {
     throw new Error("Unauthorized");
@@ -267,7 +299,7 @@ export async function approveShiftSlot(shiftSlotId: string) {
   } catch (error) {
     console.error("Failed to approve shift slot:", error);
     throw new Error(
-      error instanceof Error ? error.message : "Failed to approve shift slot"
+      error instanceof Error ? error.message : "Failed to approve shift slot",
     );
   }
 }
@@ -278,7 +310,7 @@ export async function denyShiftSlot(shiftSlotId: string) {
   } catch (error) {
     console.error("Failed to deny shift slot:", error);
     throw new Error(
-      error instanceof Error ? error.message : "Failed to deny shift slot"
+      error instanceof Error ? error.message : "Failed to deny shift slot",
     );
   }
 }

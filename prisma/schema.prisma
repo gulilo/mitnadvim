@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../generated/prisma"
 }
 
 datasource db {
@@ -7,221 +8,222 @@ datasource db {
 }
 
 model account {
-  id                                                            String                 @id(map: "user_pkey") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  display_name                                                  String                 @db.VarChar(255)
-  email                                                         String                 @unique(map: "user_email_key") @db.VarChar(255)
-  created_at                                                    DateTime               @default(now()) @db.Timestamptz(6)
-  updated_at                                                    DateTime?              @db.Timestamptz(6)
-  created_by                                                    String                 @db.Uuid
-  updated_by                                                    String?                @db.Uuid
-  password_hash                                                 String?
-  phone                                                         String?                @db.VarChar(50)
-  account_tag_account_tag_account_idToaccount                   account_tag[]          @relation("account_tag_account_idToaccount")
-  account_tag_account_tag_created_byToaccount                   account_tag[]          @relation("account_tag_created_byToaccount")
-  account_tag_account_tag_updated_byToaccount                   account_tag[]          @relation("account_tag_updated_byToaccount")
-  ambulance_ambulance_created_byToaccount                       ambulance[]            @relation("ambulance_created_byToaccount")
-  ambulance_ambulance_updated_byToaccount                       ambulance[]            @relation("ambulance_updated_byToaccount")
-  area_area_created_byToaccount                                 area[]                 @relation("area_created_byToaccount")
-  area_area_updated_byToaccount                                 area[]                 @relation("area_updated_byToaccount")
-  emergency_contacts_emergency_contacts_created_byToaccount     emergency_contacts[]   @relation("emergency_contacts_created_byToaccount")
-  emergency_contacts_emergency_contacts_updated_byToaccount     emergency_contacts[]   @relation("emergency_contacts_updated_byToaccount")
-  launch_point_launch_point_created_byToaccount                 launch_point[]         @relation("launch_point_created_byToaccount")
-  launch_point_launch_point_updated_byToaccount                 launch_point[]         @relation("launch_point_updated_byToaccount")
-  notification_notification_created_byToaccount                 notification[]         @relation("notification_created_byToaccount")
-  notification_notification_updated_byToaccount                 notification[]         @relation("notification_updated_byToaccount")
-  notification_notification_user_idToaccount                    notification[]         @relation("notification_user_idToaccount")
-  password_reset_token_password_reset_token_account_idToaccount password_reset_token[] @relation("password_reset_token_account_idToaccount")
-  password_reset_token_password_reset_token_created_byToaccount password_reset_token[] @relation("password_reset_token_created_byToaccount")
-  password_reset_token_password_reset_token_updated_byToaccount password_reset_token[] @relation("password_reset_token_updated_byToaccount")
-  permanent_shift_permanent_shift_created_byToaccount           permanent_shift[]      @relation("permanent_shift_created_byToaccount")
-  permanent_shift_permanent_shift_updated_byToaccount           permanent_shift[]      @relation("permanent_shift_updated_byToaccount")
-  permissions_permissions_created_byToaccount                   permissions[]          @relation("permissions_created_byToaccount")
-  permissions_permissions_updated_byToaccount                   permissions[]          @relation("permissions_updated_byToaccount")
-  shift_shift_created_byToaccount                               shift[]                @relation("shift_created_byToaccount")
-  shift_shift_driver_idToaccount                                shift[]                @relation("shift_driver_idToaccount")
-  shift_shift_updated_byToaccount                               shift[]                @relation("shift_updated_byToaccount")
-  shift_slot_shift_slot_created_byToaccount                     shift_slot[]           @relation("shift_slot_created_byToaccount")
-  shift_slot_shift_slot_updated_byToaccount                     shift_slot[]           @relation("shift_slot_updated_byToaccount")
-  shift_slot_shift_slot_user_idToaccount                        shift_slot[]           @relation("shift_slot_user_idToaccount")
-  tag_tag_created_byToaccount                                   tag[]                  @relation("tag_created_byToaccount")
-  tag_tag_updated_byToaccount                                   tag[]                  @relation("tag_updated_byToaccount")
-  tag_permission_tag_permission_created_byToaccount             tag_permission[]       @relation("tag_permission_created_byToaccount")
-  tag_permission_tag_permission_updated_byToaccount             tag_permission[]       @relation("tag_permission_updated_byToaccount")
-  user_info_user_info_account_idToaccount                       user_info[]            @relation("user_info_account_idToaccount")
-  user_info_user_info_created_byToaccount                       user_info[]            @relation("user_info_created_byToaccount")
-  user_info_user_info_updated_byToaccount                       user_info[]            @relation("user_info_updated_byToaccount")
+  id                             String                 @id(map: "user_pkey") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  display_name                   String                 @db.VarChar(255)
+  email                          String                 @unique(map: "user_email_key") @db.VarChar(255)
+  password_hash                  String?
+  phone                          String                 @unique @db.VarChar(50)
+  created_at                     DateTime               @default(now()) @db.Timestamptz(6)
+  updated_at                     DateTime?              @db.Timestamptz(6)
+  created_by_id                  String                 @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @db.Uuid
+  updated_by_id                  String?                @db.Uuid
+  created_by                     account                @relation("created_by_id", fields: [created_by_id], references: [id])
+  updated_by                     account?               @relation("updated_by_id", fields: [updated_by_id], references: [id])
+  accountTags_account            account_tag[]          @relation("account_id")
+  accountTags_created_by         account_tag[]          @relation("created_by_id")
+  accountTags_updated_by         account_tag[]          @relation("updated_by_id")
+  accounts_created_by            account[]              @relation("created_by_id")
+  accounts_updated_by            account[]              @relation("updated_by_id")
+  ambulances_created_by          ambulance[]            @relation("created_by_id")
+  ambulances_updated_by          ambulance[]            @relation("updated_by_id")
+  areas_created_by               area[]                 @relation("created_by_id")
+  areas_updated_by               area[]                 @relation("updated_by_id")
+  emergencyContacts_created_by   emergency_contacts[]   @relation("created_by_id")
+  emergencyContacts_updated_by   emergency_contacts[]   @relation("updated_by_id")
+  launchPoints_created_by        launch_point[]         @relation("created_by_id")
+  launchPoints_updated_by        launch_point[]         @relation("updated_by_id")
+  notifications_account          notification[]
+  notifications_created_by       notification[]         @relation("created_by_id")
+  notifications_updated_by       notification[]         @relation("updated_by_id")
+  passwordResetTokens_account    password_reset_token[]
+  passwordResetTokens_created_by password_reset_token[] @relation("created_by_id")
+  passwordResetTokens_updated_by password_reset_token[] @relation("updated_by_id")
+  permanentShifts_created_by     permanent_shift[]      @relation("created_by_id")
+  permanentShifts_updated_by     permanent_shift[]      @relation("updated_by_id")
+  permissions                    permissions[]          @relation("created_by_id")
+  permissions_updated_by         permissions[]          @relation("updated_by_id")
+  shiftSlots                     shift_slot[]
+  shiftSlots_created_by          shift_slot[]           @relation("created_by_id")
+  shiftSlots_updated_by          shift_slot[]           @relation("updated_by_id")
+  shifts_driver                  shift[]                @relation("driver_id")
+  shifts_created_by              shift[]                @relation("created_by_id")
+  shifts_updated_by              shift[]                @relation("updated_by_id")
+  tagPermissions_created_by      tag_permission[]       @relation("created_by_id")
+  tagPermissions_updated_by      tag_permission[]       @relation("updated_by_id")
+  tags_created_by                tag[]                  @relation("created_by_id")
+  tags_updated_by                tag[]                  @relation("updated_by_id")
+  userInfos_account              user_info[]            @relation("account_id")
+  userInfos_created_by           user_info[]            @relation("created_by_id")
+  userInfos_updated_by           user_info[]            @relation("updated_by_id")
 
   @@index([display_name], map: "idx_user_display_name")
   @@index([email], map: "idx_user_email")
 }
 
 model account_tag {
-  id                                      String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  account_id                              String    @db.Uuid
-  tag_id                                  String    @db.Uuid
-  created_at                              DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at                              DateTime? @db.Timestamptz(6)
-  created_by                              String    @db.Uuid
-  updated_by                              String?   @db.Uuid
-  account_account_tag_account_idToaccount account   @relation("account_tag_account_idToaccount", fields: [account_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_account_tag_account")
-  account_account_tag_created_byToaccount account   @relation("account_tag_created_byToaccount", fields: [created_by], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_account_tag_created_by")
-  tag                                     tag       @relation(fields: [tag_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_account_tag_tag")
-  account_account_tag_updated_byToaccount account?  @relation("account_tag_updated_byToaccount", fields: [updated_by], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_account_tag_updated_by")
-
-  @@unique([account_id, tag_id], map: "uk_account_tag")
+  id            String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  account_id    String    @db.Uuid
+  account       account   @relation("account_id", fields: [account_id], references: [id])
+  tagId         String    @map("tag_id") @db.Uuid
+  tag           tag       @relation(fields: [tagId], references: [id])
+  created_at    DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime? @db.Timestamptz(6)
+  created_by_id String    @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @db.Uuid
+  created_by    account   @relation("created_by_id", fields: [created_by_id], references: [id])
+  updated_by_id String?   @db.Uuid
+  updated_by    account?  @relation("updated_by_id", fields: [updated_by_id], references: [id])
 }
 
 model ambulance {
-  id                                    String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  number                                String         @db.VarChar(255)
-  created_at                            DateTime       @default(now()) @db.Timestamptz(6)
-  updated_at                            DateTime?      @db.Timestamptz(6)
-  created_by                            String         @db.Uuid
-  updated_by                            String?        @db.Uuid
-  type                                  ambulance_type
-  account_ambulance_created_byToaccount account        @relation("ambulance_created_byToaccount", fields: [created_by], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_ambulance_created_by")
-  account_ambulance_updated_byToaccount account?       @relation("ambulance_updated_byToaccount", fields: [updated_by], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_ambulance_updated_by")
-  shift                                 shift[]
+  id            String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  number        String         @db.VarChar(255)
+  type          ambulance_type
+  created_at    DateTime       @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime?      @db.Timestamptz(6)
+  created_by_id String         @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @db.Uuid
+  created_by    account        @relation("created_by_id", fields: [created_by_id], references: [id])
+  updated_by_id String?        @db.Uuid
+  updated_by    account?       @relation("updated_by_id", fields: [updated_by_id], references: [id])
+  shifts        shift[]
 }
 
 model area {
-  id                               String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  name                             String         @db.VarChar(255)
-  created_at                       DateTime       @default(now()) @db.Timestamptz(6)
-  updated_at                       DateTime?      @db.Timestamptz(6)
-  created_by                       String         @db.Uuid
-  updated_by                       String?        @db.Uuid
-  account_area_created_byToaccount account        @relation("area_created_byToaccount", fields: [created_by], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_area_created_by")
-  account_area_updated_byToaccount account?       @relation("area_updated_byToaccount", fields: [updated_by], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_area_updated_by")
-  launch_point                     launch_point[]
-  user_info                        user_info[]
+  id            String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name          String         @db.VarChar(255)
+  created_at    DateTime       @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime?      @db.Timestamptz(6)
+  created_by_id String         @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @db.Uuid
+  created_by    account        @relation("created_by_id", fields: [created_by_id], references: [id])
+  updated_by_id String?        @db.Uuid
+  updated_by    account?       @relation("updated_by_id", fields: [updated_by_id], references: [id])
+  launchPoints  launch_point[]
+  userInfos     user_info[]
 }
 
 model emergency_contacts {
-  id                                             String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  user_id                                        String    @db.Uuid
-  name                                           String    @db.VarChar(255)
-  relationship                                   String    @db.VarChar(255)
-  phone                                          String    @db.VarChar(50)
-  email                                          String?   @db.VarChar(255)
-  address                                        String?
-  created_at                                     DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at                                     DateTime? @db.Timestamptz(6)
-  created_by                                     String    @db.Uuid
-  updated_by                                     String?   @db.Uuid
-  account_emergency_contacts_created_byToaccount account   @relation("emergency_contacts_created_byToaccount", fields: [created_by], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_emergency_contacts_created_by")
-  account_emergency_contacts_updated_byToaccount account?  @relation("emergency_contacts_updated_byToaccount", fields: [updated_by], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_emergency_contacts_updated_by")
-  user_info                                      user_info @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_emergency_contacts_user")
+  id            String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  user_info_id  String    @db.Uuid
+  user          user_info @relation(fields: [user_info_id], references: [id])
+  name          String    @db.VarChar(255)
+  relationship  String    @db.VarChar(255)
+  phone         String    @db.VarChar(50)
+  email         String?   @db.VarChar(255)
+  address       String?
+  created_at    DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime? @db.Timestamptz(6)
+  created_by_id String    @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @db.Uuid
+  created_by    account   @relation("created_by_id", fields: [created_by_id], references: [id])
+  updated_by_id String?   @db.Uuid
+  updated_by    account?  @relation("updated_by_id", fields: [updated_by_id], references: [id])
 }
 
 model launch_point {
-  id                                       String            @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  area_id                                  String            @db.Uuid
-  name                                     String            @db.VarChar(255)
-  created_at                               DateTime          @default(now()) @db.Timestamptz(6)
-  updated_at                               DateTime?         @db.Timestamptz(6)
-  created_by                               String            @db.Uuid
-  updated_by                               String?           @db.Uuid
-  area                                     area              @relation(fields: [area_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_launch_point_area")
-  account_launch_point_created_byToaccount account           @relation("launch_point_created_byToaccount", fields: [created_by], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_launch_point_created_by")
-  account_launch_point_updated_byToaccount account?          @relation("launch_point_updated_byToaccount", fields: [updated_by], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_launch_point_updated_by")
-  permanent_shift                          permanent_shift[]
-  shift                                    shift[]
+  id              String            @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  area_id         String            @db.Uuid
+  area            area              @relation(fields: [area_id], references: [id])
+  name            String            @db.VarChar(255)
+  created_at      DateTime          @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime?         @db.Timestamptz(6)
+  created_by_id   String            @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @db.Uuid
+  created_by      account           @relation("created_by_id", fields: [created_by_id], references: [id])
+  updated_by_id   String?           @db.Uuid
+  updated_by      account?          @relation("updated_by_id", fields: [updated_by_id], references: [id])
+  permanentShifts permanent_shift[]
+  shifts          shift[]
 }
 
 model notification {
-  id                                       String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  user_id                                  String    @db.Uuid
-  title                                    String    @db.VarChar(255)
-  message                                  String
-  timestamp                                DateTime  @db.Timestamptz(6)
-  read                                     Boolean   @default(false)
-  created_at                               DateTime  @default(now()) @db.Timestamptz(6)
-  created_by                               String    @db.Uuid
-  updated_at                               DateTime? @db.Timestamptz(6)
-  updated_by                               String?   @db.Uuid
-  account_notification_created_byToaccount account   @relation("notification_created_byToaccount", fields: [created_by], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_notification_created_by")
-  account_notification_updated_byToaccount account?  @relation("notification_updated_byToaccount", fields: [updated_by], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_notification_updated_by")
-  account_notification_user_idToaccount    account   @relation("notification_user_idToaccount", fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_notification_user")
+  id            String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  account_id    String    @db.Uuid
+  account       account   @relation(fields: [account_id], references: [id])
+  title         String    @db.VarChar(255)
+  message       String
+  timestamp     DateTime  @db.Timestamptz(6)
+  read          Boolean   @default(false)
+  created_at    DateTime  @default(now()) @db.Timestamptz(6)
+  created_by_id String    @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @db.Uuid
+  created_by    account   @relation("created_by_id", fields: [created_by_id], references: [id])
+  updated_at    DateTime? @db.Timestamptz(6)
+  updated_by_id String?   @db.Uuid
+  updated_by    account?  @relation("updated_by_id", fields: [updated_by_id], references: [id])
 }
 
 model password_reset_token {
-  id                                               String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  account_id                                       String    @db.Uuid
-  token_hash                                       String
-  expires_at                                       DateTime  @db.Timestamptz(6)
-  created_at                                       DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at                                       DateTime? @db.Timestamptz(6)
-  created_by                                       String    @db.Uuid
-  updated_by                                       String?   @db.Uuid
-  used                                             Boolean?  @default(false)
-  account_password_reset_token_account_idToaccount account   @relation("password_reset_token_account_idToaccount", fields: [account_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_password_reset_token_account")
-  account_password_reset_token_created_byToaccount account   @relation("password_reset_token_created_byToaccount", fields: [created_by], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_password_reset_token_created_by")
-  account_password_reset_token_updated_byToaccount account?  @relation("password_reset_token_updated_byToaccount", fields: [updated_by], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_password_reset_token_updated_by")
+  id            String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  account_id    String    @db.Uuid
+  account       account   @relation(fields: [account_id], references: [id])
+  token_hash    String
+  expires_at    DateTime  @db.Timestamptz(6)
+  used          Boolean?  @default(false)
+  created_at    DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime? @db.Timestamptz(6)
+  created_by_id String    @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @db.Uuid
+  created_by    account   @relation("created_by_id", fields: [created_by_id], references: [id])
+  updated_by_id String?   @db.Uuid
+  updated_by    account?  @relation("updated_by_id", fields: [updated_by_id], references: [id])
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model permanent_shift {
-  id                                          String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  launch_point_id                             String          @db.Uuid
-  week_day                                    Int
-  start_time                                  DateTime        @db.Time(6)
-  end_time                                    DateTime        @db.Time(6)
-  adult_only                                  Boolean         @default(false)
-  number_of_slots                             Int             @default(1)
-  created_at                                  DateTime        @default(now()) @db.Timestamptz(6)
-  updated_at                                  DateTime?       @db.Timestamptz(6)
-  created_by                                  String          @db.Uuid
-  updated_by                                  String?         @db.Uuid
-  shift_type                                  shift_type
-  ambulance_type                              ambulance_type?
-  start_date                                  DateTime?       @db.Date
-  end_date                                    DateTime?       @db.Date
-  overnight                                   Boolean?        @default(true)
-  account_permanent_shift_created_byToaccount account         @relation("permanent_shift_created_byToaccount", fields: [created_by], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_permanent_shift_created_by")
-  launch_point                                launch_point    @relation(fields: [launch_point_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_permanent_shift_launch_point")
-  account_permanent_shift_updated_byToaccount account?        @relation("permanent_shift_updated_byToaccount", fields: [updated_by], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_permanent_shift_updated_by")
+  id              String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  launch_point_id String          @db.Uuid
+  launch_point    launch_point    @relation(fields: [launch_point_id], references: [id])
+  week_day        Int
+  start_time      DateTime        @db.Time(6)
+  end_time        DateTime        @db.Time(6)
+  adult_only      Boolean         @default(false)
+  number_of_slots Int             @default(1)
+  shift_type      shift_type
+  ambulance_type  ambulance_type?
+  start_date      DateTime?       @db.Date
+  end_date        DateTime?       @db.Date
+  overnight       Boolean?        @default(true)
+  created_at      DateTime        @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime?       @db.Timestamptz(6)
+  created_by_id   String          @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @db.Uuid
+  created_by      account         @relation("created_by_id", fields: [created_by_id], references: [id])
+  updated_by_id   String?         @db.Uuid
+  updated_by      account?        @relation("updated_by_id", fields: [updated_by_id], references: [id])
 
-  @@index([launch_point_id], map: "idx_permanent_shift_launch_point_id")
   @@index([week_day], map: "idx_permanent_shift_week_day")
 }
 
 model permissions {
-  id                                      String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  name                                    String           @unique @db.VarChar(255)
-  created_at                              DateTime         @default(now()) @db.Timestamptz(6)
-  updated_at                              DateTime?        @db.Timestamptz(6)
-  created_by                              String           @db.Uuid
-  updated_by                              String?          @db.Uuid
-  account_permissions_created_byToaccount account          @relation("permissions_created_byToaccount", fields: [created_by], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_permissions_created_by")
-  account_permissions_updated_byToaccount account?         @relation("permissions_updated_byToaccount", fields: [updated_by], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_permissions_updated_by")
-  tag_permission                          tag_permission[]
+  id             String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name           String           @unique @db.VarChar(255)
+  created_at     DateTime         @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime?        @db.Timestamptz(6)
+  created_by_id  String           @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @db.Uuid
+  created_by     account          @relation("created_by_id", fields: [created_by_id], references: [id])
+  updated_by_id  String?          @db.Uuid
+  updated_by     account?         @relation("updated_by_id", fields: [updated_by_id], references: [id])
+  tagPermissions tag_permission[]
 }
 
 model shift {
-  id                                String            @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  driver_id                         String?           @db.Uuid
-  launch_point_id                   String            @db.Uuid
-  start_time                        DateTime?         @db.Time(6)
-  end_time                          DateTime?         @db.Time(6)
-  created_at                        DateTime          @default(now()) @db.Timestamptz(6)
-  updated_at                        DateTime?         @db.Timestamptz(6)
-  created_by                        String            @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @db.Uuid
-  updated_by                        String?           @db.Uuid
-  start_date                        DateTime          @db.Date
-  adult_only                        Boolean?          @default(false)
-  number_of_slots                   Int?              @default(1)
-  status                            shift_status_type @default(active)
-  ambulance_id                      String?           @db.Uuid
-  shift_type                        String?           @db.VarChar
-  end_date                          DateTime?         @db.Date
-  ambulance_type                    ambulance_type
-  ambulance                         ambulance?        @relation(fields: [ambulance_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_shift_ambulance")
-  account_shift_created_byToaccount account           @relation("shift_created_byToaccount", fields: [created_by], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_shift_created_by")
-  account_shift_driver_idToaccount  account?          @relation("shift_driver_idToaccount", fields: [driver_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_shift_driver")
-  launch_point                      launch_point      @relation(fields: [launch_point_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_shift_launch_point")
-  account_shift_updated_byToaccount account?          @relation("shift_updated_byToaccount", fields: [updated_by], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_shift_updated_by")
-  shift_slot                        shift_slot[]
+  id              String            @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  driver_id       String?           @db.Uuid
+  driver          account?          @relation("driver_id", fields: [driver_id], references: [id])
+  launch_point_id String            @db.Uuid
+  launch_point    launch_point      @relation(fields: [launch_point_id], references: [id])
+  start_time      DateTime?         @db.Time(6)
+  end_time        DateTime?         @db.Time(6)
+  start_date      DateTime          @db.Date
+  adult_only      Boolean?          @default(false)
+  number_of_slots Int?              @default(1)
+  status          shift_status_type @default(active)
+  ambulance_id    String?           @db.Uuid
+  ambulance       ambulance?        @relation(fields: [ambulance_id], references: [id])
+  shift_type      shift_type
+  end_date        DateTime?         @db.Date
+  ambulance_type  ambulance_type
+  created_at      DateTime          @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime?         @db.Timestamptz(6)
+  created_by_id   String            @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @db.Uuid
+  created_by      account           @relation("created_by_id", fields: [created_by_id], references: [id])
+  updated_by_id   String?           @db.Uuid
+  updated_by      account?          @relation("updated_by_id", fields: [updated_by_id], references: [id])
+
+  shiftSlots shift_slot[]
 
   @@index([start_date], map: "idx_shift_date")
   @@index([driver_id], map: "idx_shift_driver_id")
@@ -230,72 +232,72 @@ model shift {
 }
 
 model shift_slot {
-  id                                     String       @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  shift_id                               String       @db.Uuid
-  user_id                                String       @db.Uuid
-  status                                 shift_status @default(pending)
-  created_at                             DateTime     @default(now()) @db.Timestamptz(6)
-  updated_at                             DateTime?    @db.Timestamptz(6)
-  created_by                             String       @db.Uuid
-  updated_by                             String?      @db.Uuid
-  account_shift_slot_created_byToaccount account      @relation("shift_slot_created_byToaccount", fields: [created_by], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_shift_slot_created_by")
-  shift                                  shift        @relation(fields: [shift_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_shift_slot_shift")
-  account_shift_slot_updated_byToaccount account?     @relation("shift_slot_updated_byToaccount", fields: [updated_by], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_shift_slot_updated_by")
-  account_shift_slot_user_idToaccount    account      @relation("shift_slot_user_idToaccount", fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_shift_slot_user")
+  id            String       @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  shift_id      String       @db.Uuid
+  shift         shift        @relation(fields: [shift_id], references: [id])
+  user_id       String       @db.Uuid
+  user          account      @relation(fields: [user_id], references: [id])
+  status        shift_status @default(pending)
+  created_at    DateTime     @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime?    @db.Timestamptz(6)
+  created_by_id String       @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @db.Uuid
+  created_by    account      @relation("created_by_id", fields: [created_by_id], references: [id])
+  updated_by_id String?      @db.Uuid
+  updated_by    account?     @relation("updated_by_id", fields: [updated_by_id], references: [id])
 
   @@unique([shift_id, user_id], map: "uk_shift_slot")
 }
 
 model tag {
-  id                              String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  name                            String           @db.VarChar(255)
-  created_at                      DateTime         @default(now()) @db.Timestamptz(6)
-  updated_at                      DateTime?        @db.Timestamptz(6)
-  created_by                      String           @db.Uuid
-  updated_by                      String?          @db.Uuid
-  category                        String?          @db.VarChar(255)
-  account_tag                     account_tag[]
-  account_tag_created_byToaccount account          @relation("tag_created_byToaccount", fields: [created_by], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_tag_created_by")
-  account_tag_updated_byToaccount account?         @relation("tag_updated_byToaccount", fields: [updated_by], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_tag_updated_by")
-  tag_permission                  tag_permission[]
+  id             String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name           String           @db.VarChar(255)
+  created_at     DateTime         @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime?        @db.Timestamptz(6)
+  created_by_id  String           @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @db.Uuid
+  created_by     account          @relation("created_by_id", fields: [created_by_id], references: [id])
+  updated_by_id  String?          @db.Uuid
+  updated_by     account?         @relation("updated_by_id", fields: [updated_by_id], references: [id])
+  category       String?          @db.VarChar(255)
+  accountTags    account_tag[]
+  tagPermissions tag_permission[]
 }
 
 model tag_permission {
-  id                                         String      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  tag_id                                     String      @db.Uuid
-  permission_id                              String      @db.Uuid
-  created_at                                 DateTime    @default(now()) @db.Timestamptz(6)
-  updated_at                                 DateTime?   @db.Timestamptz(6)
-  created_by                                 String      @db.Uuid
-  updated_by                                 String?     @db.Uuid
-  account_tag_permission_created_byToaccount account     @relation("tag_permission_created_byToaccount", fields: [created_by], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_tag_permission_created_by")
-  permissions                                permissions @relation(fields: [permission_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_tag_permission_permission")
-  tag                                        tag         @relation(fields: [tag_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_tag_permission_tag")
-  account_tag_permission_updated_byToaccount account?    @relation("tag_permission_updated_byToaccount", fields: [updated_by], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_tag_permission_updated_by")
+  id            String      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  tag_id        String      @db.Uuid
+  tag           tag         @relation(fields: [tag_id], references: [id])
+  permission_id String      @db.Uuid
+  permission    permissions @relation(fields: [permission_id], references: [id])
+  created_at    DateTime    @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime?   @db.Timestamptz(6)
+  created_by_id String      @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @db.Uuid
+  created_by    account     @relation("created_by_id", fields: [created_by_id], references: [id])
+  updated_by_id String?     @db.Uuid
+  updated_by    account?    @relation("updated_by_id", fields: [updated_by_id], references: [id])
 
   @@unique([tag_id, permission_id], map: "uk_tag_permission")
 }
 
 model user_info {
-  id                                    String               @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  account_id                            String               @db.Uuid
-  first_name                            String?              @db.VarChar(255)
-  last_name                             String?              @db.VarChar(255)
-  address                               String?
-  created_at                            DateTime             @default(now()) @db.Timestamptz(6)
-  updated_at                            DateTime?            @db.Timestamptz(6)
-  created_by                            String               @db.Uuid
-  updated_by                            String?              @db.Uuid
-  image_url                             String?
-  role                                  String?              @db.VarChar(255)
-  area_id                               String?              @db.Uuid
-  active                                Boolean              @default(false)
-  active_date                           DateTime?            @db.Date
-  emergency_contacts                    emergency_contacts[]
-  account_user_info_account_idToaccount account              @relation("user_info_account_idToaccount", fields: [account_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_user_info_account")
-  area                                  area?                @relation(fields: [area_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_user_info_area")
-  account_user_info_created_byToaccount account              @relation("user_info_created_byToaccount", fields: [created_by], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_user_info_created_by")
-  account_user_info_updated_byToaccount account?             @relation("user_info_updated_byToaccount", fields: [updated_by], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_user_info_updated_by")
+  id                String               @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  account_id        String               @db.Uuid
+  account           account              @relation("account_id", fields: [account_id], references: [id])
+  first_name        String?              @db.VarChar(255)
+  last_name         String?              @db.VarChar(255)
+  address           String?
+  created_at        DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime?            @db.Timestamptz(6)
+  created_by_id     String               @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @db.Uuid
+  created_by        account              @relation("created_by_id", fields: [created_by_id], references: [id])
+  updated_by_id     String?              @db.Uuid
+  updated_by        account?             @relation("updated_by_id", fields: [updated_by_id], references: [id])
+  image_url         String?
+  role              String?              @db.VarChar(255)
+  area_id           String?              @db.Uuid
+  area              area?                @relation(fields: [area_id], references: [id])
+  active            Boolean              @default(false)
+  active_date       DateTime?            @db.Date
+  emergencyContacts emergency_contacts[]
 }
 
 enum ambulance_type {

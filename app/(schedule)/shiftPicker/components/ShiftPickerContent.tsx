@@ -5,7 +5,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/app/components/ui/accordion";
-import type { AmbulanceType, DisplayShift, PickerShiftType, ShiftType } from "../../data/shift";
+import type { AmbulanceType, DisplayShift, ShiftType } from "../../data/shift";
 import PickerCell from "./pickerCell";
 import { Tag } from "@/app/(user)/data/definitions";
 

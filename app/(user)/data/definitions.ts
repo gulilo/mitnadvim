@@ -44,7 +44,7 @@ export type DisplayTag ={
 export type EmergencyContact = Prisma.emergency_contactsGetPayload<{
   select: {
     id: true;
-    user_id: true;
+    user_info_id: true;
     name: true;
     relationship: true;
     phone: true;

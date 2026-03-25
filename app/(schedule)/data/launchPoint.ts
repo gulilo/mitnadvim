@@ -1,5 +1,5 @@
 import { prisma } from "../../lib/data";
-import type { Prisma } from "@prisma/client";
+import type { area, launch_point, Prisma } from "@prisma/client";
 
 export type LaunchPoint = Prisma.launch_pointGetPayload<{
   select: {
@@ -16,72 +16,47 @@ export type Area = Prisma.areaGetPayload<{
   };
 }>;
 
-export async function getAllLaunchPoints(): Promise<LaunchPoint[]> {
+export async function getAllLaunchPoints(): Promise<launch_point[]> {
   try {
-    const launchPoints = await prisma.launch_point.findMany({
-      orderBy: { name: "asc" },
-      select: {
-        id: true,
-        area_id: true,
-        name: true,
-      },
-    });
-    return launchPoints.map((launchPoint) => ({
-      id: launchPoint.id,
-      area_id: launchPoint.area_id,
-      name: launchPoint.name,
-    }));
+    return await prisma.launch_point.findMany();
   } catch (error) {
-    console.error('Failed to fetch launch points:', error);
-    throw new Error('Failed to fetch launch points.');
+    console.error("Failed to fetch launch points:", error);
+    throw new Error("Failed to fetch launch points.");
   }
 }
 
-export async function getAllAreas(): Promise<Area[]> {
+export async function getAllAreas(): Promise<area[]> {
   try {
-    const areas = await prisma.area.findMany({
-      orderBy: { name: "asc" },
-      select: {
-        id: true,
-        name: true,
-      },
-    });
-    return areas.map((area) => ({
-      id: area.id,
-      name: area.name,
-    }));
+    return await prisma.area.findMany();
   } catch (error) {
-    console.error('Failed to fetch areas:', error);
-    throw new Error('Failed to fetch areas.');
+    console.error("Failed to fetch areas:", error);
+    throw new Error("Failed to fetch areas.");
   }
 }
 
 export async function getAreaName(areaId: string): Promise<string | null> {
   try {
-    const area = await prisma.area.findUnique({
-      where: { id: areaId },
-      select: { name: true },
-    });
-    return area?.name ?? null;
+    return (
+      (
+        await prisma.area.findUnique({
+          where: { id: areaId },
+          select: { name: true },
+        })
+      )?.name ?? null
+    );
   } catch (error) {
-    console.error('Failed to fetch area name:', error);
+    console.error("Failed to fetch area name:", error);
     return null;
   }
 }
 
-export async function getLaunchPointById(id: string): Promise<LaunchPoint | null> {
+export async function getLaunchPointById(
+  id: string,
+): Promise<launch_point | null> {
   try {
-    const launchPoint = await prisma.launch_point.findUnique({ where: { id } });
-    if (!launchPoint) {
-      return null;
-    }
-    return {
-      id: launchPoint.id,
-      area_id: launchPoint.area_id,
-      name: launchPoint.name,
-    };
+    return await prisma.launch_point.findUnique({ where: { id } });
   } catch (error) {
-    console.error('Failed to fetch launch point:', error);
+    console.error("Failed to fetch launch point:", error);
     return null;
   }
 }
@@ -94,8 +69,8 @@ export async function createLaunchPointRecord(params: {
   return prisma.launch_point.create({
     data: {
       name: params.name,
-      area_id: params.areaId,
-      created_by: params.createdBy,
+      area: { connect: { id: params.areaId } },
+      created_by: { connect: { id: params.createdBy } },
     },
   });
 }

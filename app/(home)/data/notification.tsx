@@ -6,10 +6,10 @@ export async function getNotification(userid: string) {
   console.log(userid);
   try {
     const notifications = await prisma.notification.findMany({
-      where: { user_id: userid },
+      where: { account_id: userid },
       select: {
         id: true,
-        user_id: true,
+        account_id: true,
         title: true,
         message: true,
         timestamp: true,
@@ -18,7 +18,7 @@ export async function getNotification(userid: string) {
     });
     return notifications.map((notification): Notification => ({
       id: notification.id,
-      user_id: notification.user_id,
+      account_id: notification.account_id,
       title: notification.title,
       message: notification.message,
       timestamp: notification.timestamp,

@@ -9,7 +9,6 @@ import MenuProfile from "./MenuProfile";
 import Link from "next/link";
 import { Separator } from "../ui/separator";
 import { handleSignOut } from "@/app/lib/actions";
-import { redirect } from "next/navigation";
 import { getProfileData, ProfileData } from "@/app/(user)/lib/actions";
 import { getUserPermissions } from "@/app/(user)/data/user";
 

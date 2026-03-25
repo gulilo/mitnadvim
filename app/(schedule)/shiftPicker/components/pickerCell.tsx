@@ -86,7 +86,7 @@ export default function PickerCell({ shift, tags }: { shift: DisplayShift, tags:
                                 <div key={slot.id}>
                                     <div key={slot.id}>{slot.user?.first_name ?? "—"}</div>
                                     {tags.some((tag) => tag.name === "רכז שיבוצים") ? (
-                                        <button onClick={() => denyShiftSlot(slot.id) } className="border-3 border-red-500 px-4 text-red-500 py-2 rounded-md">ביטול שיבוץ</button>
+                                        <button onClick={() => denyShiftSlot(slot.id)} className="border-3 border-red-500 px-4 text-red-500 py-2 rounded-md">ביטול שיבוץ</button>
                                     ) : null}
                                 </div>
                             ) : (

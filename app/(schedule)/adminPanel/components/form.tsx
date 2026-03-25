@@ -14,7 +14,8 @@ import { Label } from "@/app/components/ui/label";
 import { Checkbox } from "@/app/components/ui/checkbox";
 import { Button } from "@/app/components/ui/button";
 import { createPermanentShift, createShift } from "../lib/actions";
-import { PermanentShift, ShiftRecord, ShiftType } from "../../data/shift";
+import { PermanentShiftRecord, ShiftRecord, ShiftType } from "../../data/shift";
+import { ambulance_type, shift_status_type, shift_type } from "@prisma/client";
 
 
 const SHIFT_TYPES: readonly { key: ShiftType; label: string }[] = [
@@ -42,7 +43,7 @@ export default function Form({
 }: {
   launchPoints: LaunchPoint[];
 }) {
-  const [shiftTypeValue, setShiftTypeValue] = useState<ShiftType>("night");
+  const [shiftTypeValue, setShiftTypeValue] = useState<shift_type>("night");
   const [shiftFrequency, setShiftFrequency] = useState<"permanent" | "one-time">();
   const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
   const [endDate, setEndDate] = useState(new Date().toISOString().split("T")[0]);
@@ -79,15 +80,15 @@ export default function Form({
   };
 
   const handleShiftTypeChange = (value: string) => {
-    setShiftTypeValue(value as ShiftType);
-    const times = SHIFT_TYPE_TIMES[value as ShiftType];
+    setShiftTypeValue(value as shift_type);
+    const times = SHIFT_TYPE_TIMES[value as shift_type];
     if (times) {
       setStartTime(times.start);
       setEndTime(times.end);
     }
   };
 
-  const handleSabmit = async (formData: FormData) => {
+  const handleSabmit = async () => {
     if (shiftFrequency === "permanent") {
       if (!launchPoint) {
         alert("אנא בחר נקודת הזנקה");
@@ -113,37 +114,34 @@ export default function Form({
 
       for (const dayObj of daysOfWeek) {
         if (selectedDays[dayObj.key]) {
-          const permanentShift: PermanentShift = {
-            id: "",
-            area_id: selectedLaunchPoint.area_id,
+          const permanentShift : PermanentShiftRecord = {
             launch_point_id: launchPoint,
             shift_type: shiftTypeValue,
             week_day: dayObj.value,
-            start_time: startTime,
-            end_time: endTime,
+            start_time: new Date(startTime),
+            end_time: new Date(endTime),
             adult_only: availability === "adults-only",
             number_of_slots: parseInt(numEscorts),
-            ambulance_type: ambulanceType as "white" | "atan",
+            ambulance_type: ambulanceType as ambulance_type,
           };
           await createPermanentShift(permanentShift);
         }
       }
     }
     if (shiftFrequency === "one-time") {
-      const shift: ShiftRecord = {
-        id: "",
+      const shift : ShiftRecord = {
         launch_point_id: launchPoint,
         start_date: new Date(startDate),
         end_date: new Date(endDate),
-        start_time: startTime,
-        end_time: endTime,
-        shift_type: shiftTypeValue as "day" | "evening" | "night",
+        start_time: new Date(startTime),
+        end_time: new Date(endTime),
+        shift_type: shiftTypeValue as shift_type,
         adult_only: availability === "adults-only",
         number_of_slots: parseInt(numEscorts),
-        status: "active",
+        status: "active" as shift_status_type,
         ambulance_id: null,
         driver_id: null,
-        ambulance_type: ambulanceType as "white" | "atan",
+        ambulance_type: ambulanceType as ambulance_type,
       };
       await createShift(shift);
     }
