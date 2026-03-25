@@ -3,8 +3,8 @@
 import { authenticate } from "../../lib/actions";
 import Image from "next/image";
 import { useState } from "react";
-import ForgotPasswordPanel from "../components/forgotPasswordPanel";
-import Footer from "../components/footer";
+import ForgotPasswordPanel from "./components/forgotPasswordPanel";
+import Footer from "./components/footer";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);

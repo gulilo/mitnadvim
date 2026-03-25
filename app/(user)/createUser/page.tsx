@@ -1,9 +1,7 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import Image from "next/image";
-import MainMenu from "@/app/components/layout/mainMenu";
 import { getAllAreas } from "@/app/(schedule)/data/launchPoint";
-import CreateUserForm from "./CreateUserForm";
+import CreateUserForm from "./components/CreateUserForm";
 import { getAllTags, getDisplayTags } from "../data/user";
 
 export default async function CreateUserPage() {

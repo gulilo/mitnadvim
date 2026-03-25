@@ -3,7 +3,7 @@
 import { EyeOff, Lock, LockKeyhole } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { useActionState } from "react";
-import { changePassword, ChangePasswordFormState } from "../lib/actions";
+import { changePassword, ChangePasswordFormState } from "../../lib/actions";
 import { redirect } from "next/navigation";
 
 async function changePasswordAction(prevState: ChangePasswordFormState, formData: FormData): Promise<ChangePasswordFormState> {

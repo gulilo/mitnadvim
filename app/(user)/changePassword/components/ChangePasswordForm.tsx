@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Lock, LockKeyhole, AlertCircle } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
-import { changePassword, type ChangePasswordFormState } from "../lib/actions";
+import { changePassword, type ChangePasswordFormState } from "../../lib/actions";
 
 function PasswordField({
   id,

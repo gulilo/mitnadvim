@@ -10,7 +10,7 @@ import { getAccountByAccountId, getUserTags, getAreaName, getUserByAccountId } f
 
 export async function authenticate(formData: FormData) {
     try {
-        const redirectTo = formData.get("redirectTo") as string || "/user";
+        const redirectTo = formData.get("redirectTo") as string || "/";
         await signIn("credentials", {
             email: formData.get("email"),
             password: formData.get("password"),

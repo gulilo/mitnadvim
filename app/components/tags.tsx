@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/app/lib/utils";
-import { DisplayTag } from "../data/definitions";
+import { DisplayTag } from "../(user)/data/definitions";
 
 export default function Tags({ tags }: { tags: DisplayTag[] }) {
   if (!tags || tags.length === 0) {

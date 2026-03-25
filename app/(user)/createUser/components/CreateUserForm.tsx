@@ -21,9 +21,9 @@ import { cn } from "@/app/lib/utils";
 import type { DbArea } from "@/app/(schedule)/data/launchPoint";
 import { Camera, PlusIcon } from "lucide-react";
 import { Switch } from "@/app/components/ui/switch";
-import Tags from "../components/tags";
-import { DisplayTag } from "../data/definitions";
-import { submitCreateUserForm } from "../lib/actions";
+import Tags from "../../../components/tags";
+import { DisplayTag } from "../../data/definitions";
+import { submitCreateUserForm } from "../../lib/actions";
 
 const QUALIFICATION_OPTIONS = [
   { value: "first_aid_m", label: "מגיש עזרה ראשונה" },
