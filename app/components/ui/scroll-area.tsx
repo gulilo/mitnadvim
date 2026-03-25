@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area";
+import { ScrollArea as ScrollAreaPrimitive } from "radix-ui";
 
 import { cn } from "@/app/lib/utils";
 
@@ -41,7 +41,7 @@ function ScrollBar({
       className={cn(
         "flex touch-none p-px transition-colors select-none",
         orientation === "vertical" &&
-          "h-full w-2.5 border-r border-r-transparent right-0 pt-3",
+          "h-full w-2.5 border-e border-e-transparent end-0 pt-3",
         orientation === "horizontal" &&
           "h-2.5 flex-col border-t border-t-transparent",
         className

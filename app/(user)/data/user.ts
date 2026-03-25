@@ -58,7 +58,7 @@ export async function getAreaName(areaId: string): Promise<string | null> {
 export async function getUserTags(accountId: string): Promise<DbTag[]> {
   try {
     const tags = await sql`
-      SELECT * 
+      SELECT t.id, t.name, t.category
       FROM tag t
       INNER JOIN account_tag at ON t.id = at.tag_id
       WHERE at.account_id = ${accountId}`;
@@ -95,7 +95,7 @@ export async function getUserPermissions(tags: DbTag[]): Promise<string[]> {
     if (!tags || tags.length === 0) {
       return [];
     }
-
+    console.log("tags", tags);
     // Join tag_permission with permissions table to get permission names
     // Use DISTINCT to avoid duplicate permissions if multiple tags have the same permission
     const permissions = await sql`
