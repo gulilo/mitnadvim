@@ -16,6 +16,13 @@ import { approveShiftSlot, denyShiftSlot, removedriverfromshift } from "../../li
 import { ButtonGroup } from "@/app/components/ui/button-group";
 import { Button } from "@/app/components/ui/button";
 
+function slotVolunteerName(slot: DisplayShift["confirmed_slots"][number]): string {
+    if (!slot?.user) return "—";
+    const { first_name, last_name } = slot.user;
+    const name = [first_name, last_name].filter(Boolean).join(" ").trim();
+    return name || "—";
+}
+
 function formatShiftDateTime(date: Date | string, time: string): string {
     const d = typeof date === "string" ? new Date(date) : date;
     const day = d.getDate();
@@ -41,7 +48,7 @@ export default function PickerCell({ shift, tags }: { shift: DisplayShift, tags:
 
                     {shift.confirmed_slots.map((slot, index) => (
                         slot ? (
-                            <div key={slot.id}>{slot.user?.first_name ?? "—"}</div>
+                            <div key={slot.id}>{slotVolunteerName(slot)}</div>
                         ) : (
                             <Image key={`empty-${index}`} src="/Icon.svg" alt="slot" width={20} height={20} />
                         )
@@ -84,7 +91,7 @@ export default function PickerCell({ shift, tags }: { shift: DisplayShift, tags:
                         {shift.confirmed_slots.map((slot, index) => (
                             slot ? (
                                 <div key={slot.id}>
-                                    <div key={slot.id}>{slot.user?.first_name ?? "—"}</div>
+                                    <div key={slot.id}>{slotVolunteerName(slot)}</div>
                                     {tags.some((tag) => tag.name === "רכז שיבוצים") ? (
                                         <button onClick={() => denyShiftSlot(slot.id)} className="border-3 border-red-500 px-4 text-red-500 py-2 rounded-md">ביטול שיבוץ</button>
                                     ) : null}
@@ -98,7 +105,7 @@ export default function PickerCell({ shift, tags }: { shift: DisplayShift, tags:
                             shift.pending_slots.map((slot, index) => (
                                 slot ? (
                                     <div key={slot.id}>
-                                        <div key={slot.id}>{slot.user?.first_name ?? "—"}</div>
+                                        <div key={slot.id}>{slotVolunteerName(slot)}</div>
                                         <ButtonGroup dir="ltr">
                                             <Button variant="destructive" className="bg-red-500 text-white" onClick={() => approveShiftSlot(slot.id)}>אישור</Button>
                                             <Button variant="outline" className=" bg-transparent" onClick={() => denyShiftSlot(slot.id)}>ביטול</Button>

@@ -28,6 +28,7 @@ export default async function ShiftPickerPage({
     const { date } = await searchParams;
     const paramDate = date ?? new Date().toLocaleDateString("he-IL");
     const selectedDate = parseHebrewDate(paramDate) ?? new Date();
+    console.log("selectedDate", selectedDate);
     const shiftsData = await getShiftsForPickerDay(selectedDate, tags);
     console.log("shiftsData", shiftsData);
 

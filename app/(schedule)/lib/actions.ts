@@ -3,6 +3,10 @@
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import {
+  getUserByAccountId,
+  getUserTags,
+} from "@/app/(user)/data/user";
+import {
   createShiftSlotRecord,
   getDisplayShiftsByDate,
   DisplayShift,
@@ -17,7 +21,6 @@ import {
   getAllLaunchPoints,
 } from "../data/launchPoint";
 import { getAmbulanceByNumber } from "../data/ambulance";
-import { getUserTags } from "@/app/(user)/data/user";
 import { Tag } from "@/app/(user)/data/definitions";
 
 /** Map shift_type from DB to schedule column key */
@@ -102,7 +105,7 @@ export async function deleteLaunchPoint(launchPointId: string) {
 
 export async function updateShiftDriver(
   shiftId: string,
-  driverAccountId: string | null,
+  driverUserInfoId: string | null,
 ) {
   try {
     const session = await auth();
@@ -112,7 +115,7 @@ export async function updateShiftDriver(
 
     await updateShiftDriverRecord({
       shiftId,
-      driverAccountId,
+      driverUserInfoId,
       updatedBy: session.user.id,
     });
 
@@ -133,7 +136,7 @@ export async function removedriverfromshift(shiftId: string) {
     }
     await updateShiftDriverRecord({
       shiftId,
-      driverAccountId: null,
+      driverUserInfoId: null,
       updatedBy: session.user.id,
     });
   } catch (error) {
@@ -240,17 +243,21 @@ export async function registerShiftSlot(
     if (!session?.user?.id) {
       throw new Error("Unauthorized");
     }
+    const profile = await getUserByAccountId(session.user.id);
+    if (!profile) {
+      throw new Error("לא נמצא פרופיל משתמש");
+    }
     if (isNoar) {
       await createShiftSlotRecord({
         shiftId: shift.id,
-        userId: session.user.id,
+        userInfoId: profile.id,
         status: "pending",
         createdBy: session.user.id,
       });
     } else {
       await createShiftSlotRecord({
         shiftId: shift.id,
-        userId: session.user.id,
+        userInfoId: profile.id,
         status: "confirmed",
         createdBy: session.user.id,
       });

@@ -15,8 +15,8 @@ model account {
   phone                          String                 @unique @db.VarChar(50)
   created_at                     DateTime               @default(now()) @db.Timestamptz(6)
   updated_at                     DateTime?              @db.Timestamptz(6)
-  created_by_id                  String                 @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @db.Uuid
-  updated_by_id                  String?                @db.Uuid
+  created_by_id                  String                 @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @map("created_by") @db.Uuid
+  updated_by_id                  String?                @map("updated_by") @db.Uuid
   created_by                     account                @relation("created_by_id", fields: [created_by_id], references: [id])
   updated_by                     account?               @relation("updated_by_id", fields: [updated_by_id], references: [id])
   accountTags_account            account_tag[]          @relation("account_id")
@@ -42,17 +42,15 @@ model account {
   permanentShifts_updated_by     permanent_shift[]      @relation("updated_by_id")
   permissions                    permissions[]          @relation("created_by_id")
   permissions_updated_by         permissions[]          @relation("updated_by_id")
-  shiftSlots                     shift_slot[]
   shiftSlots_created_by          shift_slot[]           @relation("created_by_id")
   shiftSlots_updated_by          shift_slot[]           @relation("updated_by_id")
-  shifts_driver                  shift[]                @relation("driver_id")
   shifts_created_by              shift[]                @relation("created_by_id")
   shifts_updated_by              shift[]                @relation("updated_by_id")
   tagPermissions_created_by      tag_permission[]       @relation("created_by_id")
   tagPermissions_updated_by      tag_permission[]       @relation("updated_by_id")
   tags_created_by                tag[]                  @relation("created_by_id")
   tags_updated_by                tag[]                  @relation("updated_by_id")
-  userInfos_account              user_info[]            @relation("account_id")
+  profile                        user_info?             @relation("account_id")
   userInfos_created_by           user_info[]            @relation("created_by_id")
   userInfos_updated_by           user_info[]            @relation("updated_by_id")
 
@@ -68,10 +66,12 @@ model account_tag {
   tag           tag       @relation(fields: [tagId], references: [id])
   created_at    DateTime  @default(now()) @db.Timestamptz(6)
   updated_at    DateTime? @db.Timestamptz(6)
-  created_by_id String    @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @db.Uuid
+  created_by_id String    @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @map("created_by") @db.Uuid
   created_by    account   @relation("created_by_id", fields: [created_by_id], references: [id])
-  updated_by_id String?   @db.Uuid
+  updated_by_id String?   @map("updated_by") @db.Uuid
   updated_by    account?  @relation("updated_by_id", fields: [updated_by_id], references: [id])
+
+  @@unique([account_id, tagId], map: "uk_account_tag")
 }
 
 model ambulance {
@@ -80,9 +80,9 @@ model ambulance {
   type          ambulance_type
   created_at    DateTime       @default(now()) @db.Timestamptz(6)
   updated_at    DateTime?      @db.Timestamptz(6)
-  created_by_id String         @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @db.Uuid
+  created_by_id String         @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @map("created_by") @db.Uuid
   created_by    account        @relation("created_by_id", fields: [created_by_id], references: [id])
-  updated_by_id String?        @db.Uuid
+  updated_by_id String?        @map("updated_by") @db.Uuid
   updated_by    account?       @relation("updated_by_id", fields: [updated_by_id], references: [id])
   shifts        shift[]
 }
@@ -92,9 +92,9 @@ model area {
   name          String         @db.VarChar(255)
   created_at    DateTime       @default(now()) @db.Timestamptz(6)
   updated_at    DateTime?      @db.Timestamptz(6)
-  created_by_id String         @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @db.Uuid
+  created_by_id String         @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @map("created_by") @db.Uuid
   created_by    account        @relation("created_by_id", fields: [created_by_id], references: [id])
-  updated_by_id String?        @db.Uuid
+  updated_by_id String?        @map("updated_by") @db.Uuid
   updated_by    account?       @relation("updated_by_id", fields: [updated_by_id], references: [id])
   launchPoints  launch_point[]
   userInfos     user_info[]
@@ -102,7 +102,7 @@ model area {
 
 model emergency_contacts {
   id            String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  user_info_id  String    @db.Uuid
+  user_info_id  String    @map("user_id") @db.Uuid
   user          user_info @relation(fields: [user_info_id], references: [id])
   name          String    @db.VarChar(255)
   relationship  String    @db.VarChar(255)
@@ -111,9 +111,9 @@ model emergency_contacts {
   address       String?
   created_at    DateTime  @default(now()) @db.Timestamptz(6)
   updated_at    DateTime? @db.Timestamptz(6)
-  created_by_id String    @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @db.Uuid
+  created_by_id String    @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @map("created_by") @db.Uuid
   created_by    account   @relation("created_by_id", fields: [created_by_id], references: [id])
-  updated_by_id String?   @db.Uuid
+  updated_by_id String?   @map("updated_by") @db.Uuid
   updated_by    account?  @relation("updated_by_id", fields: [updated_by_id], references: [id])
 }
 
@@ -124,9 +124,9 @@ model launch_point {
   name            String            @db.VarChar(255)
   created_at      DateTime          @default(now()) @db.Timestamptz(6)
   updated_at      DateTime?         @db.Timestamptz(6)
-  created_by_id   String            @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @db.Uuid
+  created_by_id   String            @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @map("created_by") @db.Uuid
   created_by      account           @relation("created_by_id", fields: [created_by_id], references: [id])
-  updated_by_id   String?           @db.Uuid
+  updated_by_id   String?           @map("updated_by") @db.Uuid
   updated_by      account?          @relation("updated_by_id", fields: [updated_by_id], references: [id])
   permanentShifts permanent_shift[]
   shifts          shift[]
@@ -134,17 +134,17 @@ model launch_point {
 
 model notification {
   id            String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  account_id    String    @db.Uuid
+  account_id    String    @map("user_id") @db.Uuid
   account       account   @relation(fields: [account_id], references: [id])
   title         String    @db.VarChar(255)
   message       String
   timestamp     DateTime  @db.Timestamptz(6)
   read          Boolean   @default(false)
   created_at    DateTime  @default(now()) @db.Timestamptz(6)
-  created_by_id String    @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @db.Uuid
+  created_by_id String    @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @map("created_by") @db.Uuid
   created_by    account   @relation("created_by_id", fields: [created_by_id], references: [id])
   updated_at    DateTime? @db.Timestamptz(6)
-  updated_by_id String?   @db.Uuid
+  updated_by_id String?   @map("updated_by") @db.Uuid
   updated_by    account?  @relation("updated_by_id", fields: [updated_by_id], references: [id])
 }
 
@@ -157,9 +157,9 @@ model password_reset_token {
   used          Boolean?  @default(false)
   created_at    DateTime  @default(now()) @db.Timestamptz(6)
   updated_at    DateTime? @db.Timestamptz(6)
-  created_by_id String    @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @db.Uuid
+  created_by_id String    @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @map("created_by") @db.Uuid
   created_by    account   @relation("created_by_id", fields: [created_by_id], references: [id])
-  updated_by_id String?   @db.Uuid
+  updated_by_id String?   @map("updated_by") @db.Uuid
   updated_by    account?  @relation("updated_by_id", fields: [updated_by_id], references: [id])
 }
 
@@ -179,9 +179,9 @@ model permanent_shift {
   overnight       Boolean?        @default(true)
   created_at      DateTime        @default(now()) @db.Timestamptz(6)
   updated_at      DateTime?       @db.Timestamptz(6)
-  created_by_id   String          @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @db.Uuid
+  created_by_id   String          @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @map("created_by") @db.Uuid
   created_by      account         @relation("created_by_id", fields: [created_by_id], references: [id])
-  updated_by_id   String?         @db.Uuid
+  updated_by_id   String?         @map("updated_by") @db.Uuid
   updated_by      account?        @relation("updated_by_id", fields: [updated_by_id], references: [id])
 
   @@index([week_day], map: "idx_permanent_shift_week_day")
@@ -192,9 +192,9 @@ model permissions {
   name           String           @unique @db.VarChar(255)
   created_at     DateTime         @default(now()) @db.Timestamptz(6)
   updated_at     DateTime?        @db.Timestamptz(6)
-  created_by_id  String           @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @db.Uuid
+  created_by_id  String           @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @map("created_by") @db.Uuid
   created_by     account          @relation("created_by_id", fields: [created_by_id], references: [id])
-  updated_by_id  String?          @db.Uuid
+  updated_by_id  String?          @map("updated_by") @db.Uuid
   updated_by     account?         @relation("updated_by_id", fields: [updated_by_id], references: [id])
   tagPermissions tag_permission[]
 }
@@ -202,7 +202,7 @@ model permissions {
 model shift {
   id              String            @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   driver_id       String?           @db.Uuid
-  driver          account?          @relation("driver_id", fields: [driver_id], references: [id])
+  driver          user_info?        @relation("shift_driver", fields: [driver_id], references: [id])
   launch_point_id String            @db.Uuid
   launch_point    launch_point      @relation(fields: [launch_point_id], references: [id])
   start_time      DateTime?         @db.Time(6)
@@ -218,9 +218,9 @@ model shift {
   ambulance_type  ambulance_type
   created_at      DateTime          @default(now()) @db.Timestamptz(6)
   updated_at      DateTime?         @db.Timestamptz(6)
-  created_by_id   String            @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @db.Uuid
+  created_by_id   String            @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @map("created_by") @db.Uuid
   created_by      account           @relation("created_by_id", fields: [created_by_id], references: [id])
-  updated_by_id   String?           @db.Uuid
+  updated_by_id   String?           @map("updated_by") @db.Uuid
   updated_by      account?          @relation("updated_by_id", fields: [updated_by_id], references: [id])
 
   shiftSlots shift_slot[]
@@ -236,13 +236,13 @@ model shift_slot {
   shift_id      String       @db.Uuid
   shift         shift        @relation(fields: [shift_id], references: [id])
   user_id       String       @db.Uuid
-  user          account      @relation(fields: [user_id], references: [id])
+  user          user_info    @relation("shift_slot_user", fields: [user_id], references: [id])
   status        shift_status @default(pending)
   created_at    DateTime     @default(now()) @db.Timestamptz(6)
   updated_at    DateTime?    @db.Timestamptz(6)
-  created_by_id String       @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @db.Uuid
+  created_by_id String       @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @map("created_by") @db.Uuid
   created_by    account      @relation("created_by_id", fields: [created_by_id], references: [id])
-  updated_by_id String?      @db.Uuid
+  updated_by_id String?      @map("updated_by") @db.Uuid
   updated_by    account?     @relation("updated_by_id", fields: [updated_by_id], references: [id])
 
   @@unique([shift_id, user_id], map: "uk_shift_slot")
@@ -253,9 +253,9 @@ model tag {
   name           String           @db.VarChar(255)
   created_at     DateTime         @default(now()) @db.Timestamptz(6)
   updated_at     DateTime?        @db.Timestamptz(6)
-  created_by_id  String           @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @db.Uuid
+  created_by_id  String           @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @map("created_by") @db.Uuid
   created_by     account          @relation("created_by_id", fields: [created_by_id], references: [id])
-  updated_by_id  String?          @db.Uuid
+  updated_by_id  String?          @map("updated_by") @db.Uuid
   updated_by     account?         @relation("updated_by_id", fields: [updated_by_id], references: [id])
   category       String?          @db.VarChar(255)
   accountTags    account_tag[]
@@ -270,9 +270,9 @@ model tag_permission {
   permission    permissions @relation(fields: [permission_id], references: [id])
   created_at    DateTime    @default(now()) @db.Timestamptz(6)
   updated_at    DateTime?   @db.Timestamptz(6)
-  created_by_id String      @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @db.Uuid
+  created_by_id String      @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @map("created_by") @db.Uuid
   created_by    account     @relation("created_by_id", fields: [created_by_id], references: [id])
-  updated_by_id String?     @db.Uuid
+  updated_by_id String?     @map("updated_by") @db.Uuid
   updated_by    account?    @relation("updated_by_id", fields: [updated_by_id], references: [id])
 
   @@unique([tag_id, permission_id], map: "uk_tag_permission")
@@ -287,9 +287,9 @@ model user_info {
   address           String?
   created_at        DateTime             @default(now()) @db.Timestamptz(6)
   updated_at        DateTime?            @db.Timestamptz(6)
-  created_by_id     String               @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @db.Uuid
+  created_by_id     String               @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @map("created_by") @db.Uuid
   created_by        account              @relation("created_by_id", fields: [created_by_id], references: [id])
-  updated_by_id     String?              @db.Uuid
+  updated_by_id     String?              @map("updated_by") @db.Uuid
   updated_by        account?             @relation("updated_by_id", fields: [updated_by_id], references: [id])
   image_url         String?
   role              String?              @db.VarChar(255)
@@ -298,6 +298,10 @@ model user_info {
   active            Boolean              @default(false)
   active_date       DateTime?            @db.Date
   emergencyContacts emergency_contacts[]
+  shiftsAsDriver    shift[]              @relation("shift_driver")
+  shiftSlots        shift_slot[]         @relation("shift_slot_user")
+
+  @@unique([account_id], map: "uk_user_info_account_id")
 }
 
 enum ambulance_type {
@@ -320,4 +324,7 @@ enum shift_type {
   day
   evening
   night
+  reinforcement
+  over_the_machine
+  security
 }

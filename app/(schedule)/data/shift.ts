@@ -1,6 +1,7 @@
 "use server";
 
-import { User, Tag } from "@/app/(user)/data/definitions";
+import { User, Tag, userInfoPublicSelect } from "@/app/(user)/data/definitions";
+import { toPostgresCalendarDate } from "@/app/lib/date-utils";
 import { prisma } from "../../lib/data";
 import type {
   ambulance_type,
@@ -11,7 +12,6 @@ import type {
   shift_type,
   launch_point,
   ambulance,
-  account,
 } from "@prisma/client";
 
 export type ShiftType =
@@ -28,6 +28,7 @@ export type PermanentShiftRecord = Omit<
   "id" | "created_at" | "updated_at" | "created_by_id" | "updated_by_id"
 >;
 
+/** `driver_id` references `user_info.id` (profile), not `account.id`. */
 export type ShiftRecord = Omit<
   Prisma.shiftUncheckedCreateInput,
   "id" | "created_at" | "updated_at" | "created_by_id" | "updated_by_id"
@@ -63,7 +64,8 @@ export type DisplayShift = {
 export type DisplayShiftSlot = {
   id: string;
   shift_id: string;
-  user: account;
+  /** Slot volunteer profile (`user_info`), not `account`. */
+  user: User;
   status: "pending" | "confirmed" | "cancelled";
 };
 
@@ -159,7 +161,9 @@ export async function getShiftById(id: string): Promise<shift | null> {
 
 export async function getShiftsByDate(date: Date): Promise<shift[]> {
   try {
-    return await prisma.shift.findMany({ where: { start_date: date } });
+    return await prisma.shift.findMany({
+      where: { start_date: toPostgresCalendarDate(date) },
+    });
   } catch (error) {
     console.error("Failed to fetch shifts by date:", error);
     throw new Error("Failed to fetch shifts by date.");
@@ -171,18 +175,14 @@ export async function getDisplayShiftsByDate(
   date: Date,
 ): Promise<DisplayShift[]> {
   const shifts = await prisma.shift.findMany({
-    where: { start_date: date },
+    where: { start_date: toPostgresCalendarDate(date) },
     include: {
       launch_point: true,
       ambulance: true,
-      driver: {
-        include: {
-          userInfos_account: true,
-        },
-      },
+      driver: { select: userInfoPublicSelect },
       shiftSlots: {
         include: {
-          user: true,
+          user: { select: userInfoPublicSelect },
         },
       },
     },
@@ -194,7 +194,7 @@ export async function getDisplayShiftsByDate(
       launch_point: s.launch_point,
       ambulance_type: s.ambulance_type,
       ambulance: s.ambulance,
-      driver: s.driver?.userInfos_account[0] ?? null,
+      driver: s.driver,
       start_date: s.start_date ?? new Date(),
       end_date: s.end_date ?? new Date(),
       start_time: s.start_time ? s.start_time.toISOString() : "",
@@ -219,8 +219,8 @@ export async function getShiftsByDateRange(
     return await prisma.shift.findMany({
       where: {
         start_date: {
-          gte: startDate,
-          lte: endDate,
+          gte: toPostgresCalendarDate(startDate),
+          lte: toPostgresCalendarDate(endDate),
         },
       },
     });
@@ -230,6 +230,7 @@ export async function getShiftsByDateRange(
   }
 }
 
+/** `driverId` is a `user_info.id` (profile row), not an `account.id`. */
 export async function getShiftsByDriver(driverId: string): Promise<shift[]> {
   try {
     return await prisma.shift.findMany({
@@ -328,6 +329,7 @@ export async function getShiftSlotsByShift(
   }
 }
 
+/** `userId` is `user_info.id` (profile row), not `account.id`. */
 export async function getShiftSlotsByUser(
   userId: string,
 ): Promise<ShiftSlot[]> {
@@ -360,14 +362,14 @@ export async function getShiftSlotById(id: string): Promise<ShiftSlot | null> {
 
 export async function updateShiftDriverRecord(params: {
   shiftId: string;
-  driverAccountId: string | null;
+  driverUserInfoId: string | null;
   updatedBy: string;
 }) {
   return prisma.shift.update({
     where: { id: params.shiftId },
     data: {
-      driver: params.driverAccountId
-        ? { connect: { id: params.driverAccountId } }
+      driver: params.driverUserInfoId
+        ? { connect: { id: params.driverUserInfoId } }
         : { disconnect: true },
       updated_by: { connect: { id: params.updatedBy } },
     },
@@ -392,14 +394,15 @@ export async function updateShiftAmbulanceRecord(params: {
 
 export async function createShiftSlotRecord(params: {
   shiftId: string;
-  userId: string;
+  /** `user_info.id` of the volunteer. */
+  userInfoId: string;
   status: "pending" | "confirmed";
   createdBy: string;
 }) {
   return prisma.shift_slot.create({
     data: {
       shift: { connect: { id: params.shiftId } },
-      user: { connect: { id: params.userId } },
+      user: { connect: { id: params.userInfoId } },
       status: params.status,
       created_by: { connect: { id: params.createdBy } },
     },

@@ -14,6 +14,7 @@ import { Label } from "@/app/components/ui/label";
 import { Checkbox } from "@/app/components/ui/checkbox";
 import { Button } from "@/app/components/ui/button";
 import { createPermanentShift, createShift } from "../lib/actions";
+import { timeStringToPrismaTime } from "@/app/lib/date-utils";
 import { PermanentShiftRecord, ShiftRecord, ShiftType } from "../../data/shift";
 import { ambulance_type, shift_status_type, shift_type } from "@prisma/client";
 
@@ -118,8 +119,8 @@ export default function Form({
             launch_point_id: launchPoint,
             shift_type: shiftTypeValue,
             week_day: dayObj.value,
-            start_time: new Date(startTime),
-            end_time: new Date(endTime),
+            start_time: timeStringToPrismaTime(startTime),
+            end_time: timeStringToPrismaTime(endTime),
             adult_only: availability === "adults-only",
             number_of_slots: parseInt(numEscorts),
             ambulance_type: ambulanceType as ambulance_type,
@@ -133,8 +134,8 @@ export default function Form({
         launch_point_id: launchPoint,
         start_date: new Date(startDate),
         end_date: new Date(endDate),
-        start_time: new Date(startTime),
-        end_time: new Date(endTime),
+        start_time: timeStringToPrismaTime(startTime),
+        end_time: timeStringToPrismaTime(endTime),
         shift_type: shiftTypeValue as shift_type,
         adult_only: availability === "adults-only",
         number_of_slots: parseInt(numEscorts),
@@ -300,7 +301,7 @@ export default function Form({
                       <input
                         type="time"
                         value={startTime}
-                        onChange={(e) => setStartTime(e.target.value)}
+                        onChange={(e) => setStartTime(e.target.value.trim())}
                         className="border-b border-red-500 bg-transparent px-2 py-1 text-[16px] font-bold focus:outline-none"
                       />
                     </div>
@@ -314,7 +315,7 @@ export default function Form({
                       <input
                         type="time"
                         value={endTime}
-                        onChange={(e) => setEndTime(e.target.value)}
+                        onChange={(e) => setEndTime(e.target.value.trim())}
                         className="border-b border-red-500 bg-transparent px-2 py-1 text-[16px] font-bold focus:outline-none"
                       />
                     </div>
@@ -337,7 +338,7 @@ export default function Form({
                   <input
                     type="time"
                     value={startTime}
-                    onChange={(e) => setStartTime(e.target.value)}
+                    onChange={(e) => setStartTime(e.target.value.trim())}
                     className="border-b border-red-500 bg-transparent px-2 py-1 text-[16px] font-bold focus:outline-none"
                   />
                 </div>
@@ -354,7 +355,7 @@ export default function Form({
                   <input
                     type="time"
                     value={endTime}
-                    onChange={(e) => setEndTime(e.target.value)}
+                    onChange={(e) => setEndTime(e.target.value.trim())}
                     className="border-b border-red-500 bg-transparent px-2 py-1 text-[16px] font-bold focus:outline-none"
                   />
                 </div>

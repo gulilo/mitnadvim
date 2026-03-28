@@ -10,19 +10,22 @@ export type Account = Prisma.accountGetPayload<{
   };
 }>;
 
+/** Prisma `select` for `user_info` profile fields only (no relations). */
+export const userInfoPublicSelect = {
+  id: true,
+  account_id: true,
+  first_name: true,
+  last_name: true,
+  image_url: true,
+  address: true,
+  area_id: true,
+  role: true,
+  active: true,
+  active_date: true,
+} as const;
+
 export type User = Prisma.user_infoGetPayload<{
-  select: {
-    id: true;
-    account_id: true;
-    first_name: true;
-    last_name: true;
-    image_url: true;
-    address: true;
-    area_id: true;
-    role: true;
-    active: true;
-    active_date: true;
-  };
+  select: typeof userInfoPublicSelect;
 }>;
 
 export type Tag = Prisma.tagGetPayload<{
@@ -33,13 +36,13 @@ export type Tag = Prisma.tagGetPayload<{
   };
 }>;
 
-export type DisplayTag ={
+export type DisplayTag = {
   id: string;
   name: string;
   bgColor: string;
   textColor: string;
   border: string;
-}
+};
 
 export type EmergencyContact = Prisma.emergency_contactsGetPayload<{
   select: {

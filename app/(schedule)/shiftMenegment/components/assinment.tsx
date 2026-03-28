@@ -43,7 +43,7 @@ export default function Assinment({
   const handleAssign = async (user: User) => {
     setUpdatingUserId(user.id);
     try {
-      await updateShiftDriver(shift.id, user.account_id);
+      await updateShiftDriver(shift.id, user.id);
       onDriverAssigned(shift.id, user);
     } finally {
       setUpdatingUserId(null);
