@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { account, emergency_contacts, tag, user_info } from "@prisma/client";
 import { prisma } from "../../lib/data";
 import { DisplayTag } from "./definitions";
@@ -9,6 +10,15 @@ export async function getUserByEmail(email: string): Promise<account | null> {
   } catch (error) {
     console.error("Failed to fetch user:", error);
     throw new Error("Failed to fetch user.");
+  }
+}
+
+export async function getUserByPhone(phone: string): Promise<account | null> {
+  try {
+    return await prisma.account.findUnique({ where: { phone } });
+  } catch (error) {
+    console.error("Failed to fetch user by phone:", error);
+    throw new Error("Failed to fetch user by phone.");
   }
 }
 
@@ -209,7 +219,7 @@ export async function createAccount(params: {
       email: params.email,
       password_hash: params.passwordHash,
       created_by_id: params.createdBy,
-      phone: params.phone ?? null,
+      phone: params.phone ?? "",
     },
   });
 }
