@@ -7,9 +7,9 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 
 function getSelectedDateLabel(date: Date): string {
-    const d = date.getDate();
-    const m = HEBREW_MONTHS[date.getMonth()];
-    const y = date.getFullYear();
+    const d = date.getUTCDate();
+    const m = HEBREW_MONTHS[date.getUTCMonth()];
+    const y = date.getUTCFullYear();
     return `${d} ${m} ${y}`;
 }
 
@@ -26,7 +26,9 @@ export default async function ShiftPickerPage({
     const tags = await getUserTags(session.user.id);
 
     const { date } = await searchParams;
+    console.log("date", date);
     const paramDate = date ?? new Date().toLocaleDateString("he-IL");
+    console.log("paramDate", paramDate);
     const selectedDate = parseHebrewDate(paramDate) ?? new Date();
     console.log("selectedDate", selectedDate);
     const shiftsData = await getShiftsForPickerDay(selectedDate, tags);

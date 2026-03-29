@@ -1,13 +1,17 @@
 /**
- * UTC midnight for the same calendar year/month/day as the given Date's
- * **local** components. Use when filtering Prisma `@db.Date` / PostgreSQL
- * `date` columns: a local-midnight Date (e.g. `new Date(2026, 1, 1)`) becomes
- * the previous UTC calendar day when the server compares timestamps, so
- * equality against `DATE '2026-02-01'` returns no rows.
+ * Normalizes to UTC midnight for the calendar year/month/day in **UTC**.
+ * Use when filtering Prisma `@db.Date` / PostgreSQL `date` columns together
+ * with parsed civil dates (`parseHebrewDate`, ISO date-only strings as UTC).
+ * Parsing `DD.MM.YYYY` with `new Date(y, m, d)` uses local midnight, which
+ * serializes to the previous UTC day and mismatches `@db.Date` comparisons.
  */
 export function toPostgresCalendarDate(date: Date): Date {
   return new Date(
-    Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()),
+    Date.UTC(
+      date.getUTCFullYear(),
+      date.getUTCMonth(),
+      date.getUTCDate(),
+    ),
   );
 }
 
@@ -47,17 +51,19 @@ export function timeStringToPrismaTime(time: string): Date {
  */
 export function parseHebrewDate(dateString: string): Date | undefined {
   if (!dateString) return undefined;
-  // Try parsing Hebrew format (DD.MM.YYYY)
-  const parts = dateString.split('.');
+  // DD.MM.YYYY or DD/MM/YYYY (he-IL locale may use either)
+  const parts = dateString.trim().split(/[./]/);
   if (parts.length === 3) {
     const day = parseInt(parts[0], 10);
     const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
     const year = parseInt(parts[2], 10);
-
     if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
-      const date = new Date(year, month, day);
-      // Verify the date is valid
-      if (date.getDate() === day && date.getMonth() === month && date.getFullYear() === year) {
+      const date = new Date(Date.UTC(year, month, day));
+      if (
+        date.getUTCDate() === day &&
+        date.getUTCMonth() === month &&
+        date.getUTCFullYear() === year
+      ) {
         return date;
       }
     }
