@@ -5,9 +5,9 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/app/components/ui/accordion";
-import type { AmbulanceType, DisplayShift, PickerShiftType, ShiftType } from "../../data/shift";
+import type { AmbulanceType, DisplayShift, ShiftType } from "../../data/shift";
 import PickerCell from "./pickerCell";
-import { DbTag } from "@/app/(user)/data/definitions";
+import { Tag } from "@/app/(user)/data/definitions";
 
 const SHIFT_TYPE_LABELS: Record<ShiftType, string> = {
   day: "בוקר",
@@ -42,7 +42,7 @@ const SHIFT_TYPE_STYLE: Record<
 
 const AMBULANCE_TYPE_STYLE: Record<string, { bg: string; textDark: boolean }> = {
   white: { bg: "rgba(252,92,92,0.5)", textDark: true },
-  intensive: { bg: "#fffaa8", textDark: true },
+  atan: { bg: "#fffaa8", textDark: true },
   default: { bg: "#fffaa8", textDark: true },
 };
 
@@ -56,7 +56,7 @@ export default function ShiftPickerContent({
   tags,
 }: {
   shiftsData: Map<ShiftType, Map<AmbulanceType, DisplayShift[]>>;
-  tags: DbTag[];
+  tags: Tag[];
 }) {
   const shiftStyle = (id: string) => SHIFT_TYPE_STYLE[id] ?? { bg: "#e5e5e5", textDark: true };
   

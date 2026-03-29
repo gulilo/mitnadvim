@@ -1,18 +1,28 @@
 "use server";
 
 import { auth } from "@/auth";
-import { getAccountByAccountId, getAreaName, getUserByAccountId, getUserByEmail, getUserTags, getTagName, getTagCategory } from "../data/user";
-import { DbAccount, DbTag, DbUser } from "../data/definitions";
-import { sql } from "@/app/lib/data";
+import {
+  createAccountUserAndEmergency,
+  getAccountByAccountId,
+  getAreaName,
+  getUserByAccountId,
+  getUserByEmail,
+  getUserTags,
+  getTagName,
+  getTagCategory,
+  updateAccountPassword,
+} from "../data/user";
+import { createPasswordResetTokenRecord } from "../data/passwordReset";
 import crypto from "crypto";
 import bcrypt from "bcrypt";
+import { account, tag, user_info } from "@prisma/client";
 
 export type ProfileData = {
-  user: DbUser;
-  account: DbAccount;
+  user: user_info;
+  account: account;
   areaName: string;
-  tags: DbTag[];
-}
+  tags: tag[];
+};
 
 export async function getProfileData() {
   try {
@@ -27,17 +37,21 @@ export async function getProfileData() {
     }
 
     const account = await getAccountByAccountId(session.user.id);
-    const areaName = await getAreaName(user.area_id);
+    if (!account) {
+      return null;
+    }
+
+    const areaName = user.area_id ? await getAreaName(user.area_id) : null;
     const tags = await getUserTags(session.user.id);
 
     return {
       user,
       account,
-      areaName,
+      areaName: areaName ?? "",
       tags,
-    } as ProfileData;
+    };
   } catch (error) {
-    console.error('Failed to fetch profile data:', error);
+    console.error("Failed to fetch profile data:", error);
     return null;
   }
 }
@@ -47,13 +61,13 @@ export async function getTagsData(tagIds: string[]) {
     const tagCategories = await Promise.all(
       tagIds.map(async (tagId) => {
         return await getTagCategory(tagId);
-      })
+      }),
     );
 
     const tagNames = await Promise.all(
       tagIds.map(async (tagId) => {
         return await getTagName(tagId);
-      })
+      }),
     );
 
     const tags = tagNames.map((tagName, index) => {
@@ -65,49 +79,45 @@ export async function getTagsData(tagIds: string[]) {
 
     return tags;
   } catch (error) {
-    console.error('Failed to fetch tags data:', error);
+    console.error("Failed to fetch tags data:", error);
     return [];
-  }
-}
-
-export async function accountExistsByEmail(email: string): Promise<boolean> {
-  try {
-    const account = await getUserByEmail(email);
-    return !!account;
-  } catch {
-    return false;
   }
 }
 
 export type CreateUserFormState = { error?: string };
 
 function generateRandomPassword() {
-  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+  return (
+    Math.random().toString(36).substring(2, 15) +
+    Math.random().toString(36).substring(2, 15)
+  );
 }
 
 /**
  * Validates all form fields and returns parsed values or an error.
  * No DB writes — run this before any insert.
  */
-function validateCreateUserForm(formData: FormData): CreateUserFormState | {
-  ok: true;
-  email: string;
-  phone: string;
-  displayName: string;
-  firstName: string;
-  lastName: string;
-  areaId: string;
-  qualification: string;
-  address: string;
-  isActive: boolean;
-  membershipYear: string | null;
-  emergencyName: string;
-  emergencyRelationship: string;
-  emergencyPhone: string;
-  emergencyEmail: string;
-  emergencyAddress: string;
-  passwordHash: string;
-} {
+function validateCreateUserForm(formData: FormData):
+  | CreateUserFormState
+  | {
+      ok: true;
+      email: string;
+      phone: string;
+      displayName: string;
+      firstName: string;
+      lastName: string;
+      areaId: string;
+      qualification: string;
+      address: string;
+      isActive: boolean;
+      membershipYear: string | null;
+      emergencyName: string;
+      emergencyRelationship: string;
+      emergencyPhone: string;
+      emergencyEmail: string;
+      emergencyAddress: string;
+      passwordHash: string;
+    } {
   const email = (formData.get("email") as string)?.trim();
   if (!email) {
     return { error: "נא להזין כתובת דוא״ל" };
@@ -129,13 +139,17 @@ function validateCreateUserForm(formData: FormData): CreateUserFormState | {
     return { error: "נא לבחור הכשרה" };
   }
 
-  const emergencyRelationship = (formData.get("emergency_relationship") as string)?.trim();
+  const emergencyRelationship = (
+    formData.get("emergency_relationship") as string
+  )?.trim();
   if (!emergencyRelationship) {
     return { error: "נא לבחור קרבה לאיש קשר בחירום" };
   }
 
-  const emergencyName = (formData.get("emergency_name") as string)?.trim() ?? "";
-  const emergencyPhone = (formData.get("emergency_phone") as string)?.trim() ?? "";
+  const emergencyName =
+    (formData.get("emergency_name") as string)?.trim() ?? "";
+  const emergencyPhone =
+    (formData.get("emergency_phone") as string)?.trim() ?? "";
   if (!emergencyName || !emergencyPhone) {
     return { error: "נא להזין שם ומספר טלפון לאיש קשר בחירום" };
   }
@@ -143,9 +157,12 @@ function validateCreateUserForm(formData: FormData): CreateUserFormState | {
   const phone = (formData.get("phone") as string)?.trim() ?? "";
   const address = (formData.get("address") as string)?.trim() ?? "";
   const isActive = (formData.get("is_active") as string) === "true";
-  const membershipYearRaw = (formData.get("membership_year") as string)?.trim() || null;
-  const emergencyEmail = (formData.get("emergency_email") as string)?.trim() ?? "";
-  const emergencyAddress = (formData.get("emergency_address") as string)?.trim() ?? "";
+  const membershipYearRaw =
+    (formData.get("membership_year") as string)?.trim() || null;
+  const emergencyEmail =
+    (formData.get("emergency_email") as string)?.trim() ?? "";
+  const emergencyAddress =
+    (formData.get("emergency_address") as string)?.trim() ?? "";
   const passwordHash = generateRandomPassword();
   const displayName = `${firstName} ${lastName}`.trim();
 
@@ -174,7 +191,7 @@ function validateCreateUserForm(formData: FormData): CreateUserFormState | {
  * Single atomic insert: account → user_info → emergency_contacts.
  * All succeed or all roll back (single statement).
  */
-async function createAccountUserAndEmergency(params: {
+async function createAccountUserAndEmergencyRecord(params: {
   displayName: string;
   email: string;
   phone: string;
@@ -194,36 +211,20 @@ async function createAccountUserAndEmergency(params: {
   emergencyAddress: string;
 }): Promise<{ error?: string; accountId?: string }> {
   try {
-    const new_account = await sql`
-      WITH new_account AS (
-        INSERT INTO account (display_name, email, phone, password_hash, created_by)
-        VALUES (${params.displayName}, ${params.email}, ${params.phone}, ${params.passwordHash}, ${params.createdBy})
-        RETURNING id
-      ),
-      new_user AS (
-        INSERT INTO user_info (account_id, first_name, last_name, image_url, address, area_id, role, active, active_date, created_by)
-        SELECT new_account.id, ${params.firstName}, ${params.lastName}, null, ${params.address}, ${params.areaId}, ${params.qualification}, ${params.isActive}, ${params.activeDate}, ${params.createdBy}
-        FROM new_account
-        RETURNING id
-      ),
-      new_emergency AS (
-        INSERT INTO emergency_contacts (user_id, name, relationship, phone, email, address, created_by)
-        SELECT new_user.id, ${params.emergencyName}, ${params.emergencyRelationship}, ${params.emergencyPhone}, ${params.emergencyEmail}, ${params.emergencyAddress}, ${params.createdBy}
-        FROM new_user
-        RETURNING user_id
-      )
-      SELECT id FROM new_account
-    `;
-    return { accountId: new_account[0]?.id };
+    const created = await createAccountUserAndEmergency(params);
+    return { accountId: created.accountId };
   } catch (error) {
-    console.error("Failed to create account, user and emergency contact:", error);
+    console.error(
+      "Failed to create account, user and emergency contact:",
+      error,
+    );
     return { error: "יצירת המשתמש נכשלה. נא לנסות שוב." };
   }
 }
 
 export async function submitCreateUserForm(
   _prevState: CreateUserFormState,
-  formData: FormData
+  formData: FormData,
 ): Promise<CreateUserFormState> {
   const session = await auth();
   if (!session?.user?.id) {
@@ -239,7 +240,7 @@ export async function submitCreateUserForm(
   const createdBy = session.user.id;
 
   // 2. Check email uniqueness (single read)
-  const exists = await accountExistsByEmail(validated.email);
+  const exists = await getUserByEmail(validated.email);
   if (exists) {
     return { error: "חשבון עם כתובת דוא״ל זו כבר קיים במערכת" };
   }
@@ -249,7 +250,7 @@ export async function submitCreateUserForm(
     ? new Date(`${validated.membershipYear}-12-31`)
     : null;
 
-  const result = await createAccountUserAndEmergency({
+  const result = await createAccountUserAndEmergencyRecord({
     displayName: validated.displayName,
     email: validated.email,
     phone: validated.phone,
@@ -273,20 +274,25 @@ export async function submitCreateUserForm(
     return { error: result.error };
   }
 
-
   const token = await generateToken();
   const hashedToken = await hashToken(token);
   console.log("token", token);
   console.log("hashedToken", hashedToken);
- const accountId = result.accountId;
-  await sql`
-    INSERT INTO password_reset_token (account_id, token_hash, expires_at, created_by)
-    VALUES (${accountId}, ${hashedToken}, ${new Date(Date.now() + 1000 * 60 * 60 * 24)}, ${createdBy})
-  `;
+  const accountId = result.accountId;
+  await createPasswordResetTokenRecord({
+    accountId: accountId!,
+    tokenHash: hashedToken,
+    expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24),
+    createdBy,
+  });
 
   await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/emailWelcome`, {
     method: "POST",
-    body: JSON.stringify({ email: validated.email, fullName: validated.displayName, token }),
+    body: JSON.stringify({
+      email: validated.email,
+      fullName: validated.displayName,
+      token,
+    }),
   });
 
   return result;
@@ -317,11 +323,12 @@ function validateNewPassword(password: string): string | null {
 
 export async function changePassword(
   _prevState: ChangePasswordFormState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ChangePasswordFormState> {
   const formaccountId = (formData.get("account_id") as string)?.trim() || "";
 
-  const currentPassword = (formData.get("current_password") as string | null)?.trim() || "";
+  const currentPassword =
+    (formData.get("current_password") as string | null)?.trim() || "";
   const newPassword = (formData.get("new_password") as string)?.trim();
   const confirmPassword = (formData.get("confirm_password") as string)?.trim();
 
@@ -339,13 +346,15 @@ export async function changePassword(
   }
 
   // If we have an account id from a reset token, skip current password + session.
-  const targetAccountId = formaccountId || (await (async () => {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return "";
-    }
-    return session.user.id;
-  })());
+  const targetAccountId =
+    formaccountId ||
+    (await (async () => {
+      const session = await auth();
+      if (!session?.user?.id) {
+        return "";
+      }
+      return session.user.id;
+    })());
 
   if (!targetAccountId) {
     return { error: "יש להתחבר כדי לשנות סיסמא" };
@@ -360,20 +369,19 @@ export async function changePassword(
   // Only require current password when not using a reset token
   if (formaccountId !== "") {
     if (currentPassword) {
-    const match = await bcrypt.compare(currentPassword, account.password_hash);
-    if (!match) {
-      return { error: "סיסמא נוכחית שגויה" };
+      const match = await bcrypt.compare(
+        currentPassword,
+        account.password_hash,
+      );
+      if (!match) {
+        return { error: "סיסמא נוכחית שגויה" };
+      }
     }
   }
-}
 
   const hash = await bcrypt.hash(newPassword, 12);
   try {
-    await sql`
-      UPDATE account
-      SET password_hash = ${hash}
-      WHERE id = ${targetAccountId}
-    `;
+    await updateAccountPassword(targetAccountId, hash);
     return { success: true };
   } catch (error) {
     console.error("Failed to update password:", error);

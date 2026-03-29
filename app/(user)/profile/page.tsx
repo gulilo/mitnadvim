@@ -30,7 +30,7 @@ export default async function Profile() {
 
   const account = await getAccountByAccountId(session.user.id);
   const emergencyContact = await getEmergencyContactByUserId(user.id);
-  const areaName = await getAreaName(user.area_id);
+  const areaName = user.area_id ? await getAreaName(user.area_id) : null;
   const tags = await getUserTags(session.user.id);
   const displayTags = await getDisplayTags(tags);
   return (

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { DbUser } from "@/app/(user)/data/definitions";
+import { User } from "@/app/(user)/data/definitions";
 import { ScheduleRow, updateShiftAmbulance } from "../../../lib/actions";
 import { DataTable } from "./data-table";
 import { getColumns } from "./columns";
@@ -9,7 +9,7 @@ import { getColumns } from "./columns";
 function updateShiftDriverInRows(
   rows: ScheduleRow[],
   shiftId: string,
-  driver: DbUser
+  driver: User
 ): ScheduleRow[] {
   return rows.map((row) => ({
     ...row,
@@ -29,7 +29,7 @@ export default function ScheduleTable({
 }) {
   const [scheduleRows, setScheduleRows] = useState(initialData);
 
-  const onDriverAssigned = (shiftId: string, driver: DbUser) => {
+  const onDriverAssigned = (shiftId: string, driver: User) => {
     setScheduleRows((prev) => updateShiftDriverInRows(prev, shiftId, driver));
   };
 

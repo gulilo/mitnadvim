@@ -1,66 +1,62 @@
-'use server';
+"use server";
 
-import { DbUser } from "@/app/(user)/data/definitions";
-import { getUserByAccountId } from "@/app/(user)/data/user";
-import { sql } from "../../lib/data";
-import { DbLaunchPoint, getAllLaunchPoints } from "./launchPoint";
-import { getAllAmbulances } from "./ambulance";
-import type { DbAmbulance } from "./ambulance";
-import { DbTag } from "@/app/(user)/data/definitions";
+import { User, Tag, userInfoPublicSelect } from "@/app/(user)/data/definitions";
+import { toPostgresCalendarDate } from "@/app/lib/date-utils";
+import { prisma } from "../../lib/data";
+import type {
+  ambulance_type,
+  permanent_shift,
+  Prisma,
+  shift,
+  shift_status,
+  shift_type,
+  launch_point,
+  ambulance,
+} from "@prisma/client";
 
-export type ShiftType = "day" | "evening" | "night" | "reinforcement" | "over_the_machine" | "security";
-export type AmbulanceType = "white" | "intensive";
+export type ShiftType =
+  | "day"
+  | "evening"
+  | "night"
+  | "reinforcement"
+  | "over_the_machine"
+  | "security";
+export type AmbulanceType = "white" | "atan";
 
+export type PermanentShiftRecord = Omit<
+  Prisma.permanent_shiftUncheckedCreateInput,
+  "id" | "created_at" | "updated_at" | "created_by_id" | "updated_by_id"
+>;
 
-export type DbPermanentShift = {
-  id: string;
-  area_id: string;
-  launch_point_id: string;
-  shift_type: ShiftType;
-  week_day: number;
-  start_time: string;
-  end_time: string;
-  adult_only: boolean;
-  number_of_slots: number;
-  ambulance_type: string;
-};
+/** `driver_id` references `user_info.id` (profile), not `account.id`. */
+export type ShiftRecord = Omit<
+  Prisma.shiftUncheckedCreateInput,
+  "id" | "created_at" | "updated_at" | "created_by_id" | "updated_by_id"
+>;
 
-export type DbShift = {
-  id: string;
-  launch_point_id: string;
-  ambulance_type: string;
-  ambulance_id: string | null;
-  driver_id: string | null;
-  start_date: Date;
-  end_date: Date;
-  start_time: string;
-  end_time: string;
-  shift_type: ShiftType;
-  adult_only: boolean;
-  number_of_slots: number;
-  status: "active" | "canceled";
-};
-
-export type DbShiftSlot = {
-  id: string;
-  shift_id: string;
-  user_id: string;
-  status: "pending" | "confirmed" | "cancelled";
-};
+export type ShiftSlot = Prisma.shift_slotGetPayload<{
+  select: {
+    id: true;
+    shift_id: true;
+    user_id: true;
+    status: true;
+  };
+}>;
 
 export type DisplayShift = {
   id: string;
-  launch_point: DbLaunchPoint;
-  ambulance_type: AmbulanceType;
-  ambulance: DbAmbulance | null;
-  driver: DbUser | null;
+  launch_point: launch_point;
+  ambulance_type: ambulance_type;
+  ambulance: ambulance | null;
+  /** Driver profile (`user_info`), not the login `account` row. */
+  driver: User | null;
   start_date: Date;
   end_date: Date;
   start_time: string;
   end_time: string;
-  shift_type: ShiftType;
+  shift_type: shift_type | null;
   adult_only: boolean;
-  number_of_slots: number;
+  number_of_slots: number | null;
   confirmed_slots: (DisplayShiftSlot | null)[];
   pending_slots: (DisplayShiftSlot | null)[];
 };
@@ -68,230 +64,186 @@ export type DisplayShift = {
 export type DisplayShiftSlot = {
   id: string;
   shift_id: string;
-  user: DbUser | null;
+  /** Slot volunteer profile (`user_info`), not `account`. */
+  user: User;
   status: "pending" | "confirmed" | "cancelled";
 };
 
+function toAmbulanceType(value: ambulance_type): AmbulanceType {
+  return value === "atan" ? "atan" : "white";
+}
+
+function toShiftSlotStatus(value: shift_status): shift_status {
+  return value;
+}
+
+function toShiftSlot(slot: {
+  id: string;
+  shift_id: string;
+  user_id: string;
+  status: "pending" | "confirmed" | "cancelled";
+}): ShiftSlot {
+  return {
+    id: slot.id,
+    shift_id: slot.shift_id,
+    user_id: slot.user_id,
+    status: toShiftSlotStatus(slot.status),
+  };
+}
+
 // Permanent Shift functions
-export async function getAllPermanentShifts(): Promise<DbPermanentShift[]> {
+export async function getAllPermanentShifts(): Promise<permanent_shift[]> {
   try {
-    const permanentShifts = await sql`
-      SELECT * FROM permanent_shift 
-      ORDER BY week_day ASC, start_time ASC
-    `;
-    return permanentShifts as DbPermanentShift[];
+    return await prisma.permanent_shift.findMany();
   } catch (error) {
-    console.error('Failed to fetch permanent shifts:', error);
-    throw new Error('Failed to fetch permanent shifts.');
+    console.error("Failed to fetch permanent shifts:", error);
+    throw new Error("Failed to fetch permanent shifts.");
   }
 }
 
-export async function getPermanentShiftByDate(date: Date): Promise<DbPermanentShift[]> {
+export async function getPermanentShiftByDate(
+  date: Date,
+): Promise<permanent_shift[]> {
   try {
-    const permanentShifts = await sql`
-      SELECT * FROM permanent_shift 
-      WHERE week_day = ${date.getDay()}
-    `;
-    return permanentShifts as DbPermanentShift[];
+    return await prisma.permanent_shift.findMany({
+      where: { week_day: date.getDay() },
+    });
   } catch (error) {
-    console.error('Failed to fetch permanent shifts by date:', error);
-    throw new Error('Failed to fetch permanent shifts by date.');
+    console.error("Failed to fetch permanent shifts by date:", error);
+    throw new Error("Failed to fetch permanent shifts by date.");
   }
 }
 
-export async function getPermanentShiftById(id: string): Promise<DbPermanentShift | null> {
+export async function getPermanentShiftById(
+  id: string,
+): Promise<permanent_shift | null> {
   try {
-    const permanentShift = await sql`
-      SELECT * FROM permanent_shift 
-      WHERE id = ${id}
-    `;
-    return permanentShift[0] as DbPermanentShift | null;
+    return await prisma.permanent_shift.findUnique({
+      where: { id },
+    });
   } catch (error) {
-    console.error('Failed to fetch permanent shift:', error);
-    return null;
+    console.error("Failed to fetch permanent shift:", error);
+    throw new Error("Failed to fetch permanent shift.");
   }
 }
 
-export async function getPermanentShiftsByLaunchPoint(launchPointId: string): Promise<DbPermanentShift[]> {
+export async function getPermanentShiftsByLaunchPoint(
+  launchPointId: string,
+): Promise<permanent_shift[]> {
   try {
-    const permanentShifts = await sql`
-      SELECT * FROM permanent_shift 
-      WHERE launch_point_id = ${launchPointId}
-      ORDER BY week_day ASC, start_time ASC
-    `;
-    return permanentShifts as DbPermanentShift[];
+    return await prisma.permanent_shift.findMany({
+      where: { launch_point_id: launchPointId },
+    });
   } catch (error) {
-    console.error('Failed to fetch permanent shifts by launch point:', error);
-    throw new Error('Failed to fetch permanent shifts by launch point.');
+    console.error("Failed to fetch permanent shifts by launch point:", error);
+    throw new Error("Failed to fetch permanent shifts by launch point.");
   }
 }
 
 // Shift functions
-export async function getAllShifts(): Promise<DbShift[]> {
+export async function getAllShifts(): Promise<shift[]> {
   try {
-    const shifts = await sql`
-      SELECT * FROM shift 
-      ORDER BY date DESC, start_time DESC
-    `;
-    return shifts as DbShift[];
+    return await prisma.shift.findMany();
   } catch (error) {
-    console.error('Failed to fetch shifts:', error);
-    throw new Error('Failed to fetch shifts.');
+    console.error("Failed to fetch shifts:", error);
+    throw new Error("Failed to fetch shifts.");
   }
 }
 
-export async function getShiftById(id: string): Promise<DbShift | null> {
+export async function getShiftById(id: string): Promise<shift | null> {
   try {
-    const shift = await sql`
-      SELECT * FROM shift 
-      WHERE id = ${id}
-    `;
-    return shift[0] as DbShift | null;
+    return await prisma.shift.findUnique({ where: { id } });
   } catch (error) {
-    console.error('Failed to fetch shift:', error);
-    return null;
+    console.error("Failed to fetch shift:", error);
+    throw new Error("Failed to fetch shift.");
   }
 }
 
-export async function getShiftsByDate(date: Date): Promise<DbShift[]> {
+export async function getShiftsByDate(date: Date): Promise<shift[]> {
   try {
-    const shifts = await sql`
-      SELECT * FROM shift 
-      WHERE start_date = ${date}
-      ORDER BY start_time ASC
-    `;
-    return shifts as DbShift[];
+    return await prisma.shift.findMany({
+      where: { start_date: toPostgresCalendarDate(date) },
+    });
   } catch (error) {
-    console.error('Failed to fetch shifts by date:', error);
-    throw new Error('Failed to fetch shifts by date.');
+    console.error("Failed to fetch shifts by date:", error);
+    throw new Error("Failed to fetch shifts by date.");
   }
 }
 
 /** Returns shifts for a date enriched as DisplayShift (launch_point, ambulance, driver, slots). */
-export async function getDisplayShiftsByDate(date: Date): Promise<DisplayShift[]> {
-  const shifts = await getShiftsByDate(date);
-  const launchPoints = await getAllLaunchPoints();
-  const ambulances = await getAllAmbulances();
-  const lpMap = new Map(launchPoints.map((lp) => [lp.id, lp]));
-  const ambMap = new Map(ambulances.map((a) => [a.id, a]));
-  const driverIds = [...new Set(shifts.map((s) => s.driver_id).filter(Boolean))] as string[];
-  const driverMap = new Map<string, DbUser>();
-  await Promise.all(
-    driverIds.map(async (id) => {
-      const user = await getUserByAccountId(id);
-      if (user) driverMap.set(id, user);
-    })
-  );
-  const slotsPerShift = await Promise.all(shifts.map((s) => getShiftSlotsByShift(s.id)));
-  const slotUserIds = [...new Set(slotsPerShift.flat().map((slot) => slot.user_id).filter(Boolean))];
-  const slotUserMap = new Map<string, DbUser>();
-  await Promise.all(
-    slotUserIds.map(async (id) => {
-      const user = await getUserByAccountId(id);
-      if (user) slotUserMap.set(id, user);
-    })
-  );
-  const displayShifts: DisplayShift[] = shifts.map((s, i) => {
-    const launch_point = lpMap.get(s.launch_point_id);
-    if (!launch_point) throw new Error(`Launch point not found: ${s.launch_point_id}`);
-    const rawSlots = slotsPerShift[i];
-    const confirmedSlots = rawSlots.filter((slot) => slot.status === "confirmed");
-    const confirmed_slots: (DisplayShiftSlot | null)[] = Array.from(
-      { length: s.number_of_slots },
-      (_, j) => {
-        if (j >= confirmedSlots.length) return null;
-        const slot = confirmedSlots[j];
-        if (slot.status === "confirmed") {
-          return {
-            id: slot.id,
-            shift_id: slot.shift_id,
-            user: slotUserMap.get(slot.user_id) ?? null, 
-            status: slot.status,
-          } as DisplayShiftSlot;
-        }
-        return null;
-      }
-    );
-    const pendingSlots = rawSlots.filter((slot) => slot.status === "pending");
-    const pending_slots: (DisplayShiftSlot | null)[] = Array.from(
-      { length: pendingSlots.length },
-       (_, j) => {
-      if (j >= pendingSlots.length) return null;
-      const slot = pendingSlots[j];
-      return {
-        id: slot.id,
-        shift_id: slot.shift_id,
-        user: slotUserMap.get(slot.user_id) ?? null, 
-        status: slot.status,
-      } as DisplayShiftSlot;
-    });
+export async function getDisplayShiftsByDate(
+  date: Date,
+): Promise<DisplayShift[]> {
+  console.log("date", date);
+  const shifts = await prisma.shift.findMany({
+    where: { start_date: toPostgresCalendarDate(date) },
+    include: {
+      launch_point: true,
+      ambulance: true,
+      driver: { select: userInfoPublicSelect },
+      shiftSlots: {
+        include: {
+          user: { select: userInfoPublicSelect },
+        },
+      },
+    },
+  });
+
+  const displayShifts: DisplayShift[] = shifts.map((s) => {
     return {
       id: s.id,
-      launch_point,
-      ambulance_type: s.ambulance_type as AmbulanceType,
-      ambulance: s.ambulance_id ? ambMap.get(s.ambulance_id) ?? null : null,
-      driver: s.driver_id ? (driverMap.get(s.driver_id) ?? null) : null,
-      start_date: s.start_date,
-      end_date: s.end_date,
-      start_time: s.start_time,
-      end_time: s.end_time,
-      shift_type: s.shift_type,
-      adult_only: s.adult_only,
+      launch_point: s.launch_point,
+      ambulance_type: s.ambulance_type,
+      ambulance: s.ambulance,
+      driver: s.driver,
+      start_date: s.start_date ?? new Date(),
+      end_date: s.end_date ?? new Date(),
+      start_time: s.start_time ? s.start_time.toISOString() : "",
+      end_time: s.end_time ? s.end_time.toISOString() : "",
+      shift_type: s.shift_type as shift_type,
+      adult_only: s.adult_only ?? false,
       number_of_slots: s.number_of_slots,
-      confirmed_slots,
-      pending_slots,
+      confirmed_slots: s.shiftSlots.filter(
+        (slot) => slot.status === "confirmed",
+      ),
+      pending_slots: s.shiftSlots.filter((slot) => slot.status === "pending"),
     };
   });
   return displayShifts;
 }
 
-export async function getShiftsByDateRange(startDate: Date, endDate: Date): Promise<DbShift[]> {
+export async function getShiftsByDateRange(
+  startDate: Date,
+  endDate: Date,
+): Promise<shift[]> {
   try {
-    const shifts = await sql`
-      SELECT * FROM shift 
-      WHERE date >= ${startDate} AND date <= ${endDate}
-      ORDER BY date ASC, start_time ASC
-    `;
-    return shifts as DbShift[];
+    return await prisma.shift.findMany({
+      where: {
+        start_date: {
+          gte: toPostgresCalendarDate(startDate),
+          lte: toPostgresCalendarDate(endDate),
+        },
+      },
+    });
   } catch (error) {
-    console.error('Failed to fetch shifts by date range:', error);
-    throw new Error('Failed to fetch shifts by date range.');
+    console.error("Failed to fetch shifts by date range:", error);
+    throw new Error("Failed to fetch shifts by date range.");
   }
 }
 
-export async function getShiftsByPermanentShift(permanentShiftId: string): Promise<DbShift[]> {
+/** `driverId` is a `user_info.id` (profile row), not an `account.id`. */
+export async function getShiftsByDriver(driverId: string): Promise<shift[]> {
   try {
-    const shifts = await sql`
-      SELECT * FROM shift 
-      WHERE permanent_shift_id = ${permanentShiftId}
-      ORDER BY date DESC
-    `;
-    return shifts as DbShift[];
+    return await prisma.shift.findMany({
+      where: { driver_id: driverId },
+    });
   } catch (error) {
-    console.error('Failed to fetch shifts by permanent shift:', error);
-    throw new Error('Failed to fetch shifts by permanent shift.');
-  }
-}
-
-export async function getShiftsByDriver(driverId: string): Promise<DbShift[]> {
-  try {
-    const shifts = await sql`
-      SELECT * FROM shift 
-      WHERE driver_id = ${driverId}
-      ORDER BY date DESC, start_time DESC
-    `;
-    return shifts as DbShift[];
-  } catch (error) {
-    console.error('Failed to fetch shifts by driver:', error);
-    throw new Error('Failed to fetch shifts by driver.');
+    console.error("Failed to fetch shifts by driver:", error);
+    throw new Error("Failed to fetch shifts by driver.");
   }
 }
 
 // Picker: grouped by shift_type, then ambulance_type, then location (launch point)
-
-
-
-
 
 export type PickerLocationRow = {
   id: string;
@@ -323,74 +275,200 @@ const SHIFT_TYPE_ORDER: ShiftType[] = [
   "security",
 ];
 
-
-
-export async function getShiftsForPickerDay(date: Date, tags: DbTag[]): Promise<Map<ShiftType, Map<AmbulanceType, DisplayShift[]>>> {
+export async function getShiftsForPickerDay(
+  date: Date,
+  tags: Tag[],
+): Promise<Map<shift_type, Map<ambulance_type, DisplayShift[]>>> {
   const displayShifts = await getDisplayShiftsByDate(date);
 
   const NOAR_TAG_NAME = "נוער";
-  function  isNoar(tags: DbTag[]): boolean {
+  function isNoar(tags: Tag[]): boolean {
     return tags.some((t) => t.name === NOAR_TAG_NAME);
   }
-  
 
   const filterShiftsForTag = (shifts: DisplayShift[]) =>
     isNoar(tags) ? shifts.filter((s) => !s.adult_only) : shifts;
 
   const filteredDisplayShifts = filterShiftsForTag(displayShifts);
   // Group by shift_type -> ambulance_type -> list of DisplayShift (for location rows)
-  const byShiftType = new Map<ShiftType, Map<AmbulanceType, DisplayShift[]>>();
+  const byShiftType = new Map<
+    shift_type,
+    Map<ambulance_type, DisplayShift[]>
+  >();
 
   for (const shift of filteredDisplayShifts) {
     const st = shift.shift_type;
+    if (st == null) continue;
     if (!byShiftType.has(st)) byShiftType.set(st, new Map());
     const byAmb = byShiftType.get(st)!;
-    const ambType = shift.ambulance_type as AmbulanceType;
-    if (!byAmb.has(ambType as AmbulanceType)) byAmb.set(ambType as AmbulanceType, []);
-    byAmb.get(ambType as AmbulanceType)!.push(shift);
+    const ambType = toAmbulanceType(shift.ambulance_type);
+    if (!byAmb.has(ambType)) byAmb.set(ambType, []);
+    byAmb.get(ambType)!.push(shift);
   }
 
   return byShiftType;
 }
 
 // Shift Slot functions
-export async function getShiftSlotsByShift(shiftId: string): Promise<DbShiftSlot[]> {
+export async function getShiftSlotsByShift(
+  shiftId: string,
+): Promise<ShiftSlot[]> {
   try {
-    const shiftSlots = await sql`
-      SELECT * FROM shift_slot 
-      WHERE shift_id = ${shiftId}
-      ORDER BY created_at ASC
-    `;
-    return shiftSlots as DbShiftSlot[];
+    const shiftSlots = await prisma.shift_slot.findMany({
+      where: { shift_id: shiftId },
+      select: {
+        id: true,
+        shift_id: true,
+        user_id: true,
+        status: true,
+      },
+    });
+    return shiftSlots.map(toShiftSlot);
   } catch (error) {
-    console.error('Failed to fetch shift slots:', error);
-    throw new Error('Failed to fetch shift slots.');
+    console.error("Failed to fetch shift slots:", error);
+    throw new Error("Failed to fetch shift slots.");
   }
 }
 
-export async function getShiftSlotsByUser(userId: string): Promise<DbShiftSlot[]> {
+/** `userId` is `user_info.id` (profile row), not `account.id`. */
+export async function getShiftSlotsByUser(
+  userId: string,
+): Promise<ShiftSlot[]> {
   try {
-    const shiftSlots = await sql`
-      SELECT * FROM shift_slot 
-      WHERE user_id = ${userId}
-      ORDER BY created_at DESC
-    `;
-    return shiftSlots as DbShiftSlot[];
+    const shiftSlots = await prisma.shift_slot.findMany({
+      where: { user_id: userId },
+      select: {
+        id: true,
+        shift_id: true,
+        user_id: true,
+        status: true,
+      },
+    });
+    return shiftSlots.map(toShiftSlot);
   } catch (error) {
-    console.error('Failed to fetch shift slots by user:', error);
-    throw new Error('Failed to fetch shift slots by user.');
+    console.error("Failed to fetch shift slots by user:", error);
+    throw new Error("Failed to fetch shift slots by user.");
   }
 }
 
-export async function getShiftSlotById(id: string): Promise<DbShiftSlot | null> {
+export async function getShiftSlotById(id: string): Promise<ShiftSlot | null> {
   try {
-    const shiftSlot = await sql`
-      SELECT * FROM shift_slot 
-      WHERE id = ${id}
-    `;
-    return shiftSlot[0] as DbShiftSlot | null;
+    const shiftSlot = await prisma.shift_slot.findUnique({ where: { id } });
+    return shiftSlot ? toShiftSlot(shiftSlot) : null;
   } catch (error) {
-    console.error('Failed to fetch shift slot:', error);
+    console.error("Failed to fetch shift slot:", error);
     return null;
   }
+}
+
+export async function updateShiftDriverRecord(params: {
+  shiftId: string;
+  driverUserInfoId: string | null;
+  updatedBy: string;
+}) {
+  return prisma.shift.update({
+    where: { id: params.shiftId },
+    data: {
+      driver: params.driverUserInfoId
+        ? { connect: { id: params.driverUserInfoId } }
+        : { disconnect: true },
+      updated_by: { connect: { id: params.updatedBy } },
+    },
+  });
+}
+
+export async function updateShiftAmbulanceRecord(params: {
+  shiftId: string;
+  ambulanceId: string | null;
+  updatedBy: string;
+}) {
+  return prisma.shift.update({
+    where: { id: params.shiftId },
+    data: {
+      ambulance: params.ambulanceId
+        ? { connect: { id: params.ambulanceId } }
+        : { disconnect: true },
+      updated_by: { connect: { id: params.updatedBy } },
+    },
+  });
+}
+
+export async function createShiftSlotRecord(params: {
+  shiftId: string;
+  /** `user_info.id` of the volunteer. */
+  userInfoId: string;
+  status: "pending" | "confirmed";
+  createdBy: string;
+}) {
+  return prisma.shift_slot.create({
+    data: {
+      shift: { connect: { id: params.shiftId } },
+      user: { connect: { id: params.userInfoId } },
+      status: params.status,
+      created_by: { connect: { id: params.createdBy } },
+    },
+  });
+}
+
+export async function updateShiftSlotStatusRecord(params: {
+  shiftSlotId: string;
+  status: "confirmed" | "cancelled";
+  updatedBy: string;
+}) {
+  return prisma.shift_slot.update({
+    where: { id: params.shiftSlotId },
+    data: {
+      status: params.status,
+      updated_by: { connect: { id: params.updatedBy } },
+    },
+  });
+}
+
+export async function createPermanentShiftRecord(
+  params: PermanentShiftRecord,
+  created_by_id: string,
+) {
+  return prisma.permanent_shift.create({
+    data: {
+      created_by: { connect: { id: created_by_id } },
+      launch_point: { connect: { id: params.launch_point_id } },
+      shift_type: params.shift_type,
+      week_day: params.week_day,
+      start_time: params.start_time,
+      end_time: params.end_time,
+      adult_only: params.adult_only,
+      number_of_slots: params.number_of_slots,
+      ambulance_type: params.ambulance_type,
+      start_date: params.start_date,
+      end_date: params.end_date,
+      overnight: params.overnight,
+    },
+  });
+}
+
+export async function createShiftRecord(
+  params: ShiftRecord,
+  created_by_id: string,
+) {
+  return prisma.shift.create({
+    data: {
+      created_by: { connect: { id: created_by_id } },
+      launch_point: { connect: { id: params.launch_point_id } },
+      shift_type: params.shift_type,
+      start_time: params.start_time,
+      end_time: params.end_time,
+      adult_only: params.adult_only,
+      number_of_slots: params.number_of_slots,
+      ambulance: params.ambulance_id
+        ? { connect: { id: params.ambulance_id } }
+        : undefined,
+      driver: params.driver_id
+        ? { connect: { id: params.driver_id } }
+        : undefined,
+      start_date: params.start_date,
+      end_date: params.end_date,
+      ambulance_type: params.ambulance_type,
+      status: params.status,
+    },
+  });
 }

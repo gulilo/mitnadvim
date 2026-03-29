@@ -11,10 +11,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/app/components/ui/select";
-import { DbArea } from "../../data/launchPoint";
+import { Area } from "../../data/launchPoint";
 
 interface CreateLaunchPointFormProps {
-  areas: DbArea[];
+  areas: Area[];
 }
 
 export default function CreateLaunchPointForm({ areas }: CreateLaunchPointFormProps) {

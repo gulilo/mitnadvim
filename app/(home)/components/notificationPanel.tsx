@@ -1,7 +1,7 @@
 import NotificationCard from "./NotificationCard";
 import { Separator } from "@/app/components/ui/separator";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
-import { DBNotifiction } from "@/app/(home)/data/definitions";
+import { Notification } from "@/app/(home)/data/definitions";
 import {
   getNotification,
   formatTimestamp,
@@ -70,7 +70,7 @@ export default async function NotificationPanel() {
   }
   const notifications = (await getNotification(
     session.user.id
-  )) as DBNotifiction[];
+  )) as Notification[];
 
   return (
     <section className="relative mt-8">

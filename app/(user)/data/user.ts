@@ -1,148 +1,177 @@
-import { sql } from "../../lib/data";
-import { DbAccount, DbTag, DbUser, DisplayTag } from "./definitions";
+import type { Prisma } from "@prisma/client";
+import { account, emergency_contacts, tag, user_info } from "@prisma/client";
+import { prisma } from "../../lib/data";
+import { DisplayTag } from "./definitions";
 
-export async function getUserByEmail(email: string): Promise<DbAccount | undefined> {
-    try {
-      const user = await sql`SELECT * FROM account WHERE email = ${email}`;
-      return user[0] as DbAccount;
-    } catch (error) {
-      console.error('Failed to fetch user:', error);
-      throw new Error('Failed to fetch user.');
-    }
-}
-
-export async function getUserByPhone(phone: string): Promise<DbAccount | undefined> {
+export async function getUserByEmail(email: string): Promise<account | null> {
   try {
-    const user = await sql`SELECT * FROM account WHERE phone = ${phone}`;
-    return user[0] as DbAccount;
+    console.log("email", email);
+    return await prisma.account.findUnique({ where: { email } });
   } catch (error) {
-    console.error('Failed to fetch user by phone:', error);
-    throw new Error('Failed to fetch user by phone.');
+    console.error("Failed to fetch user:", error);
+    throw new Error("Failed to fetch user.");
   }
 }
 
-export async function getUserByAccountId(accountId: string): Promise<DbUser | undefined> {
+export async function getUserByPhone(phone: string): Promise<account | null> {
   try {
-    const user = await sql`SELECT * FROM user_info WHERE account_id = ${accountId}`;
-    return user[0] as DbUser;
+    return await prisma.account.findUnique({ where: { phone } });
   } catch (error) {
-    console.error('Failed to fetch user by account id:', error);
-    throw new Error('Failed to fetch user by account id.');
+    console.error("Failed to fetch user by phone:", error);
+    throw new Error("Failed to fetch user by phone.");
   }
 }
 
-export async function getAccountByAccountId(accountId: string): Promise<DbAccount | undefined> {
+export async function getUserByAccountId(
+  accountId: string,
+): Promise<user_info | null> {
   try {
-    const account = await sql`SELECT * FROM account WHERE id = ${accountId}`;
-    return account[0] as DbAccount;
+    return await prisma.user_info.findUnique({
+      where: { account_id: accountId },
+    });
   } catch (error) {
-    console.error('Failed to fetch account:', error);
-    throw new Error('Failed to fetch account.');
+    console.error("Failed to fetch user by account id:", error);
+    throw new Error("Failed to fetch user by account id.");
   }
 }
 
-export async function getEmergencyContactByUserId(userId: string) {
+export async function getAccountByAccountId(
+  accountId: string,
+): Promise<account | null> {
   try {
-    const contact = await sql`
-      SELECT * FROM emergency_contacts 
-      WHERE user_id = ${userId} 
-      LIMIT 1
-    `;
-    return contact[0] || null;
+    return await prisma.account.findUnique({ where: { id: accountId } });
   } catch (error) {
-    console.error('Failed to fetch emergency contact:', error);
+    console.error("Failed to fetch account:", error);
+    throw new Error("Failed to fetch account.");
+  }
+}
+
+export async function getEmergencyContactByUserId(
+  userId: string,
+): Promise<emergency_contacts | null> {
+  try {
+    return await prisma.emergency_contacts.findFirst({
+      where: { user_info_id: userId },
+    });
+  } catch (error) {
+    console.error("Failed to fetch emergency contact:", error);
     return null;
   }
 }
 
 export async function getAreaName(areaId: string): Promise<string | null> {
   try {
-    const area = await sql`SELECT name FROM area WHERE id = ${areaId}`;
-    return area[0]?.name || null;
+    return (
+      (
+        await prisma.area.findUnique({
+          where: { id: areaId },
+          select: { name: true },
+        })
+      )?.name ?? null
+    );
   } catch (error) {
-    console.error('Failed to fetch area:', error);
-    return null;
+    console.error("Failed to fetch area:", error);
+    throw new Error("Failed to fetch area.");
   }
 }
 
-export async function getUserTags(accountId: string): Promise<DbTag[]> {
+export async function getUserTags(accountId: string): Promise<tag[]> {
   try {
-    const tags = await sql`
-      SELECT t.id, t.name, t.category
-      FROM tag t
-      INNER JOIN account_tag at ON t.id = at.tag_id
-      WHERE at.account_id = ${accountId}`;
-    return tags as DbTag[];
+    return await prisma.tag.findMany({
+      where: { accountTags: { some: { account_id: accountId } } },
+    });
   } catch (error) {
-    console.error('Failed to fetch user tags:', error);
-    return [] as DbTag[];
+    console.error("Failed to fetch user tags:", error);
+    throw new Error("Failed to fetch user tags.");
   }
 }
 
 export async function getTagName(tagId: string): Promise<string | null> {
   try {
-    const tag = await sql`SELECT name FROM tag WHERE id = ${tagId}`;
-    return tag[0]?.name || null;
+    return (
+      (
+        await prisma.tag.findUnique({
+          where: { id: tagId },
+          select: { name: true },
+        })
+      )?.name ?? null
+    );
   } catch (error) {
-    console.error('Failed to fetch tag name:', error);
-    return null;
+    console.error("Failed to fetch tag name:", error);
+    throw new Error("Failed to fetch tag name.");
   }
 }
 
 export async function getTagCategory(tagId: string): Promise<string | null> {
   try {
-    const tag = await sql`SELECT category FROM tag WHERE id = ${tagId}`;
-    return tag[0]?.category || null;
+    return (
+      (
+        await prisma.tag.findUnique({
+          where: { id: tagId },
+          select: { category: true },
+        })
+      )?.category ?? null
+    );
   } catch (error) {
-    console.error('Failed to fetch tag category:', error);
-    return null;
+    console.error("Failed to fetch tag category:", error);
+    throw new Error("Failed to fetch tag category.");
   }
 }
 
-export async function getUserPermissions(tags: DbTag[]): Promise<string[]> {
+export async function getUserPermissions(tags: tag[]): Promise<string[]> {
   try {
-    // Return empty array if no tags provided
     if (!tags || tags.length === 0) {
       return [];
     }
-    console.log("tags", tags);
-    // Join tag_permission with permissions table to get permission names
-    // Use DISTINCT to avoid duplicate permissions if multiple tags have the same permission
-    const permissions = await sql`
-      SELECT DISTINCT p.name
-      FROM tag_permission tp
-      INNER JOIN permissions p ON tp.permission_id = p.id
-      WHERE tp.tag_id = ANY(${tags.map((tag) => tag.id)}::uuid[])
-    `;
-    
-    return permissions.map((permission) => permission.name);
+    return (
+      (
+        await prisma.permissions.findMany({
+          where: {
+            tagPermissions: {
+              some: { tag_id: { in: tags.map((tag) => tag.id) } },
+            },
+          },
+          select: { name: true },
+        })
+      )?.map((permission) => permission.name) ?? []
+    );
   } catch (error) {
-    console.error('Failed to fetch user permissions:', error);
-    return [];
+    console.error("Failed to fetch user permissions:", error);
+    throw new Error("Failed to fetch user permissions.");
   }
 }
 
-export async function getUsersByPartialName(name: string): Promise<DbUser[]> {
+export async function getUsersByPartialName(
+  name: string,
+): Promise<user_info[]> {
   try {
-    const users = await sql`SELECT * FROM user_info WHERE first_name ILIKE ${`%${name}%`} OR last_name ILIKE ${`%${name}%`} LIMIT 10`;
-    return users as DbUser[];
+    return (
+      (await prisma.user_info.findMany({
+        where: {
+          OR: [
+            { first_name: { contains: name, mode: "insensitive" } },
+            { last_name: { contains: name, mode: "insensitive" } },
+          ],
+        },
+        take: 10,
+      })) ?? []
+    );
   } catch (error) {
-    console.error('Failed to fetch users by partial name:', error);
-    return [];
+    console.error("Failed to fetch users by partial name:", error);
+    throw new Error("Failed to fetch users by partial name.");
   }
 }
 
-export async function getAllTags() {
+export async function getAllTags(): Promise<tag[]> {
   try {
-    const tags = await sql`SELECT * FROM tag`;
-    return tags as DbTag[];
+    return await prisma.tag.findMany({});
   } catch (error) {
-    console.error('Failed to fetch all tags:', error);
-    return [];
+    console.error("Failed to fetch all tags:", error);
+    throw new Error("Failed to fetch all tags.");
   }
 }
 
-export async function getDisplayTags(tags: DbTag[]): Promise<DisplayTag[]> {
+export async function getDisplayTags(tags: tag[]): Promise<DisplayTag[]> {
   try {
     const displayTags = [];
     for (const tag of tags) {
@@ -170,9 +199,102 @@ export async function getDisplayTags(tags: DbTag[]): Promise<DisplayTag[]> {
 
       displayTags.push(displayTag);
     }
-    return displayTags as DisplayTag[];
+    return displayTags;
   } catch (error) {
-    console.error('Failed to fetch display tags:', error);
+    console.error("Failed to fetch display tags:", error);
     return [];
   }
+}
+
+export async function createAccount(params: {
+  displayName: string;
+  email: string;
+  passwordHash: string;
+  createdBy: string;
+  phone?: string | null;
+}) {
+  return prisma.account.create({
+    data: {
+      display_name: params.displayName,
+      email: params.email,
+      password_hash: params.passwordHash,
+      created_by_id: params.createdBy,
+      phone: params.phone ?? "",
+    },
+  });
+}
+
+export async function createAccountUserAndEmergency(params: {
+  displayName: string;
+  email: string;
+  phone: string;
+  passwordHash: string;
+  createdBy: string;
+  firstName: string;
+  lastName: string;
+  address: string;
+  areaId: string;
+  qualification: string;
+  isActive: boolean;
+  activeDate: Date | null;
+  emergencyName: string;
+  emergencyRelationship: string;
+  emergencyPhone: string;
+  emergencyEmail: string;
+  emergencyAddress: string;
+}): Promise<{ accountId: string }> {
+  const created = await prisma.$transaction(async (tx) => {
+    const account = await tx.account.create({
+      data: {
+        display_name: params.displayName,
+        email: params.email,
+        phone: params.phone,
+        password_hash: params.passwordHash,
+        created_by_id: params.createdBy,
+      } as Prisma.accountUncheckedCreateInput,
+      select: { id: true },
+    });
+
+    const user = await tx.user_info.create({
+      data: {
+        account_id: account.id,
+        first_name: params.firstName,
+        last_name: params.lastName,
+        image_url: null,
+        address: params.address,
+        area_id: params.areaId,
+        role: params.qualification,
+        active: params.isActive,
+        active_date: params.activeDate,
+        created_by_id: params.createdBy,
+      } as Prisma.user_infoUncheckedCreateInput,
+      select: { id: true },
+    });
+
+    await tx.emergency_contacts.create({
+      data: {
+        user_info_id: user.id,
+        name: params.emergencyName,
+        relationship: params.emergencyRelationship,
+        phone: params.emergencyPhone,
+        email: params.emergencyEmail,
+        address: params.emergencyAddress,
+        created_by_id: params.createdBy,
+      } as Prisma.emergency_contactsUncheckedCreateInput,
+    });
+
+    return account;
+  });
+
+  return { accountId: created.id };
+}
+
+export async function updateAccountPassword(
+  accountId: string,
+  passwordHash: string,
+) {
+  return prisma.account.update({
+    where: { id: accountId },
+    data: { password_hash: passwordHash },
+  });
 }

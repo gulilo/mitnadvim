@@ -1,5 +1,3 @@
-import Footer from "./login/components/footer";
-
 export default function UserLayout({
   children,
 }: Readonly<{

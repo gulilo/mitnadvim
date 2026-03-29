@@ -1,58 +1,44 @@
 "use server";
 
 import { auth } from "@/auth";
-import { sql } from "@/app/lib/data";
 import { revalidatePath } from "next/cache";
-import { DbPermanentShift, DbShift } from "../../data/shift";
+import { createPermanentShiftRecord, createShiftRecord, PermanentShiftRecord, ShiftRecord } from "../../data/shift";
 
-export async function createPermanentShift(permanentShift: DbPermanentShift) {
+export async function createPermanentShift(permanentShift: PermanentShiftRecord) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
       throw new Error('Unauthorized');
     }
-    const launchPointId = permanentShift.launch_point_id;
-    const shiftType = permanentShift.shift_type;
-    const weekDay = permanentShift.week_day;
-    const startTime = permanentShift.start_time;
-    const endTime = permanentShift.end_time;
-    const adultOnly = permanentShift.adult_only;
-    const numberOfSlots = permanentShift.number_of_slots;
-    const ambulanceType = permanentShift.ambulance_type;
 
-    console.log(launchPointId, shiftType, weekDay, startTime, endTime, adultOnly, numberOfSlots, ambulanceType);
-
-    if (!launchPointId) {
+    if (!permanentShift.launch_point_id) {
       throw new Error('נקודת הזנקה נדרשת');
     }
-    if (!shiftType) {
+    if (!permanentShift.shift_type) {
       throw new Error('סוג משמרת (יום/ערב/לילה) נדרש');
     }
-    if (weekDay === undefined || weekDay === null) {
+    if (permanentShift.week_day === undefined || permanentShift.week_day === null) {
       throw new Error('יום בשבוע נדרש');
     }
-    if (!startTime) {
+    if (!permanentShift.start_time) {
       throw new Error('שעת התחלה נדרשת');
     }
-    if (!endTime) {
+    if (!permanentShift.end_time) {
       throw new Error('שעת סיום נדרשת');
     }
-    if (adultOnly === undefined) {
+    if (permanentShift.adult_only === undefined) {
       throw new Error('זמינות לשיבוץ נדרשת');
     }
-    if (!numberOfSlots) {
+    if (!permanentShift.number_of_slots) {
       throw new Error('מספר מלווים נדרש');
     }
-    if (!ambulanceType) {
+    if (!permanentShift.ambulance_type) {
       throw new Error('סוג אמבולנס נדרש');
     }
 
 
-    await sql`
-      INSERT INTO permanent_shift (launch_point_id, shift_type, week_day, start_time, end_time, adult_only, number_of_slots, ambulance_type, created_by)
-      VALUES (${launchPointId}, ${shiftType}, ${weekDay}, ${startTime}, ${endTime}, ${adultOnly}, ${numberOfSlots}, ${ambulanceType}, ${session.user.id})
-      RETURNING id
-    `;
+    await createPermanentShiftRecord(permanentShift, session.user.id);
+
 
     revalidatePath('/adminPanel');
   } catch (error) {
@@ -61,59 +47,43 @@ export async function createPermanentShift(permanentShift: DbPermanentShift) {
   }
 } 
 
-export async function createShift(shift: DbShift) {
+export async function createShift(shift: ShiftRecord) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
       throw new Error('Unauthorized');
     }
-    const launchPointId = shift.launch_point_id;
-    const ambulanceId = shift.ambulance_id;
-    const driverId = shift.driver_id;
-    const startDate = shift.start_date;
-    const endDate = shift.end_date;
-    const startTime = shift.start_time;
-    const endTime = shift.end_time;
-    const ambulanceType = shift.ambulance_type;
-    const shiftType = shift.shift_type;
-    const adultOnly = shift.adult_only;
-    const numberOfSlots = shift.number_of_slots;    
-    const status = shift.status;
 
-    console.log(launchPointId, ambulanceId, driverId, startDate, endDate, startTime, endTime, shiftType, adultOnly, numberOfSlots, status);
-
-    if (!launchPointId) {
+    console.log("shift", shift);
+    if (!shift.launch_point_id) {
       throw new Error('נקודת הזנקה נדרשת');
     }
-    if (!startDate) {
+    if (!shift.start_date) {
       throw new Error('תאריך התחלה נדרש');
     }
-    if (!endDate) {
+    if (!shift.end_date) {
       throw new Error('תאריך סיום נדרש');
     }
-    if (!startTime) {
+    if (!shift.start_time) {
       throw new Error('שעת התחלה נדרשת');
     }
-    if (!endTime) {
+    if (!shift.end_time) {
       throw new Error('שעת סיום נדרשת');
     }
-    if (adultOnly === undefined) {
+    if (shift.adult_only === undefined) {
       throw new Error('זמינות לשיבוץ נדרשת');
     }
-    if (!numberOfSlots) {
+    if (!shift.number_of_slots) {
       throw new Error('מספר מלווים נדרש');
     }
-    if (!status) {
+    if (!shift.status) {
       throw new Error('סטטוס נדרש');
     }
-    if (!ambulanceType) {
+    if (!shift.ambulance_type) {
       throw new Error('סוג אמבולנס נדרש');
     }
 
-    await sql`
-      INSERT INTO shift (launch_point_id, ambulance_type, ambulance_id, driver_id, start_date, end_date, start_time, end_time, shift_type, adult_only, number_of_slots, status, created_by)
-      VALUES (${launchPointId}, ${ambulanceType}, ${ambulanceId}, ${driverId}, ${startDate}, ${endDate}, ${startTime}, ${endTime}, ${shiftType}, ${adultOnly}, ${numberOfSlots}, ${status}, ${session.user.id})
-    `;
+    await createShiftRecord(shift, session.user.id);
 
     revalidatePath('/adminPanel');
   } catch (error) {

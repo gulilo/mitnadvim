@@ -8,7 +8,7 @@ export default async function FullSchedual({ date }: { date: string }) {
     console.error("Failed to parse date:", date);
     return <div>Invalid date</div>;
   }
-  dateObj.setHours(0, 0, 0, 0); // Set to start of day to ensure proper date comparison
+  dateObj.setUTCHours(0, 0, 0, 0);
 
   const scheduleRows = await getDisplayShifts(dateObj);
   return (

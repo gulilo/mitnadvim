@@ -1,6 +1,6 @@
 import { Popover, PopoverContent, PopoverTrigger } from "@/app/components/ui/popover";
 import type { DisplayShift } from "../../../data/shift";
-import type { DbUser } from "@/app/(user)/data/definitions";
+import type { User } from "@/app/(user)/data/definitions";
 import Image from "next/image";
 import Assinment from "../assinment";
 
@@ -10,7 +10,7 @@ export default function SchedualCell({
   onAmbulanceBlur,
 }: {
   shifts: DisplayShift[];
-  onDriverAssigned: (shiftId: string, driver: DbUser) => void;
+  onDriverAssigned: (shiftId: string, driver: User) => void;
   onAmbulanceBlur: (shiftId: string, ambulanceNumber: string) => void;
 }) {
   if (shifts.length === 0) return null;
@@ -49,7 +49,7 @@ export default function SchedualCell({
             </div>
           </div>
           {
-            shift.ambulance_type === "intensive" && (
+            shift.ambulance_type === "atan" && (
               <div className="flex flex-row items-center justify-between">
                 <Image
                   src={"/Paramedic Icon.svg"}

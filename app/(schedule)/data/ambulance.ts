@@ -1,49 +1,48 @@
-import { sql } from "../../lib/data";
+import { prisma } from "../../lib/data";
+import type { Prisma } from "@prisma/client";
+import { ambulance } from "@prisma/client";
 
-export type DbAmbulance = {
-  id: string;
-  number: string;
-  atan: boolean;
-};
+export type Ambulance = Prisma.ambulanceGetPayload<{
+  select: {
+    id: true;
+    number: true;
+    type: true;
+  };
+}> & { atan: boolean };
 
-export async function getAllAmbulances(): Promise<DbAmbulance[]> {
+export async function getAllAmbulances(): Promise<ambulance[]> {
   try {
-    const ambulances = await sql`
-      SELECT * FROM ambulance ORDER BY number ASC
-    `;
-    return ambulances as DbAmbulance[];
+    return await prisma.ambulance.findMany();
   } catch (error) {
     console.error("Failed to get all ambulances:", error);
     throw new Error("Failed to get all ambulances.");
   }
 }
 
-export async function getAmbulanceById(id: string): Promise<DbAmbulance | null> {
+export async function getAmbulanceById(id: string): Promise<ambulance | null> {
   try {
-    const ambulance = await sql`
-      SELECT * FROM ambulance WHERE id = ${id}
-    `;
-    return ambulance[0] as DbAmbulance | null;
+    return await prisma.ambulance.findUnique({ where: { id } });
   } catch (error) {
     console.error("Failed to get ambulance by id:", error);
     throw new Error(
-      error instanceof Error ? error.message : "Failed to get ambulance by id"
+      error instanceof Error ? error.message : "Failed to get ambulance by id",
     );
   }
 }
 
 export async function getAmbulanceByNumber(
-  ambulanceNumber: string
-): Promise<DbAmbulance | null> {
+  ambulanceNumber: string,
+): Promise<ambulance | null> {
   try {
-    const ambulance = await sql`
-      SELECT * FROM ambulance WHERE number = ${ambulanceNumber}
-    `;
-    return ambulance[0] as DbAmbulance | null;
+    return await prisma.ambulance.findFirst({
+      where: { number: ambulanceNumber },
+    });
   } catch (error) {
     console.error("Failed to get ambulance by number:", error);
     throw new Error(
-      error instanceof Error ? error.message : "Failed to get ambulance by number"
+      error instanceof Error
+        ? error.message
+        : "Failed to get ambulance by number",
     );
   }
 }
