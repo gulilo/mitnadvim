@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { User } from "lucide-react";
-import Tags from "@/app/(user)/components/tags";
-import HomeStation from "@/app/(user)/components/homeStation";
+import Tags from "@/app/components/tags";
+import HomeStation from "@/app/components/homeStation";
 import { ProfileData } from "@/app/(user)/lib/actions";
 import { getDisplayTags } from "@/app/(user)/data/user";
 

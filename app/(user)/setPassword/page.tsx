@@ -3,7 +3,7 @@ import Link from "next/link";
 import { AlertCircle } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { validatePasswordResetToken } from "../data/passwordReset";
-import SetPasswordForm from "@/app/(user)/setPassword/SetPasswordForm";
+import SetPasswordForm from "@/app/(user)/setPassword/components/SetPasswordForm";
 
 type Props = {
   searchParams: Promise<{ token?: string }>;

@@ -1,4 +1,4 @@
-import ChangePasswordForm from "./ChangePasswordForm";
+import ChangePasswordForm from "./components/ChangePasswordForm";
 import { validatePasswordResetToken } from "../data/passwordReset";
 
 type Props = {

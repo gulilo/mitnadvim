@@ -11,8 +11,8 @@ import {
 import Image from "next/image";
 import { Camera, User, Cross } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
-import Tags from "../components/tags";
-import HomeStation from "../components/homeStation";
+import Tags from "../../components/tags";
+import HomeStation from "../../components/homeStation";
 import { Separator } from "@/app/components/ui/separator";
 
 export default async function Profile() {

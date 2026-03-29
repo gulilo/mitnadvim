@@ -1,5 +1,5 @@
 import { getProfileData } from "@/app/(user)/lib/actions";
-import HomeStation from "@/app/(user)/components/homeStation";
+import HomeStation from "@/app/components/homeStation";
 import { getAllLaunchPoints } from "../data/launchPoint";
 import Form from "./components/form";
 

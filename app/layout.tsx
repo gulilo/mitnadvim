@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { Noto_Sans_Hebrew } from "next/font/google";
 import "./globals.css";
-import RtlProvider from "@/app/components/providers/rtl-provider";
 import MainMenu from "./components/layout/mainMenu";
 import { auth } from "@/auth";
+import { DirectionProvider } from "./components/ui/direction";
 
 const notoSansHebrew = Noto_Sans_Hebrew({
   subsets: ["hebrew", "latin"],
@@ -24,10 +24,10 @@ export default async function RootLayout({
   return (
     <html lang="he" dir="rtl" className={notoSansHebrew.variable}>
       <body className="relative">
-        <RtlProvider>
-          {session && <MainMenu />}
-          {children}
-        </RtlProvider>
+        <DirectionProvider dir="rtl" >
+        {session && <MainMenu />}
+        {children}
+        </DirectionProvider>
       </body>
     </html>
   );
