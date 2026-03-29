@@ -19,7 +19,7 @@ export type ShiftType =
   | "evening"
   | "night"
   | "reinforcement"
-  | "over_the_machine"
+  | "Overstaffed"
   | "security";
 export type AmbulanceType = "white" | "atan";
 
@@ -271,7 +271,7 @@ const SHIFT_TYPE_ORDER: ShiftType[] = [
   "reinforcement",
   "evening",
   "night",
-  "over_the_machine",
+  "Overstaffed",
   "security",
 ];
 

@@ -236,7 +236,7 @@ export async function getDisplayShifts(date: Date): Promise<ScheduleRow[]> {
 export async function registerShiftSlot(
   shift: DisplayShift,
   tags: Tag[],
-  isNoar: boolean,
+  isPending: boolean,
 ) {
   try {
     const session = await auth();
@@ -247,7 +247,7 @@ export async function registerShiftSlot(
     if (!profile) {
       throw new Error("לא נמצא פרופיל משתמש");
     }
-    if (isNoar) {
+    if (isPending) {
       await createShiftSlotRecord({
         shiftId: shift.id,
         userInfoId: profile.id,

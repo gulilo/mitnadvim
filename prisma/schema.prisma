@@ -325,6 +325,6 @@ enum shift_type {
   evening
   night
   reinforcement
-  over_the_machine
+  Overstaffed
   security
 }

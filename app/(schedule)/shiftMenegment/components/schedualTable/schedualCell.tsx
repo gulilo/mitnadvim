@@ -70,7 +70,7 @@ export default function SchedualCell({
           }
           < div className="flex flex-row items-center justify-between gap-2" >
             <Image
-              src={"/ambulance icon.svg"}
+              src={"/Ambulance icon.svg"}
               alt="ambulance"
               width={20}
               height={20}
