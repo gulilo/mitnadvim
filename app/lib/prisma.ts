@@ -6,7 +6,7 @@ declare global {
 }
 
 const adapter = new PrismaNeon({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: process.env.POSTGRES_URL,
 });
 
 export const prisma =
