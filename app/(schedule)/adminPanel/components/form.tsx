@@ -20,11 +20,11 @@ import { ambulance_type, shift_status_type, shift_type } from "@prisma/client";
 
 
 const SHIFT_TYPES: readonly { key: ShiftType; label: string }[] = [
-  { key: "day", label: "יום" },
+  { key: "day", label: "בוקר" },
   { key: "evening", label: "ערב" },
   { key: "night", label: "לילה" },
   { key: "reinforcement", label: "תגבור" },
-  { key: "over_the_machine", label: "מעל התקן" },
+  { key: "Overstaffed", label: "מעל התקן" },
   { key: "security", label: "אבטחה" },
 ];
 
@@ -76,7 +76,7 @@ export default function Form({
     evening: { start: "15:00", end: "23:00" },
     night: { start: "23:00", end: "07:00" },
     reinforcement: { start: "07:00", end: "15:00" },
-    over_the_machine: { start: "15:00", end: "23:00" },
+    Overstaffed: { start: "15:00", end: "23:00" },
     security: { start: "23:00", end: "07:00" },
   };
 
@@ -182,11 +182,15 @@ export default function Form({
                 <SelectValue placeholder="" />
               </SelectTrigger>
               <SelectContent>
-                {launchPoints.map((lp) => (
-                  <SelectItem key={lp.id} value={lp.id}>
-                    {lp.name}
-                  </SelectItem>
-                ))}
+                {shiftTypeValue === "Overstaffed" ? (
+                  <SelectItem value="Overstaffed">מעל התקן</SelectItem>
+                ) : (
+                  launchPoints.map((lp) => (
+                    <SelectItem key={lp.id} value={lp.id}>
+                      {lp.name}
+                     </SelectItem>
+                   ))
+                 )}
               </SelectContent>
             </Select>
           </div>

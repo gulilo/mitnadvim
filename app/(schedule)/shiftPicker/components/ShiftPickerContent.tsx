@@ -14,7 +14,7 @@ const SHIFT_TYPE_LABELS: Record<ShiftType, string> = {
   reinforcement: "תגבור",
   evening: "ערב",
   night: "לילה",
-  over_the_machine: "מעל התקן",
+  Overstaffed: "מעל התקן",
   security: "אבטחה",
 };
 
@@ -36,7 +36,7 @@ const SHIFT_TYPE_STYLE: Record<
   reinforcement: { bg: "#c3adf3", textDark: true },
   evening: { bg: "#2b6678", textDark: false },
   night: { bg: "#183e4a", textDark: false },
-  over_the_machine: { bg: "#532ca7", textDark: false },
+  Overstaffed: { bg: "#532ca7", textDark: false },
   security: { bg: "#14ae5c", textDark: true },
 };
 

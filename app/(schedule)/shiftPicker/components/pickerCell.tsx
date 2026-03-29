@@ -39,7 +39,7 @@ export default function PickerCell({ shift, tags }: { shift: DisplayShift, tags:
                 <AccordionTrigger className="flex flex-row h-20 w-full px-2 items-center justify-between gap-4 text-lg font-bold border border-red-500 data-[state=open]:hidden">
                     <p>{shift.launch_point.name}</p>
                     <div className="flex flex-col">
-                        <Image src={"/ambulance icon.svg"} alt="ambulance" width={20} height={20} />
+                        <Image src={"/Ambulance icon.svg"} alt="ambulance" width={20} height={20} />
                         <p>{shift.ambulance?.number}</p>
                     </div>
                     {shift.driver ?
@@ -60,7 +60,7 @@ export default function PickerCell({ shift, tags }: { shift: DisplayShift, tags:
                         <div className="flex flex-row justify-center items-center gap-4">
                             <p>{shift.launch_point.name}</p>
                             <div className="flex flex-col items-center">
-                                <Image src={"/ambulance icon.svg"} alt="ambulance" width={20} height={20} />
+                                <Image src={"/Ambulance icon.svg"} alt="ambulance" width={20} height={20} />
                                 <p>{shift.ambulance?.number}</p>
                             </div>
 
