@@ -3,6 +3,8 @@ import HomeStation from "@/app/components/homeStation";
 import { getAllLaunchPoints } from "../data/launchPoint";
 import Form from "./components/form";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminPanel() {
   const userProfile = await getProfileData();
   const launchPoints = await getAllLaunchPoints();
