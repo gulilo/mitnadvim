@@ -16,15 +16,15 @@ import * as React from "react";
 
 const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
-export interface CreateUserEmailProps {
+export interface WelcomeEmailProps {
     name: string;
     setPasswordUrl: string;
 }
 
-export default function CreateUserEmail({
+export default function WelcomeEmail({
     name,
     setPasswordUrl,
-}: CreateUserEmailProps) {
+}: WelcomeEmailProps) {
     return (
         <Html lang="he" dir="rtl">
             <Head />

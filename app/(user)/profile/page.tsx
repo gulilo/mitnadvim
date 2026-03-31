@@ -14,6 +14,8 @@ import { Button } from "@/app/components/ui/button";
 import Tags from "../../components/tags";
 import HomeStation from "../../components/homeStation";
 import { Separator } from "@/app/components/ui/separator";
+import { resetPassword } from "../lib/actions";
+import ChangePasswordButton from "./components/changePasswordButton";
 
 export default async function Profile() {
   const session = await auth();
@@ -29,6 +31,10 @@ export default async function Profile() {
   }
 
   const account = await getAccountByAccountId(session.user.id);
+  if(!account) {
+    console.log("account not found");
+    redirect("./login");
+  }
   const emergencyContact = await getEmergencyContactByUserId(user.id);
   const areaName = user.area_id ? await getAreaName(user.area_id) : null;
   const tags = await getUserTags(session.user.id);
@@ -227,12 +233,7 @@ export default async function Profile() {
 
       {/* Change Password Button */}
       <div className="px-4 pb-4">
-        <Button
-          className="w-[240px] h-11 bg-red-500 hover:bg-red-600 text-white text-lg font-bold rounded-lg mx-auto block"
-          variant="destructive"
-        >
-          שינוי סיסמא
-        </Button>
+          <ChangePasswordButton account={account} />
       </div>
 
       {/* Membership Status */}

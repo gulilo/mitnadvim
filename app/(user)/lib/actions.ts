@@ -11,6 +11,7 @@ import {
   getTagName,
   getTagCategory,
   updateAccountPassword,
+  getUserByPhone,
 } from "../data/user";
 import { createPasswordResetTokenRecord } from "../data/passwordReset";
 import crypto from "crypto";
@@ -387,4 +388,50 @@ export async function changePassword(
     console.error("Failed to update password:", error);
     return { error: "שמירת הסיסמא נכשלה. נא לנסות שוב." };
   }
+}
+
+export async function forgotPassword(phone: string) {
+  const account = await getUserByPhone(phone);
+  if (!account) {
+    return { error: "לא נמצא חשבון" };
+  }
+  const token = await generateToken();
+  const hashedToken = await hashToken(token);
+
+  await createPasswordResetTokenRecord({
+    accountId: account.id,
+    tokenHash: hashedToken,
+    expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24),
+    createdBy: account.id,
+  });
+  await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/forgotPassword`, {
+    method: "POST",
+    body: JSON.stringify({
+      email: account.email,
+      fullName: account.display_name,
+      token,
+    }),
+  });
+  return { success: true };
+}
+
+export async function resetPassword(account: account) {
+  const token = await generateToken();
+  const hashedToken = await hashToken(token);
+
+  await createPasswordResetTokenRecord({
+    accountId: account.id,
+    tokenHash: hashedToken,
+    expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24),
+    createdBy: account.id,
+  });
+  await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/forgotPassword`, {
+    method: "POST",
+    body: JSON.stringify({
+      email: account.email,
+      fullName: account.display_name,
+      token,
+    }),
+  });
+  return { success: true };
 }

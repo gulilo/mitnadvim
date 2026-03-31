@@ -1,3 +1,4 @@
+"use client";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -9,9 +10,25 @@ import {
   AlertDialogTrigger,
 } from "../../../components/ui/alert-dialog";
 import Image from "next/image";
+import { useState } from "react";
+import { forgotPassword } from "../../lib/actions";
+import EmailSentAlert from "../../components/emailSentAlert";
+
+
 
 export default function ForgotPasswordPanel() {
+
+  const [phone, setPhone] = useState("");
+  const [isEmailSentAlertOpen, setIsEmailSentAlertOpen] = useState(false);
+  async function handleForgotPassword() {
+    const response = await forgotPassword(phone);
+    console.log(response);
+    if (response.success) {
+      setIsEmailSentAlertOpen(true);
+    }
+  }
   return (
+    <>
     <AlertDialog>
       <AlertDialogTrigger className="text-white text-sm font-sans underline mt-2">
         שכחתי סיסמא
@@ -29,8 +46,9 @@ export default function ForgotPasswordPanel() {
               className="w-full bg-transparent text-black placeholder-white/70 py-2 px-0 border-0 outline-none text-center"
               type="tel"
               placeholder=""
-              name="email"
+              name="phone"
               required
+              onChange={(e) => setPhone(e.target.value)}
             />
           </div>
           <label
@@ -41,11 +59,20 @@ export default function ForgotPasswordPanel() {
           </label>
         </AlertDialogDescription>
         <AlertDialogFooter>
-          <AlertDialogAction className="w-full bg-[#FF6969] text-white font-bold rounded-lg py-3 px-6 border-2 border-[#FF5555] hover:bg-[#FF5555] transition-colors">
+          <AlertDialogAction
+            className="w-full bg-[#FF6969] text-white font-bold rounded-lg py-3 px-6 border-2 border-[#FF5555] hover:bg-[#FF5555] transition-colors"
+            onClick={handleForgotPassword}
+          >
             שחזור סיסמא
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
+     <EmailSentAlert
+     email={phone}
+     open={isEmailSentAlertOpen}
+     onOpenChange={setIsEmailSentAlertOpen}
+   />
+   </>
   );
 }
