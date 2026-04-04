@@ -30,6 +30,7 @@ export async function POST(req: Request) {
   try {
     const poller = await client.beginSend(message);
     const response = await poller.pollUntilDone();
+    console.log("response", response);
     return Response.json({ success: true });
   } catch (error) {
     console.log("error", error);
