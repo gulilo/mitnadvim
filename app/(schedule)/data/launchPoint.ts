@@ -6,6 +6,7 @@ export type LaunchPoint = Prisma.launch_pointGetPayload<{
     id: true;
     area_id: true;
     name: true;
+    order: true;
   };
 }>;
 

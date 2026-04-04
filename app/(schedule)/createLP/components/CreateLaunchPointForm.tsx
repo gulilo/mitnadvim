@@ -66,11 +66,11 @@ export default function CreateLaunchPointForm({ areas }: CreateLaunchPointFormPr
       </div>
       <div className="flex flex-row gap-4 items-center">
         <label htmlFor="areaId" className="whitespace-nowrap min-w-[120px]">
-          אזור:
+          תחנה:
         </label>
         <Select value={areaId} onValueChange={setAreaId} required>
           <SelectTrigger className="flex-1">
-            <SelectValue placeholder="בחר אזור" />
+            <SelectValue placeholder="בחר תחנה" />
           </SelectTrigger>
           <SelectContent>
             {areas.map((area) => (

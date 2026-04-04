@@ -13,6 +13,7 @@ import {
 } from "@/app/components/ui/card";
 import CreateLaunchPointForm from "./components/CreateLaunchPointForm";
 import DeleteLaunchPointButton from "./components/DeleteLaunchPointButton";
+import SortableLaunchPointsList from "./components/sortableLaunchPointsList";
 
 export default async function CreateLP() {
   const session = await auth();
@@ -54,25 +55,7 @@ export default async function CreateLP() {
           {launchPointsWithAreaNames.length === 0 ? (
             <p className="text-muted-foreground">אין נקודות הזנקה עדיין</p>
           ) : (
-            <ul className="space-y-2">
-              {launchPointsWithAreaNames.map((lp) => (
-                <li
-                  key={lp.id}
-                  className="flex flex-row justify-between items-center p-3 border-b border-border"
-                >
-                  <div className="flex flex-col">
-                    <span className="font-medium">{lp.name}</span>
-                    <span className="text-sm text-muted-foreground">
-                      אזור: {lp.areaName}
-                    </span>
-                  </div>
-                  <DeleteLaunchPointButton
-                    launchPointId={lp.id}
-                    launchPointName={lp.name}
-                  />
-                </li>
-              ))}
-            </ul>
+            <SortableLaunchPointsList items={launchPointsWithAreaNames} />
           )}
         </CardContent>
       </Card>

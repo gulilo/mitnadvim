@@ -127,6 +127,7 @@ launchPoint [color:red]{
   id string pk
   areaid string fk
   name sting
+  order int
 
   createdAt timestamp
   updatedAt timestamp nullable
