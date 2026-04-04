@@ -15,16 +15,16 @@ import { Checkbox } from "@/app/components/ui/checkbox";
 import { Button } from "@/app/components/ui/button";
 import { createPermanentShift, createShift } from "../lib/actions";
 import { timeStringToPrismaTime } from "@/app/lib/date-utils";
-import { PermanentShiftRecord, ShiftRecord, ShiftType } from "../../data/shift";
+import { PermanentShiftRecord, ShiftRecord } from "../../data/shift";
 import { ambulance_type, shift_status_type, shift_type } from "@prisma/client";
 
 
-const SHIFT_TYPES: readonly { key: ShiftType; label: string }[] = [
+const SHIFT_TYPES: readonly { key: shift_type; label: string }[] = [
   { key: "day", label: "בוקר" },
   { key: "evening", label: "ערב" },
   { key: "night", label: "לילה" },
   { key: "reinforcement", label: "תגבור" },
-  { key: "Overstaffed", label: "מעל התקן" },
+  { key: "overstaffed", label: "מעל התקן" },
   { key: "security", label: "אבטחה" },
 ];
 
@@ -71,12 +71,12 @@ export default function Form({
     }));
   };
 
-  const SHIFT_TYPE_TIMES: Record<ShiftType, { start: string; end: string }> = {
+  const SHIFT_TYPE_TIMES: Record<shift_type, { start: string; end: string }> = {
     day: { start: "07:00", end: "15:00" },
     evening: { start: "15:00", end: "23:00" },
     night: { start: "23:00", end: "07:00" },
     reinforcement: { start: "07:00", end: "15:00" },
-    Overstaffed: { start: "15:00", end: "23:00" },
+    overstaffed: { start: "15:00", end: "23:00" },
     security: { start: "23:00", end: "07:00" },
   };
 
@@ -182,8 +182,8 @@ export default function Form({
                 <SelectValue placeholder="" />
               </SelectTrigger>
               <SelectContent>
-                {shiftTypeValue === "Overstaffed" ? (
-                  <SelectItem value="Overstaffed">מעל התקן</SelectItem>
+                {shiftTypeValue === "overstaffed" ? (
+                  <SelectItem value="overstaffed">מעל התקן</SelectItem>
                 ) : (
                   launchPoints.map((lp) => (
                     <SelectItem key={lp.id} value={lp.id}>

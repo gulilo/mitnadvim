@@ -14,13 +14,6 @@ import type {
   ambulance,
 } from "@prisma/client";
 
-export type ShiftType =
-  | "day"
-  | "reinforcement"
-  | "evening"
-  | "night"
-  | "Overstaffed"
-  | "security";
 export type AmbulanceType = "white" | "atan";
 
 export type PermanentShiftRecord = Omit<
@@ -259,7 +252,7 @@ export type PickerAmbulanceType = {
 };
 
 export type PickerShiftType = {
-  id: ShiftType;
+  id: shift_type;
   label: string;
   count: number;
   ambulanceTypes: PickerAmbulanceType[];

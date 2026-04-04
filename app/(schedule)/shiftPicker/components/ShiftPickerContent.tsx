@@ -8,18 +8,18 @@ import {
 import {
   type AmbulanceType,
   type DisplayShift,
-  type ShiftType,
 } from "../../data/shift";
 import PickerCell from "./pickerCell";
 import { Tag } from "@/app/(user)/data/definitions";
+import { shift_type } from "@/generated/prisma/enums";
 
 
-const SHIFT_TYPE_LABELS: Record<ShiftType, string> = {
+const SHIFT_TYPE_LABELS: Record<shift_type, string> = {
   day: "בוקר",
   reinforcement: "תגבור",
   evening: "ערב",
   night: "לילה",
-  Overstaffed: "מעל התקן",
+  overstaffed: "מעל התקן",
   security: "אבטחה",
 };
 
@@ -41,19 +41,19 @@ const SHIFT_TYPE_STYLE: Record<
   reinforcement: { bg: "#c3adf3", textDark: true },
   evening: { bg: "#2b6678", textDark: false },
   night: { bg: "#183e4a", textDark: false },
-  Overstaffed: { bg: "#532ca7", textDark: false },
+  overstaffed: { bg: "#532ca7", textDark: false },
   security: { bg: "#14ae5c", textDark: true },
 };
 
-const SHIFT_TYPE_ORDER: ShiftType[] = [
+const SHIFT_TYPE_ORDER: shift_type[] = [
   "day",
   "reinforcement",
   "evening",
   "night",
-  "Overstaffed",
+  "overstaffed",
   "security",
 ];
-function compareShiftTypeOrder(a: ShiftType, b: ShiftType): number {
+function compareShiftTypeOrder(a: shift_type, b: shift_type): number {
   const ia = SHIFT_TYPE_ORDER.indexOf(a);
   const ib = SHIFT_TYPE_ORDER.indexOf(b);
   const ra = ia === -1 ? SHIFT_TYPE_ORDER.length : ia;
@@ -76,7 +76,7 @@ export default function ShiftPickerContent({
   shiftsData,
   tags,
 }: {
-  shiftsData: Map<ShiftType, Map<AmbulanceType, DisplayShift[]>>;
+  shiftsData: Map<shift_type, Map<AmbulanceType, DisplayShift[]>>;
   tags: Tag[];
 }) {
   const shiftStyle = (id: string) => SHIFT_TYPE_STYLE[id] ?? { bg: "#e5e5e5", textDark: true };
