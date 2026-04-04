@@ -16,9 +16,9 @@ import type {
 
 export type ShiftType =
   | "day"
+  | "reinforcement"
   | "evening"
   | "night"
-  | "reinforcement"
   | "Overstaffed"
   | "security";
 export type AmbulanceType = "white" | "atan";
@@ -264,15 +264,6 @@ export type PickerShiftType = {
   count: number;
   ambulanceTypes: PickerAmbulanceType[];
 };
-
-const SHIFT_TYPE_ORDER: ShiftType[] = [
-  "day",
-  "reinforcement",
-  "evening",
-  "night",
-  "Overstaffed",
-  "security",
-];
 
 export async function getShiftsForPickerDay(
   date: Date,

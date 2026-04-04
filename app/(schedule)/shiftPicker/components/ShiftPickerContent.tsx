@@ -5,9 +5,14 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/app/components/ui/accordion";
-import type { AmbulanceType, DisplayShift, ShiftType } from "../../data/shift";
+import {
+  type AmbulanceType,
+  type DisplayShift,
+  type ShiftType,
+} from "../../data/shift";
 import PickerCell from "./pickerCell";
 import { Tag } from "@/app/(user)/data/definitions";
+
 
 const SHIFT_TYPE_LABELS: Record<ShiftType, string> = {
   day: "בוקר",
@@ -40,6 +45,22 @@ const SHIFT_TYPE_STYLE: Record<
   security: { bg: "#14ae5c", textDark: true },
 };
 
+const SHIFT_TYPE_ORDER: ShiftType[] = [
+  "day",
+  "reinforcement",
+  "evening",
+  "night",
+  "Overstaffed",
+  "security",
+];
+function compareShiftTypeOrder(a: ShiftType, b: ShiftType): number {
+  const ia = SHIFT_TYPE_ORDER.indexOf(a);
+  const ib = SHIFT_TYPE_ORDER.indexOf(b);
+  const ra = ia === -1 ? SHIFT_TYPE_ORDER.length : ia;
+  const rb = ib === -1 ? SHIFT_TYPE_ORDER.length : ib;
+  return ra - rb;
+}
+
 const AMBULANCE_TYPE_STYLE: Record<string, { bg: string; textDark: boolean }> = {
   white: { bg: "rgba(252,92,92,0.5)", textDark: true },
   atan: { bg: "#fffaa8", textDark: true },
@@ -62,7 +83,9 @@ export default function ShiftPickerContent({
   
   return (
     <Accordion type="multiple" className="mt-6 w-full">
-      {[...shiftsData].map(([shiftType, ambulanceType]) => {
+      {[...shiftsData]
+        .sort(([a], [b]) => compareShiftTypeOrder(a, b))
+        .map(([shiftType, ambulanceType]) => {
         const style = shiftStyle(shiftType);
         const hasAmbulanceTypes = ambulanceType.size > 0;
         return (
@@ -108,22 +131,6 @@ export default function ShiftPickerContent({
                         >
                           {shifts.map((shift) => (
                             <PickerCell shift={shift} key={shift.id} tags={tags} />
-
-                            // <div
-                            //   key={loc.shiftId}
-                            //   className="flex h-20 w-full items-center justify-between gap-4 px-6 text-lg font-bold border border-red-500"
-                            //   style={{
-                            //     backgroundColor: ambStyle.bg,
-                            //     color: ambStyle.textDark ? "black" : "white",
-                            //   }}
-                            // >
-                            //   {loc.ambulanceNumber != null && (
-                            //     <span>
-                            //       {loc.ambulanceNumber}
-                            //     </span>
-                            //   )}
-                            //   <span>{loc.label}</span>
-                            // </div>
                           ))}
                         </AccordionContent>
                       </AccordionItem>
