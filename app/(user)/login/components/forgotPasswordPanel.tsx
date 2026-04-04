@@ -17,13 +17,10 @@ import EmailSentAlert from "../../components/emailSentAlert";
 
 
 export default function ForgotPasswordPanel() {
-
   const [phone, setPhone] = useState("");
   const [isEmailSentAlertOpen, setIsEmailSentAlertOpen] = useState(false);
   async function handleForgotPassword() {
-    console.log("phone", phone);
     const response = await forgotPassword(phone);
-    console.log("response", response);
     if (response.success) {
       setIsEmailSentAlertOpen(true);
     }

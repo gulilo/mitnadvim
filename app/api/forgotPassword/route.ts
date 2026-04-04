@@ -6,9 +6,6 @@ const connectionString = process.env.AZURE_COMMUNICATION_CONNECTION_STRING!;
 
 export async function POST(req: Request) {
   const { email, fullName, token } = await req.json();
-  console.log("email", email);
-  console.log("fullName", fullName);
-  console.log("token", token);
 
   const client = new EmailClient(connectionString);
 
@@ -29,13 +26,11 @@ export async function POST(req: Request) {
       to: [{ address: email }],
     },
   };
-  console.log("message", message);
+
   try {
     const poller = await client.beginSend(message);
-    console.log("poller", poller);
     const response = await poller.pollUntilDone();
-    console.log("response", response);
-    return Response.json({ success: true });
+    return response.status === "succeeded" ? Response.json({ success: true }) : Response.json({ error: "Email failed" }, { status: 500 });
   } catch (error) {
     console.log("error", error);
     return Response.json({ error: "Email failed" }, { status: 500 });
