@@ -4,6 +4,7 @@ import "./globals.css";
 import MainMenu from "./components/layout/mainMenu";
 import { auth } from "@/auth";
 import { DirectionProvider } from "./components/ui/direction";
+import Headers from "./components/layout/headers";
 
 const notoSansHebrew = Noto_Sans_Hebrew({
   subsets: ["hebrew", "latin"],
@@ -25,7 +26,7 @@ export default async function RootLayout({
     <html lang="he" dir="rtl" className={notoSansHebrew.variable}>
       <body className="relative">
         <DirectionProvider dir="rtl" >
-        {session && <MainMenu />}
+        {session && <Headers/>}
         {children}
         </DirectionProvider>
       </body>

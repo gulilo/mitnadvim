@@ -5,7 +5,6 @@ import { DisplayTag } from "./definitions";
 
 export async function getUserByEmail(email: string): Promise<account | null> {
   try {
-    console.log("email", email);
     return await prisma.account.findUnique({ where: { email } });
   } catch (error) {
     console.error("Failed to fetch user:", error);

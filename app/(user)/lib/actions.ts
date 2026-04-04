@@ -277,8 +277,6 @@ export async function submitCreateUserForm(
 
   const token = await generateToken();
   const hashedToken = await hashToken(token);
-  console.log("token", token);
-  console.log("hashedToken", hashedToken);
   const accountId = result.accountId;
   await createPasswordResetTokenRecord({
     accountId: accountId!,
@@ -360,8 +358,6 @@ export async function changePassword(
   if (!targetAccountId) {
     return { error: "יש להתחבר כדי לשנות סיסמא" };
   }
-
-  console.log("targetAccountId", targetAccountId);
 
   const account = await getAccountByAccountId(targetAccountId);
   if (!account?.password_hash) {

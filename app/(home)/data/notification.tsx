@@ -3,7 +3,6 @@ import { Notification } from "./definitions";
 import { ReactNode } from "react";
 
 export async function getNotification(userid: string) {
-  console.log(userid);
   try {
     const notifications = await prisma.notification.findMany({
       where: { account_id: userid },

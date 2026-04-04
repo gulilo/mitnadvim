@@ -26,13 +26,9 @@ export default async function ShiftPickerPage({
     const tags = await getUserTags(session.user.id);
 
     const { date } = await searchParams;
-    console.log("date", date);
     const paramDate = date ?? new Date().toLocaleDateString("he-IL");
-    console.log("paramDate", paramDate);
     const selectedDate = parseHebrewDate(paramDate) ?? new Date();
-    console.log("selectedDate", selectedDate);
     const shiftsData = await getShiftsForPickerDay(selectedDate, tags);
-    console.log("shiftsData", shiftsData);
 
     return (
         <div className="flex flex-col items-center w-full">

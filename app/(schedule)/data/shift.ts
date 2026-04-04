@@ -174,7 +174,6 @@ export async function getShiftsByDate(date: Date): Promise<shift[]> {
 export async function getDisplayShiftsByDate(
   date: Date,
 ): Promise<DisplayShift[]> {
-  console.log("date", date);
   const shifts = await prisma.shift.findMany({
     where: { start_date: toPostgresCalendarDate(date) },
     include: {

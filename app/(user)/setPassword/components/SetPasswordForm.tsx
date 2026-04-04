@@ -7,9 +7,7 @@ import { changePassword, ChangePasswordFormState } from "../../lib/actions";
 import { redirect } from "next/navigation";
 
 async function changePasswordAction(prevState: ChangePasswordFormState, formData: FormData): Promise<ChangePasswordFormState> {
-  console.log("formData", formData);
   const result = await changePassword(prevState, formData);
-  console.log("result", result);
   if (result.success) {
     redirect("/");
   }

@@ -54,7 +54,6 @@ export async function createShift(shift: ShiftRecord) {
       throw new Error('Unauthorized');
     }
 
-    console.log("shift", shift);
     if (!shift.launch_point_id) {
       throw new Error('נקודת הזנקה נדרשת');
     }

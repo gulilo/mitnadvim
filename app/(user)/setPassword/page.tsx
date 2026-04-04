@@ -12,7 +12,6 @@ type Props = {
 export default async function SetPasswordPage({ searchParams }: Props) {
   const { token } = await searchParams;
   const tokenData = await validatePasswordResetToken(token);
-  console.log("tokenData", tokenData);
   if (!tokenData) {
     return (
       <div

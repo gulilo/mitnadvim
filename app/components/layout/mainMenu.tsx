@@ -28,7 +28,6 @@ export default async function MainMenu() {
           alt="Menu"
           width={24}
           height={24}
-          className="absolute z-50 top-8 end-5"
         />
       </DrawerTrigger>
 

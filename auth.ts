@@ -9,16 +9,12 @@ export const {auth, handlers, signIn, signOut} = NextAuth({
     ...authConfig,
     providers: [Credentials({
         async authorize(credentials) {
-            console.log('Credentials:', credentials);
             const parsedCredentials = z.object({ phone: z.string().min(10).max(10), password: z.string() }).safeParse(credentials);
             if (parsedCredentials.success) {
-                console.log('Parsed credentials:', parsedCredentials.data);
                 const { phone, password } = parsedCredentials.data;
                 const user = await getUserByPhone(phone)
-                console.log('User:', user);
                 if (!user || !user.password_hash) return null;
                 const passwordsMatch = await bcrypt.compare(password, user.password_hash as string);
-                console.log('Authenticated user:', user);
                 if (passwordsMatch) return user;
             }
             else 

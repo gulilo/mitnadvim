@@ -22,7 +22,6 @@ export default function ForgotPasswordPanel() {
   const [isEmailSentAlertOpen, setIsEmailSentAlertOpen] = useState(false);
   async function handleForgotPassword() {
     const response = await forgotPassword(phone);
-    console.log(response);
     if (response.success) {
       setIsEmailSentAlertOpen(true);
     }
