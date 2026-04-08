@@ -25,16 +25,14 @@ import { DisplayTag } from "../../data/definitions";
 import { submitCreateUserForm } from "../../lib/actions";
 
 const QUALIFICATION_OPTIONS = [
-  { value: "first_aid_m", label: "מגיש עזרה ראשונה" },
-  { value: "first_aid_f", label: "מגישת עזרה ראשונה" },
-  { value: "emc_m", label: "חובש רפואת חירום" },
-  { value: "emc_f", label: "חובשת רפואת חירום" },
-  { value: "paramedic_m", label: "פאראמדיק" },
-  { value: "paramedic_f", label: "פאראמדיקית" },
-  { value: "driver_corpsman_m", label: "נהג-חובש" },
-  { value: "driver_corpsman_f", label: "נהגת-חובשת" },
-  { value: "corpsman_driver_trainee_m", label: "חובש - נהג משתלם" },
-  { value: "corpsman_driver_trainee_f", label: "חובשת - נהגת משתלמת" },
+  { value: "מגיש עזרה ראשונה", label: "מגיש עזרה ראשונה" },
+  { value: "מגישת עזרה ראשונה", label: "מגישת עזרה ראשונה" },
+  { value: "חובש רפואת חירום", label: "חובש רפואת חירום" },
+  { value: "חובשת רפואת חירום", label: "חובשת רפואת חירום" },
+  { value: "פאראמדיק", label: "פאראמדיק" },
+  { value: "פאראמדיקית", label: "פאראמדיקית" },
+  { value: "נהג-חובש", label: "נהג-חובש" },
+  { value: "נהגת-חובשת", label: "נהגת-חובשת" },
 ];
 
 const RELATIONSHIP_OPTIONS = [
