@@ -455,6 +455,7 @@ export async function updateProfileField(params: {
       await updateEmergencyContactFields(params.id, { [params.field]: value });
     }
     
+    revalidatePath("/profile");
     return { success: true as const };
   } catch (error) {
     console.error("Failed to update profile field:", error);

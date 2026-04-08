@@ -3,7 +3,6 @@
 import Image from "next/image";
 import { useState, useTransition } from "react";
 import { updateProfileField } from "../../lib/actions";
-import { revalidatePath } from "next/cache";
 
 type EditableFieldProps = {
   id: string;
@@ -47,7 +46,6 @@ export default function EditableField({
         return;
       }
       setIsEditing(false);
-      revalidatePath("/profile");
     });
   };
 
