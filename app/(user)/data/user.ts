@@ -297,3 +297,39 @@ export async function updateAccountPassword(
     data: { password_hash: passwordHash },
   });
 }
+
+export async function updateAccountFields(
+  accountId: string,
+  data: { phone?: string; email?: string },
+) {
+  return prisma.account.update({
+    where: { id: accountId },
+    data,
+  });
+}
+
+export async function updateUserInfoFields(
+  userId: string,
+  data: { address?: string },
+) {
+  return prisma.user_info.update({
+    where: { id: userId },
+    data,
+  });
+}
+
+export async function updateEmergencyContactFields(
+  emergencyContactId: string,
+  data: {
+    relationship?: string;
+    name?: string;
+    phone?: string;
+    email?: string;
+    address?: string;
+  },
+) {
+  return prisma.emergency_contacts.update({
+    where: { id: emergencyContactId },
+    data,
+  });
+}

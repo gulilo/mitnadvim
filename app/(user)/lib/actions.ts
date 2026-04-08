@@ -12,11 +12,15 @@ import {
   getTagCategory,
   updateAccountPassword,
   getUserByPhone,
+  updateAccountFields,
+  updateEmergencyContactFields,
+  updateUserInfoFields,
 } from "../data/user";
 import { createPasswordResetTokenRecord } from "../data/passwordReset";
 import crypto from "crypto";
 import bcrypt from "bcrypt";
 import { account, tag, user_info } from "@prisma/client";
+import { revalidatePath } from "next/cache";
 
 export type ProfileData = {
   user: user_info;
@@ -430,4 +434,30 @@ export async function resetPassword(account: account) {
     }),
   });
   return { success: true };
+}
+
+export async function updateProfileField(params: {
+  table:string
+  id: string;
+  field: string;
+  value: string;
+}) {
+  try {
+    const value = params.value.trim();
+
+    if(params.table === "user_info") {
+      await updateUserInfoFields(params.id, { [params.field]: value });
+    }
+    else if(params.table === "account") {
+      await updateAccountFields(params.id, { [params.field]: value });
+    }
+    else if(params.table === "emergency_contacts") {
+      await updateEmergencyContactFields(params.id, { [params.field]: value });
+    }
+    
+    return { success: true as const };
+  } catch (error) {
+    console.error("Failed to update profile field:", error);
+    return { success: false as const, error: "עדכון הפרטים נכשל. נא לנסות שוב." };
+  }
 }
