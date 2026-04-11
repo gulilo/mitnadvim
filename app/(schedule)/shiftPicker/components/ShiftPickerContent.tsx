@@ -6,12 +6,11 @@ import {
   AccordionTrigger,
 } from "@/app/components/ui/accordion";
 import {
-  type AmbulanceType,
   type DisplayShift,
 } from "../../data/shift";
 import PickerCell from "./pickerCell";
 import { Tag } from "@/app/(user)/data/definitions";
-import { shift_type } from "@/generated/prisma/enums";
+import { ambulance_type, shift_type } from "@/generated/prisma/enums";
 
 
 const SHIFT_TYPE_LABELS: Record<shift_type, string> = {
@@ -76,72 +75,72 @@ export default function ShiftPickerContent({
   shiftsData,
   tags,
 }: {
-  shiftsData: Map<shift_type, Map<AmbulanceType, DisplayShift[]>>;
+  shiftsData: Map<shift_type, Map<ambulance_type, DisplayShift[]>>;
   tags: Tag[];
 }) {
   const shiftStyle = (id: string) => SHIFT_TYPE_STYLE[id] ?? { bg: "#e5e5e5", textDark: true };
-  
+
   return (
     <Accordion type="multiple" className="mt-6 w-full">
       {[...shiftsData]
         .sort(([a], [b]) => compareShiftTypeOrder(a, b))
         .map(([shiftType, ambulanceType]) => {
-        const style = shiftStyle(shiftType);
-        const hasAmbulanceTypes = ambulanceType.size > 0;
-        return (
-          <AccordionItem
-            key={shiftType}
-            value={shiftType}
-            className={cn("border border-red-500")}
-          >
-            <AccordionTrigger
-              className={cn(
-                "h-20 rounded-none px-6 py-0 w-full",
-                "text-lg font-bold",
-                style.textDark ? "text-black" : "text-white"
-              )}
-              style={{ backgroundColor: style.bg }}
+          const style = shiftStyle(shiftType);
+          const hasAmbulanceTypes = ambulanceType.size > 0;
+          return (
+            <AccordionItem
+              key={shiftType}
+              value={shiftType}
+              className={cn("border border-red-500")}
             >
-              <span>{SHIFT_TYPE_LABELS[shiftType]}</span>
-              <span>({[...ambulanceType.values()].reduce((sum, shifts) => sum + shifts.length, 0)})</span>
-            </AccordionTrigger>
-            <AccordionContent className="p-0">
-              {hasAmbulanceTypes ? (
-                <Accordion type="multiple" className="w-full">
-                  {[...ambulanceType].map(([ambulanceType, shifts]) => {
-                    const ambStyle = getAmbulanceStyle(ambulanceType);
-                    return (
-                      <AccordionItem
-                        key={ambulanceType}
-                        value={ambulanceType}
-                        className={cn("border border-red-500")}
-                      >
-                        <AccordionTrigger
-                          className={cn(
-                            "h-20 px-6 py-0 text-lg font-bold w-full",
-                            ambStyle.textDark ? "text-black" : "text-white"
-                          )}
-                          style={{ backgroundColor: ambStyle.bg }}
+              <AccordionTrigger
+                className={cn(
+                  "h-20 rounded-none px-6 py-0 w-full",
+                  "text-lg font-bold",
+                  style.textDark ? "text-black" : "text-white"
+                )}
+                style={{ backgroundColor: style.bg }}
+              >
+                <span>{SHIFT_TYPE_LABELS[shiftType]}</span>
+                <span>({[...ambulanceType.values()].reduce((sum, shifts) => sum + shifts.length, 0)})</span>
+              </AccordionTrigger>
+              <AccordionContent className="p-0">
+                {hasAmbulanceTypes ? (
+                  <Accordion type="multiple" className="w-full">
+                    {[...ambulanceType].map(([ambulanceType, shifts]) => {
+                      const ambStyle = getAmbulanceStyle(ambulanceType);
+                      return (
+                        <AccordionItem
+                          key={ambulanceType}
+                          value={ambulanceType}
+                          className={cn("border border-red-500")}
                         >
-                          <span>{getAmbulanceTypeLabel(ambulanceType)}</span>
-                          <span>({shifts.length})</span>
-                        </AccordionTrigger>
-                        <AccordionContent className="p-0"
-                          style={{ backgroundColor: ambStyle.bg }}
-                        >
-                          {shifts.map((shift) => (
-                            <PickerCell shift={shift} key={shift.id} tags={tags} />
-                          ))}
-                        </AccordionContent>
-                      </AccordionItem>
-                    );
-                  })}
-                </Accordion>
-              ) : null}
-            </AccordionContent>
-          </AccordionItem>
-        );
-      })}
+                          <AccordionTrigger
+                            className={cn(
+                              "h-20 px-6 py-0 text-lg font-bold w-full",
+                              ambStyle.textDark ? "text-black" : "text-white"
+                            )}
+                            style={{ backgroundColor: ambStyle.bg }}
+                          >
+                            <span>{getAmbulanceTypeLabel(ambulanceType)}</span>
+                            <span>({shifts.length})</span>
+                          </AccordionTrigger>
+                          <AccordionContent className="p-0"
+                            style={{ backgroundColor: ambStyle.bg }}
+                          >
+                            {shifts.map((shift) => (
+                              <PickerCell shift={shift} key={shift.id} tags={tags} />
+                            ))}
+                          </AccordionContent>
+                        </AccordionItem>
+                      );
+                    })}
+                  </Accordion>
+                ) : null}
+              </AccordionContent>
+            </AccordionItem>
+          );
+        })}
     </Accordion>
   );
 }

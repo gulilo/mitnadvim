@@ -1,7 +1,11 @@
 "use server";
 
 import { User, Tag, userInfoPublicSelect } from "@/app/(user)/data/definitions";
-import { toPostgresCalendarDate } from "@/app/lib/date-utils";
+import {
+  prismaDateToUtcDateString,
+  prismaTimeToTimeString,
+  toPostgresCalendarDate,
+} from "@/app/lib/date-utils";
 import { prisma } from "../../lib/data";
 import type {
   ambulance_type,
@@ -14,18 +18,28 @@ import type {
   ambulance,
 } from "@prisma/client";
 
-export type AmbulanceType = "white" | "atan";
-
 export type PermanentShiftRecord = Omit<
   Prisma.permanent_shiftUncheckedCreateInput,
   "id" | "created_at" | "updated_at" | "created_by_id" | "updated_by_id"
 >;
 
-/** `driver_id` references `user_info.id` (profile), not `account.id`. */
 export type ShiftRecord = Omit<
   Prisma.shiftUncheckedCreateInput,
   "id" | "created_at" | "updated_at" | "created_by_id" | "updated_by_id"
 >;
+
+/** Updatable one-time shift metadata (does not touch driver, ambulance, or slots). */
+export type ShiftRecordUpdateFields = {
+  launch_point_id: string;
+  start_date: Date;
+  end_date: Date;
+  start_time: Date;
+  end_time: Date;
+  shift_type: shift_type;
+  adult_only: boolean;
+  number_of_slots: number;
+  ambulance_type: ambulance_type;
+};
 
 export type ShiftSlot = Prisma.shift_slotGetPayload<{
   select: {
@@ -41,7 +55,6 @@ export type DisplayShift = {
   launch_point: launch_point;
   ambulance_type: ambulance_type;
   ambulance: ambulance | null;
-  /** Driver profile (`user_info`), not the login `account` row. */
   driver: User | null;
   start_date: Date;
   end_date: Date;
@@ -57,14 +70,9 @@ export type DisplayShift = {
 export type DisplayShiftSlot = {
   id: string;
   shift_id: string;
-  /** Slot volunteer profile (`user_info`), not `account`. */
   user: User;
   status: "pending" | "confirmed" | "cancelled";
 };
-
-function toAmbulanceType(value: ambulance_type): AmbulanceType {
-  return value === "atan" ? "atan" : "white";
-}
 
 function toShiftSlotStatus(value: shift_status): shift_status {
   return value;
@@ -284,7 +292,7 @@ export async function getShiftsForPickerDay(
     if (st == null) continue;
     if (!byShiftType.has(st)) byShiftType.set(st, new Map());
     const byAmb = byShiftType.get(st)!;
-    const ambType = toAmbulanceType(shift.ambulance_type);
+    const ambType = shift.ambulance_type;
     if (!byAmb.has(ambType)) byAmb.set(ambType, []);
     byAmb.get(ambType)!.push(shift);
   }
@@ -452,6 +460,28 @@ export async function createShiftRecord(
       end_date: params.end_date,
       ambulance_type: params.ambulance_type,
       status: params.status,
+    },
+  });
+}
+
+export async function updateShiftRecord(params: {
+  shiftId: string;
+  data: ShiftRecordUpdateFields;
+  updatedById: string;
+}) {
+  return prisma.shift.update({
+    where: { id: params.shiftId },
+    data: {
+      launch_point: { connect: { id: params.data.launch_point_id } },
+      start_date: params.data.start_date,
+      end_date: params.data.end_date,
+      start_time: params.data.start_time,
+      end_time: params.data.end_time,
+      shift_type: params.data.shift_type,
+      adult_only: params.data.adult_only,
+      number_of_slots: params.data.number_of_slots,
+      ambulance_type: params.data.ambulance_type,
+      updated_by: { connect: { id: params.updatedById } },
     },
   });
 }

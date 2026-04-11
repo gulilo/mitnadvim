@@ -44,6 +44,24 @@ export function timeStringToPrismaTime(time: string): Date {
   return new Date(Date.UTC(1970, 0, 1, h, m, s, 0));
 }
 
+const pad2 = (n: number) => String(n).padStart(2, "0");
+
+/**
+ * Format Prisma `@db.Date` values as `YYYY-MM-DD` using UTC calendar parts.
+ * Avoids local-timezone off-by-one when the DB stores a civil date.
+ */
+export function prismaDateToUtcDateString(date: Date): string {
+  return `${date.getUTCFullYear()}-${pad2(date.getUTCMonth() + 1)}-${pad2(date.getUTCDate())}`;
+}
+
+/**
+ * Format Prisma `@db.Time` `DateTime` as `HH:mm` using UTC clock time
+ * (inverse of {@link timeStringToPrismaTime}).
+ */
+export function prismaTimeToTimeString(time: Date): string {
+  return `${pad2(time.getUTCHours())}:${pad2(time.getUTCMinutes())}`;
+}
+
 /**
  * Parse Hebrew locale date string (DD.MM.YYYY) to a Date object
  * @param dateString - Date string in Hebrew format (DD.MM.YYYY)
@@ -80,4 +98,15 @@ export function parseHebrewDate(dateString: string): Date | undefined {
 }
 export const HEBREW_MONTHS = [
   "ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני", "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר",
+];
+
+
+export const DAYS_OF_WEEK = [
+  { key: "sunday" as const, label: "א", name: "ראשון", value: 0 },
+  { key: "monday" as const, label: "ב", name: "שני", value: 1 },
+  { key: "tuesday" as const, label: "ג", name: "שלישי", value: 2 },
+  { key: "wednesday" as const, label: "ד", name: "רביעי", value: 3 },
+  { key: "thursday" as const, label: "ה", name: "חמישי", value: 4 },
+  { key: "friday" as const, label: "ו", name: "שישי", value: 5 },
+  { key: "saturday" as const, label: "ש", name: "שבת", value: 6 },
 ];

@@ -3,6 +3,12 @@ import type { DisplayShift } from "../../../data/shift";
 import type { User } from "@/app/(user)/data/definitions";
 import Image from "next/image";
 import Assinment from "../assinment";
+import { prismaTimeToTimeString } from "@/app/lib/date-utils";
+import Link from "next/link";
+
+function deleteShift(shiftId: string) {
+  console.log(shiftId);
+}
 
 export default function SchedualCell({
   shifts,
@@ -83,9 +89,13 @@ export default function SchedualCell({
               className="border-b border-black px-2 py-1 w-10 text-center"
             />
             <p>
-              {shift.start_time} - {shift.end_time}
+              {prismaTimeToTimeString(new Date(shift.start_time))} - {prismaTimeToTimeString(new Date(shift.end_time))}
             </p>
           </div >
+          <div className="flex flex-row items-center justify-between gap-2 w-full px-15">
+            <Link href={`/editShift/${shift.id}`}>ערוך</Link>
+            <button onClick={() => deleteShift(shift.id)}>מחק</button>
+          </div>
         </div >
       ))
       }

@@ -78,7 +78,7 @@ export default async function MainMenu() {
           {permissions.includes("createShift") && (
             <>
               <DrawerClose asChild>
-                <Link href="/adminPanel">
+                <Link href="/createShift">
                   <h2 className="text-white">יצירת משמרת</h2>
                 </Link>
               </DrawerClose>
