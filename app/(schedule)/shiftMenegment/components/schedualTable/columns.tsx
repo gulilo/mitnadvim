@@ -7,7 +7,8 @@ import SchedualCell from "./schedualCell"
 
 export function getColumns(
   onDriverAssigned: (shiftId: string, driver: User) => void,
-  onAmbulanceBlur: (shiftId: string, ambulanceNumber: string) => void
+  onAmbulanceBlur: (shiftId: string, ambulanceNumber: string) => void,
+  onDeleteShift: (shiftId: string) => void
 ): ColumnDef<ScheduleRow>[] {
   return [
     {
@@ -33,6 +34,7 @@ export function getColumns(
           shifts={row.original.shiftsByType.night}
           onDriverAssigned={onDriverAssigned}
           onAmbulanceBlur={onAmbulanceBlur}
+          onDeleteShift={onDeleteShift}
         />
       ),
     },
@@ -44,6 +46,7 @@ export function getColumns(
           shifts={row.original.shiftsByType.morning}
           onDriverAssigned={onDriverAssigned}
           onAmbulanceBlur={onAmbulanceBlur}
+          onDeleteShift={onDeleteShift}
         />
       ),
     },
@@ -55,6 +58,7 @@ export function getColumns(
           shifts={row.original.shiftsByType.reinforcement}
           onDriverAssigned={onDriverAssigned}
           onAmbulanceBlur={onAmbulanceBlur}
+          onDeleteShift={onDeleteShift}
         />
       ),
     },
@@ -66,6 +70,7 @@ export function getColumns(
           shifts={row.original.shiftsByType.evening}
           onDriverAssigned={onDriverAssigned}
           onAmbulanceBlur={onAmbulanceBlur}
+          onDeleteShift={onDeleteShift}
         />
       ),
     },

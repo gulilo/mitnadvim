@@ -6,18 +6,16 @@ import Assinment from "../assinment";
 import { prismaTimeToTimeString } from "@/app/lib/date-utils";
 import Link from "next/link";
 
-function deleteShift(shiftId: string) {
-  console.log(shiftId);
-}
-
 export default function SchedualCell({
   shifts,
   onDriverAssigned,
   onAmbulanceBlur,
+  onDeleteShift,
 }: {
   shifts: DisplayShift[];
   onDriverAssigned: (shiftId: string, driver: User) => void;
   onAmbulanceBlur: (shiftId: string, ambulanceNumber: string) => void;
+  onDeleteShift: (shiftId: string) => void;
 }) {
   if (shifts.length === 0) return null;
   return (
@@ -94,7 +92,7 @@ export default function SchedualCell({
           </div >
           <div className="flex flex-row items-center justify-between gap-2 w-full px-15">
             <Link href={`/editShift/${shift.id}`}>ערוך</Link>
-            <button onClick={() => deleteShift(shift.id)}>מחק</button>
+            <button onClick={() => onDeleteShift(shift.id)}>מחק</button>
           </div>
         </div >
       ))

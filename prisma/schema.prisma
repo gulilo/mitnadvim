@@ -172,6 +172,7 @@ model permanent_shift {
   end_time        DateTime        @db.Time(6)
   adult_only      Boolean         @default(false)
   number_of_slots Int             @default(1)
+  active          Boolean         @default(true)
   created_at      DateTime        @default(now()) @db.Timestamptz(6)
   updated_at      DateTime?       @db.Timestamptz(6)
   created_by_id   String          @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @map("created_by") @db.Uuid
@@ -184,6 +185,7 @@ model permanent_shift {
   created_by      account         @relation("created_by_id", fields: [created_by_id], references: [id])
   launch_point    launch_point    @relation(fields: [launch_point_id], references: [id])
   updated_by      account?        @relation("updated_by_id", fields: [updated_by_id], references: [id])
+  shifts          shift[]
 
   @@index([week_day], map: "idx_permanent_shift_week_day")
 }
@@ -201,30 +203,34 @@ model permissions {
 }
 
 model shift {
-  id              String            @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  driver_id       String?           @db.Uuid
-  launch_point_id String            @db.Uuid
-  start_time      DateTime?         @db.Time(6)
-  end_time        DateTime?         @db.Time(6)
-  created_at      DateTime          @default(now()) @db.Timestamptz(6)
-  updated_at      DateTime?         @db.Timestamptz(6)
-  created_by_id   String            @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @map("created_by") @db.Uuid
-  updated_by_id   String?           @map("updated_by") @db.Uuid
-  start_date      DateTime          @db.Date
-  adult_only      Boolean?          @default(false)
-  number_of_slots Int?              @default(1)
-  status          shift_status_type @default(active)
-  ambulance_id    String?           @db.Uuid
-  shift_type      shift_type
-  end_date        DateTime?         @db.Date
-  ambulance_type  ambulance_type
-  ambulance       ambulance?        @relation(fields: [ambulance_id], references: [id])
-  created_by      account           @relation("created_by_id", fields: [created_by_id], references: [id])
-  driver          user_info?        @relation("shift_driver", fields: [driver_id], references: [id])
-  launch_point    launch_point      @relation(fields: [launch_point_id], references: [id])
-  updated_by      account?          @relation("updated_by_id", fields: [updated_by_id], references: [id])
-  shiftSlots      shift_slot[]
+  id                 String            @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  permanent_shift_id String?           @db.Uuid
+  permanent_shift    permanent_shift?  @relation(fields: [permanent_shift_id], references: [id])
+  driver_id          String?           @db.Uuid
+  launch_point_id    String            @db.Uuid
+  start_time         DateTime?         @db.Time(6)
+  end_time           DateTime?         @db.Time(6)
+  created_at         DateTime          @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime?         @db.Timestamptz(6)
+  created_by_id      String            @default(dbgenerated("'00000000-0000-0000-0000-000000000001'::uuid")) @map("created_by") @db.Uuid
+  updated_by_id      String?           @map("updated_by") @db.Uuid
+  start_date         DateTime          @db.Date
+  adult_only         Boolean?          @default(false)
+  number_of_slots    Int?              @default(1)
+  status             shift_status_type @default(active)
+  generated          Boolean?          @default(false)
+  ambulance_id       String?           @db.Uuid
+  shift_type         shift_type
+  end_date           DateTime?         @db.Date
+  ambulance_type     ambulance_type
+  ambulance          ambulance?        @relation(fields: [ambulance_id], references: [id])
+  created_by         account           @relation("created_by_id", fields: [created_by_id], references: [id])
+  driver             user_info?        @relation("shift_driver", fields: [driver_id], references: [id])
+  launch_point       launch_point      @relation(fields: [launch_point_id], references: [id])
+  updated_by         account?          @relation("updated_by_id", fields: [updated_by_id], references: [id])
+  shiftSlots         shift_slot[]
 
+  @@unique([permanent_shift_id, start_date, start_time], map: "uk_shift_permanent_shift_id_start_date_start_time")
   @@index([start_date], map: "idx_shift_date")
   @@index([driver_id], map: "idx_shift_driver_id")
   @@index([launch_point_id], map: "idx_shift_launch_point_id")

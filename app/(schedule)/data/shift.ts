@@ -481,7 +481,27 @@ export async function updateShiftRecord(params: {
       adult_only: params.data.adult_only,
       number_of_slots: params.data.number_of_slots,
       ambulance_type: params.data.ambulance_type,
+      generated: false,
       updated_by: { connect: { id: params.updatedById } },
     },
   });
+}
+
+export async function cancelShiftRecord(params: {
+  shiftId: string;
+  updatedBy: string;
+}) {
+  return prisma.shift.update({
+    where: { id: params.shiftId },
+    data: {
+      status: "canceled",
+      updated_by: { connect: { id: params.updatedBy } },
+    },
+  });
+}
+
+export async function cancelPermanentShiftById(permanentShiftId: string) {
+  return prisma.$executeRaw`
+    SELECT cancel_permanent_shift(CAST(${permanentShiftId} AS uuid))
+  `;
 }

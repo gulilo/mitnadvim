@@ -7,8 +7,11 @@ import {
   getUserTags,
 } from "@/app/(user)/data/user";
 import {
+  cancelPermanentShiftById,
+  cancelShiftRecord,
   createShiftSlotRecord,
   getDisplayShiftsByDate,
+  getShiftById,
   DisplayShift,
   updateShiftAmbulanceRecord,
   updateShiftDriverRecord,
@@ -177,6 +180,39 @@ export async function updateShiftAmbulance(
       error instanceof Error
         ? error.message
         : "Failed to update shift ambulance",
+    );
+  }
+}
+
+export async function cancelShift(shiftId: string) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      throw new Error("Unauthorized");
+    }
+    if (!shiftId) {
+      throw new Error("Shift ID is required");
+    }
+
+    const shift = await getShiftById(shiftId);
+    if (!shift) {
+      throw new Error("Shift not found");
+    }
+
+    if (shift.permanent_shift_id && shift.generated) {
+      await cancelPermanentShiftById(shift.permanent_shift_id);
+    } else {
+      await cancelShiftRecord({
+        shiftId,
+        updatedBy: session.user.id,
+      });
+    }
+
+    revalidatePath("/shiftMenegment");
+  } catch (error) {
+    console.error("Failed to cancel shift:", error);
+    throw new Error(
+      error instanceof Error ? error.message : "Failed to cancel shift",
     );
   }
 }
