@@ -31,23 +31,16 @@ export default function NotificationCard({
   className,
 }: NotificationCardProps) {
   return (
-    <Card className={cn("pb-1", className)}>
-      <CardHeader>
-        <div className="flex flex-row items-center justify-between">
-          <CardTitle>{header}</CardTitle>
-          <CardDescription>{date}</CardDescription>
-        </div>
-      </CardHeader>
-      <CardContent>{text}</CardContent>
-      <CardFooter>
-        <CardAction>
-          <div className="flex flex-row w-full">
-            <Button className="justify-end" variant="ghost" size="icon">
-              <Image src="./icon_delete.svg" alt="delete" width={20} height={20} />
-            </Button>
-          </div>
-        </CardAction>
-      </CardFooter>
-    </Card>
+    <div className="grid grid-cols-2">
+      <div className="flex flex-row items-center justify-between">
+        <p className="text-sm font-bold">{header}</p>
+        <p className="mt-1 text-[10px] text-[#666]">{date}</p>
+      </div>
+      <div className="flex flex-row w-full">
+        <Button className="justify-end" variant="ghost" size="icon">
+          <Image src="./icon_delete.svg" alt="delete" width={20} height={20} />
+        </Button>
+      </div>
+    </div>
   );
 }

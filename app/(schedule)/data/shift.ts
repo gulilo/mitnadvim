@@ -92,6 +92,13 @@ function toShiftSlot(slot: {
   };
 }
 
+export type ShiftPanelShift = {
+  date: Date;
+  shiftType: shift_type;
+  launchPoint: launch_point;
+  ambulanceType: ambulance_type;
+};
+
 // Permanent Shift functions
 export async function getAllPermanentShifts(): Promise<permanent_shift[]> {
   try {
@@ -504,4 +511,38 @@ export async function cancelPermanentShiftById(permanentShiftId: string) {
   return prisma.$executeRaw`
     SELECT cancel_permanent_shift(CAST(${permanentShiftId} AS uuid))
   `;
+}
+
+export async function getShiftPanelShifts(
+  userId: string,
+): Promise<ShiftPanelShift[]> {
+  try {
+    const shiftslots = await prisma.shift_slot.findMany({
+      where: {
+        user_id: userId,
+        status: "confirmed",
+        shift: { start_date: { gte: new Date() } },
+      },
+      select: {
+        shift: {
+          select: {
+            start_date: true,
+            shift_type: true,
+            launch_point: true,
+            ambulance_type: true,
+          },
+        },
+      },
+    });
+
+    return shiftslots.map((slot) => ({
+      date: slot.shift.start_date,
+      shiftType: slot.shift.shift_type,
+      launchPoint: slot.shift.launch_point,
+      ambulanceType: slot.shift.ambulance_type,
+    }));
+  } catch (error) {
+    console.error("Failed to fetch shift panel shifts:", error);
+    throw new Error("Failed to fetch shift panel shifts.");
+  }
 }
