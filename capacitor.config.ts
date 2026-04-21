@@ -5,8 +5,8 @@ const config: CapacitorConfig = {
   appName: 'Mdadan',
   webDir: 'out',
   server: {
-    // url: 'https://mdadan.azurewebsites.net',
-    url: 'http://10.0.0.20:3000',
+    url: 'https://mdadan.azurewebsites.net',
+    // url: 'http://10.0.0.20:3000',
     cleartext: true
   }
 };
