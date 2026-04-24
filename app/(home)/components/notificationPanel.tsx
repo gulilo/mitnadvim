@@ -1,19 +1,20 @@
 import NotificationCard from "./NotificationCard";
 import { Separator } from "@/app/components/ui/separator";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
-import { Notification } from "@/app/(home)/data/definitions";
 import {
   getNotification,
   formatTimestamp,
 } from "@/app/(home)/data/notification";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
+import { ChevronDown } from "lucide-react";
+import { Trash2 } from "lucide-react";
 
 // const notifications = [
 //   {
 //     id: "volunteers",
 //     title: "הודעה למתנדבים",
-//     timestamp: "11/7/2025 (14:45)",
+//     timestamp: new Date("2025-07-11T14:45:00"),
 //     message:
 //       "לורם איפסום דולור סיט אמט, קונסקטורר אדיפיסינג אלית לפרומי בלוף קינץ תתיח לרעח. לת צשחמי צש בליא, מנסוטו צמלח לביקו ננבי, צמוקו בלוקריה שיצמה ברורק.",
 //     icon: <ChevronDown className="size-5 text-[#222]" strokeWidth={2.5} />,
@@ -21,7 +22,7 @@ import { redirect } from "next/navigation";
 //   {
 //     id: "approved",
 //     title: "בקשת השיבוץ שלך אושרה 😃",
-//     timestamp: "8/7/2025 (11:17)",
+//     timestamp: new Date("2025-07-08T11:17:00"),
 //     message: (
 //       <>
 //         <span>שובצת למשמרת </span>
@@ -39,7 +40,7 @@ import { redirect } from "next/navigation";
 //   {
 //     id: "rejected",
 //     title: "בקשת השיבוץ שלך נדחתה ☹️",
-//     timestamp: "6/7/2025 (8:32)",
+//     timestamp: new Date("2025-07-06T08:32:00"),
 //     message: (
 //       <>
 //         <span>לצערנו לא ניתן לשבץ אותך למשמרת </span>
@@ -70,7 +71,7 @@ export default async function NotificationPanel() {
   }
   const notifications = (await getNotification(
     session.user.id
-  )) as Notification[];
+  ));
 
   return (
     <section className="relative mt-8">
@@ -86,18 +87,11 @@ export default async function NotificationPanel() {
             return (
               <div key={notification.id}>
                 <NotificationCard
+                  id={notification.id}
                   header={notification.title}
                   date={formattedDate}
                   text={notification.message}
-                >
-                  <p className="text-sm font-bold">{notification.title}</p>
-                  <p className="mt-1 text-[10px] text-[#666]">
-                    {formattedDate}
-                  </p>
-                  <p className="mt-2 text-xs leading-relaxed">
-                    {notification.message}
-                  </p>
-                </NotificationCard>
+                />
                 <Separator className="bg-red-inActive" />
               </div>
             );

@@ -1,31 +1,33 @@
 import { prisma } from "../../lib/data";
-import { Notification } from "./definitions";
 import { ReactNode } from "react";
 
 export async function getNotification(userid: string) {
   try {
     const notifications = await prisma.notification.findMany({
-      where: { account_id: userid },
+      where: { account_id: userid, read: false },
       select: {
         id: true,
         account_id: true,
         title: true,
         message: true,
         timestamp: true,
-        read: true,
       },
     });
-    return notifications.map((notification): Notification => ({
-      id: notification.id,
-      account_id: notification.account_id,
-      title: notification.title,
-      message: notification.message,
-      timestamp: notification.timestamp,
-      read: notification.read,
-    }));
+    return notifications;
   } catch (error) {
     console.error("Failed to fetch notifications:", error);
     throw new Error("Failed to fetch notifications.");
+  }
+}
+
+export async function updateNotificationRead(notificationId: string) {
+  try {
+    await prisma.notification.update({
+      where: { id: notificationId },
+      data: { read: true },
+    });
+  } catch (error) {
+    console.error("Failed to read notification:", error);
   }
 }
 

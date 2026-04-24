@@ -5,6 +5,8 @@ import NotificationPanel from "./(home)/components/notificationPanel";
 import ShiftPanel from "./(home)/components/shiftPanel";
 import Greeting from "./(home)/components/greetings";
 import Link from "next/link";
+import { getShiftPanelShifts } from "./(schedule)/data/shift";
+import { getUserByAccountId } from "./(user)/data/user";
 
 export default async function Home() {
   const session = await auth();
@@ -13,6 +15,11 @@ export default async function Home() {
     redirect("./login");
   }
 
+  const user = await getUserByAccountId(session?.user?.id);
+  if (!user) {
+    redirect("./login");
+  }
+  const shifts = await getShiftPanelShifts(user.id);
   return (
     <main
       className="flex flex-col justify-center mx-auto
@@ -31,7 +38,7 @@ export default async function Home() {
       <Greeting userName={userName} />
       <Link  href="/profile">Profile</Link>
       <NotificationPanel />
-      {/* <ShiftPanel /> */}
+      <ShiftPanel shifts={shifts} />
     </main>
   );
 }

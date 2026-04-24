@@ -1,53 +1,32 @@
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/app/components/ui/card";
-import { Button } from "@/app/components/ui/button";
+"use client";
 
-import { cn } from "@/app/lib/utils";
+import { Button } from "@/app/components/ui/button";
 import type { ReactNode } from "react";
 import Image from "next/image";
-
+import { readNotification } from "../lib/action";
 type NotificationCardProps = {
+  id: string;
   header: ReactNode;
   date: ReactNode;
   text: ReactNode;
-
-  children: ReactNode;
-  leading?: ReactNode;
-  trailing?: ReactNode;
-  className?: string;
 };
 
 export default function NotificationCard({
+  id,
   header,
   date,
   text,
-  className,
 }: NotificationCardProps) {
   return (
-    <Card className={cn("pb-1", className)}>
-      <CardHeader>
-        <div className="flex flex-row items-center justify-between">
-          <CardTitle>{header}</CardTitle>
-          <CardDescription>{date}</CardDescription>
-        </div>
-      </CardHeader>
-      <CardContent>{text}</CardContent>
-      <CardFooter>
-        <CardAction>
-          <div className="flex flex-row w-full">
-            <Button className="justify-end" variant="ghost" size="icon">
-              <Image src="./icon_delete.svg" alt="delete" width={20} height={20} />
-            </Button>
-          </div>
-        </CardAction>
-      </CardFooter>
-    </Card>
+    <div className="grid grid-cols-4">
+      <p className="col-span-3 text-sm font-bold">{header}</p>
+      <p className="mt-1 text-[10px] text-[#666]">{date}</p>
+      <p className="col-span-3 pl-5 text-sm">{text}</p>
+      <div className="flex flex-row items-end justify-end">
+        <Button variant="ghost" size="icon" onClick={() => readNotification(id)}>
+          <Image src="./icon_delete.svg" alt="delete" width={24} height={24} />
+        </Button>
+      </div>
+    </div>
   );
 }
