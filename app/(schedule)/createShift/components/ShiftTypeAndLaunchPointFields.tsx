@@ -8,6 +8,7 @@ import {
 import { Label } from "@/app/components/ui/label";
 import { shift_type } from "@prisma/client";
 import { LaunchPoint } from "../../data/launchPoint";
+import { SHIFT_TYPES } from "./create-shift-form.constants";
 
 export function ShiftTypeAndLaunchPointFields({
   shiftTypeValue,
@@ -24,6 +25,11 @@ export function ShiftTypeAndLaunchPointFields({
   onShiftTypeChange: (value: string) => void;
   onLaunchPointChange: (value: string) => void;
 }) {
+  console.log("launchPoint", launchPoint);
+  const overstaffedLaunchPoint = launchPoints.find((lp) => lp.name === SHIFT_TYPES.find((st) => st.key === "overstaffed")?.label)?.id;
+  if (!overstaffedLaunchPoint) {
+    throw new Error("Overstaffed launch point not found");
+  }
   return (
     <div className="flex flex-col justify-start items-center mx-auto gap-6 w-full mb-6">
       <div className="flex flex-row items-center gap-4 w-80">
@@ -53,7 +59,7 @@ export function ShiftTypeAndLaunchPointFields({
             </SelectTrigger>
             <SelectContent>
               {shiftTypeValue === "overstaffed" ? (
-                <SelectItem value="overstaffed">מעל התקן</SelectItem>
+                <SelectItem value={overstaffedLaunchPoint}>מעל התקן</SelectItem>
               ) : (
                 launchPoints.map((lp) => (
                   <SelectItem key={lp.id} value={lp.id}>
