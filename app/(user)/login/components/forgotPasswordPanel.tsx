@@ -31,7 +31,7 @@ export default function ForgotPasswordPanel() {
       <AlertDialogTrigger className="text-white text-sm font-sans underline mt-2">
         שכחתי סיסמא
       </AlertDialogTrigger>
-      <AlertDialogContent className="w-full max-w-md flex flex-col items-center justify-center bg-[#FFFAA8] rounded-lg">
+      <AlertDialogContent className="w-full max-w-md flex flex-col items-center justify-center">
         <AlertDialogHeader>
           <AlertDialogCancel className="absolute top-2 left-2 bg-[#FFFAA8] border-0 outline-none">
             <Image src="/icon_close.svg" alt="close" width={20} height={20} />

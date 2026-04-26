@@ -1,11 +1,16 @@
 "use client";
 
 import { authenticate } from "@/app/lib/actions";
-import { useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import Image from "next/image";
 import ForgotPasswordPanel from "./forgotPasswordPanel";
+import InvalidCredentials from "./InvalidCredentials";
 
 export default function LoginForm() {
+
+  const [state, formAction] = useActionState(authenticate, { success: false });
+  const [showInvalidCredentials, setShowInvalidCredentials] = useState(false);
+
     const [showPassword, setShowPassword] = useState(false);
     const [phone, setPhone] = useState("");
     const [password, setPassword] = useState("");
@@ -15,11 +20,17 @@ export default function LoginForm() {
     };
   
     const isFormFilled = phone.trim() !== "" && password.trim() !== "";
+
+    useEffect(() => {
+      if (!state.success && state.error && state.error === "Invalid credentials") {
+        setShowInvalidCredentials(true);
+      }
+    }, [state]);
   
   
     return (
     <form
-        action={authenticate}
+        action={formAction}
         className="flex flex-col w-full max-w-md gap-6 items-center justify-center pl-25 pr-25"
       >
         <div className="w-full flex flex-col items-center gap-2">
@@ -79,6 +90,11 @@ export default function LoginForm() {
         <ForgotPasswordPanel />
 
         <input type="hidden" name="redirectTo" value={"/"} />
+
+        <InvalidCredentials
+          open={showInvalidCredentials}
+          onOpenChange={setShowInvalidCredentials}
+        />
 
         <button
           className={`w-full text-white font-bold rounded-lg py-3 px-6 mt-4 transition-colors ${

@@ -1,9 +1,12 @@
 "use server";
 
 import { signIn, signOut } from "@/auth";
+import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { AuthError } from "next-auth";
 
-export async function authenticate(formData: FormData) {
+type authState = { success: boolean, error?: string };
+
+export async function authenticate(prevState: authState, formData: FormData): Promise<authState> {
     try {
         const redirectTo = formData.get("redirectTo") as string || "/";
         await signIn("credentials", {
@@ -11,18 +14,22 @@ export async function authenticate(formData: FormData) {
             password: formData.get("password"),
             redirectTo: redirectTo
         });
+        return { success: true };
     }
     catch(error) {
-        console.error('Authentication error:', error);
+        if (isRedirectError(error)) {
+          throw error;
+        }
+
         if (error instanceof AuthError) {
             switch (error.type) {
               case 'CredentialsSignin':
-                throw new Error('Invalid credentials.');
+                return { success: false, error: 'Invalid credentials' };
               default:
-                throw new Error('Something went wrong.');
+                return { success: false, error: 'Something went wrong.' };
             }
           }
-          throw error;
+          return { success: false, error: 'Something went wrong.' };
     }
 }
 
