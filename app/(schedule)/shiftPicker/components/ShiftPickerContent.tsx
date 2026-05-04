@@ -9,7 +9,7 @@ import {
   type DisplayShift,
 } from "../../data/shift";
 import PickerCell from "./pickerCell";
-import { Tag } from "@/app/(user)/data/definitions";
+import { tag } from "@prisma/client";
 import { ambulance_type, shift_type } from "@/generated/prisma/enums";
 
 
@@ -74,9 +74,11 @@ function getAmbulanceStyle(ambulanceTypeId: string): { bg: string; textDark: boo
 export default function ShiftPickerContent({
   shiftsData,
   tags,
+  userId,
 }: {
   shiftsData: Map<shift_type, Map<ambulance_type, DisplayShift[]>>;
-  tags: Tag[];
+  tags: tag[];
+  userId: string;  
 }) {
   const shiftStyle = (id: string) => SHIFT_TYPE_STYLE[id] ?? { bg: "#e5e5e5", textDark: true };
 
@@ -129,7 +131,7 @@ export default function ShiftPickerContent({
                             style={{ backgroundColor: ambStyle.bg }}
                           >
                             {shifts.map((shift) => (
-                              <PickerCell shift={shift} key={shift.id} tags={tags} />
+                              <PickerCell userId={userId} shift={shift} key={shift.id} tags={tags} />
                             ))}
                           </AccordionContent>
                         </AccordionItem>

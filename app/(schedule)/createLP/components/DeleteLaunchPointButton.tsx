@@ -50,7 +50,7 @@ export default function DeleteLaunchPointButton({
           className="h-8 w-8"
           disabled={isDeleting}
         >
-          <Image src="/icon_delete.svg" alt="delete" width={20} height={20} />
+          <Image src="/delete.svg" alt="delete" width={20} height={20} />
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent dir="rtl">

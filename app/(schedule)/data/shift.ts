@@ -16,6 +16,7 @@ import type {
   shift_type,
   launch_point,
   ambulance,
+  shift_slot,
 } from "@prisma/client";
 
 export type PermanentShiftRecord = Omit<
@@ -62,17 +63,22 @@ export type DisplayShift = {
   end_time: string;
   shift_type: shift_type | null;
   adult_only: boolean;
-  number_of_slots: number | null;
-  confirmed_slots: (DisplayShiftSlot | null)[];
-  pending_slots: (DisplayShiftSlot | null)[];
+  number_of_slots: number;
+  confirmed_slots: DisplayShiftSlot[];
+  pending_slots: DisplayShiftSlot[];
 };
 
-export type DisplayShiftSlot = {
-  id: string;
-  shift_id: string;
-  user: User;
-  status: "pending" | "confirmed" | "cancelled";
-};
+export type DisplayShiftSlot = Prisma.shift_slotGetPayload<{
+  select: {
+    id: true;
+    shift_id: true;
+    user: true;
+    status: true;
+  };
+  include: {
+    user: true;
+  };
+}>;
 
 function toShiftSlotStatus(value: shift_status): shift_status {
   return value;
@@ -209,11 +215,13 @@ export async function getDisplayShiftsByDate(
       end_time: s.end_time ? s.end_time.toISOString() : "",
       shift_type: s.shift_type as shift_type,
       adult_only: s.adult_only ?? false,
-      number_of_slots: s.number_of_slots,
+      number_of_slots: s.number_of_slots ?? 0,
       confirmed_slots: s.shiftSlots.filter(
         (slot) => slot.status === "confirmed",
-      ),
-      pending_slots: s.shiftSlots.filter((slot) => slot.status === "pending"),
+      ) as DisplayShiftSlot[],
+      pending_slots: s.shiftSlots.filter(
+        (slot) => slot.status === "pending",
+      ) as DisplayShiftSlot[],
     };
   });
   return displayShifts;

@@ -29,14 +29,14 @@ export default function SchedualCell({
             <div className="flex flex-row items-center justify-between gap-1">
               {shift.driver ? (
                 <Image
-                  src={"/icon_avatar-driver dafault (no assignment).svg"}
+                  src={"/avatar_driver_dafault.svg"}
                   alt="driver"
                   width={20}
                   height={20}
                 />
               ) : (
                 <Image
-                  src={"/driver icon.svg"}
+                  src={"/driver.svg"}
                   alt="driver"
                   width={20}
                   height={20}
@@ -56,7 +56,7 @@ export default function SchedualCell({
             shift.ambulance_type === "atan" && (
               <div className="flex flex-row items-center justify-between">
                 <Image
-                  src={"/Paramedic Icon.svg"}
+                  src={"/paramedic.svg"}
                   alt="paramedic"
                   width={20}
                   height={20}
@@ -74,7 +74,7 @@ export default function SchedualCell({
           }
           < div className="flex flex-row items-center justify-between gap-2" >
             <Image
-              src={"/Ambulance icon.svg"}
+              src={"/ambulance.svg"}
               alt="ambulance"
               width={20}
               height={20}

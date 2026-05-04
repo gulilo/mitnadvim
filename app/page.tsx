@@ -27,7 +27,7 @@ export default async function Home() {
     >
       <div className="mx-auto relative h-[120px] w-[200px]">
         <Image
-          src="/MDA-Dan-Logo.png"
+          src="/MDA_Dan_logo.png"
           alt="מגן דוד אדום - מרחב דן"
           fill
           className="object-contain"

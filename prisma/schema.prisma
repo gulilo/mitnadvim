@@ -251,7 +251,7 @@ model shift_slot {
   updated_by    account?     @relation("updated_by_id", fields: [updated_by_id], references: [id])
   user          user_info    @relation("shift_slot_user", fields: [user_id], references: [id])
 
-  @@unique([shift_id, user_id], map: "uk_shift_slot")
+  @@unique([shift_id, user_id, status], map: "uk_shift_slot")
 }
 
 model tag {

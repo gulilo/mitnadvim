@@ -7,7 +7,7 @@ export default function Footer() {
       className="mt-auto pt-8 pb-6 flex items-center justify-center gap-2 text-gray-900 text-xs"
     >
       <Image
-        src={"/Milkboss_Logo.svg"}
+        src={"/milkboss_logo.svg"}
         alt="Milkboss_Logo"
         width={20}
         height={20}

@@ -21,7 +21,7 @@ export default async function SetPasswordPage({ searchParams }: Props) {
         <div className="flex justify-start pt-2 pr-2">
           <Link href="/" className="relative h-10 w-15 block">
             <Image
-              src="/MDA-Dan-Logo.png"
+              src="/MDA-Dan_logo.png"
               alt="מגן דוד אדום - מרחב דן"
               width={60}
               height={40}
@@ -54,7 +54,7 @@ export default async function SetPasswordPage({ searchParams }: Props) {
       <div className="flex justify-start pt-2 pr-2">
         <Link href="/" className="relative h-10 w-15 block">
           <Image
-            src="/MDA-Dan-Logo.png"
+            src="/MDA-Dan_logo.png"
             alt="מגן דוד אדום - מרחב דן"
             width={60}
             height={40}

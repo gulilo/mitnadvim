@@ -20,7 +20,7 @@ export default function ContactInfo({
     <div className="px-4 space-y-4">
       <EditableField
         id={accountId}
-        iconSrc="/icon_phone.svg"
+        iconSrc="/phone.svg"
         fieldname="phone"
         label="מספר טלפון רשום:"
         value={phone ?? ""}
@@ -31,7 +31,7 @@ export default function ContactInfo({
 
       <EditableField
         id={accountId}
-        iconSrc="/icon_email.svg"
+        iconSrc="/email.svg"
         fieldname="email"
         label="כתובת דוא״ל:"
         value={email ?? ""}
@@ -42,7 +42,7 @@ export default function ContactInfo({
 
       <EditableField  
         id={userId}
-        iconSrc="/icon_pin-home.svg"
+        iconSrc="/pin_home.svg"
         fieldname="address"
         label="כתובת:"
         value={address ?? ""}

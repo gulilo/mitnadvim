@@ -29,7 +29,7 @@ const SelectTrigger = React.forwardRef<
     <SelectPrimitive.Icon asChild>
       <Image
         className="me-4"
-        src="/icon_dropdown.svg"
+        src="/dropdown.svg"
         alt="chevron-down"
         width={18}
         height={18}

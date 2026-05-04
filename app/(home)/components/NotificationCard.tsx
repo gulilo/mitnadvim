@@ -24,7 +24,7 @@ export default function NotificationCard({
       <p className="col-span-3 pl-5 text-sm">{text}</p>
       <div className="flex flex-row items-end justify-end">
         <Button variant="ghost" size="icon" onClick={() => readNotification(id)}>
-          <Image src="./icon_delete.svg" alt="delete" width={24} height={24} />
+          <Image src="/delete.svg" alt="delete" width={24} height={24} />
         </Button>
       </div>
     </div>

@@ -15,13 +15,8 @@ import { useState } from "react";
 import { approveShiftSlot, denyShiftSlot, removedriverfromshift } from "../../lib/actions";
 import { ButtonGroup } from "@/app/components/ui/button-group";
 import { Button } from "@/app/components/ui/button";
-
-function slotVolunteerName(slot: DisplayShift["confirmed_slots"][number]): string {
-    if (!slot?.user) return "—";
-    const { first_name, last_name } = slot.user;
-    const name = [first_name, last_name].filter(Boolean).join(" ").trim();
-    return name || "—";
-}
+import UserRoleIcon from "@/app/(user)/profile/components/userRoleIcon";
+import { tag } from "@prisma/client";
 
 function formatShiftDateTime(date: Date | string, time: string): string {
     const d = typeof date === "string" ? new Date(date) : date;
@@ -31,36 +26,43 @@ function formatShiftDateTime(date: Date | string, time: string): string {
     return `${day} ב${month} ${year} בשעה ${time}`;
 }
 
-export default function PickerCell({ shift, tags }: { shift: DisplayShift, tags: Tag[] }) {
+export default function PickerCell({ userId, shift, tags }: { userId: string, shift: DisplayShift, tags: tag[] }) {
     const [open, setOpen] = useState<string[]>([]);
+
+    const paddedConfirmedSlots = [...shift.confirmed_slots].concat(Array(shift.number_of_slots - shift.confirmed_slots.length).fill(null));
     return (
         <Accordion type="multiple" className="w-full" value={open} onValueChange={setOpen}>
             <AccordionItem value={shift.id}>
+
                 <AccordionTrigger className="flex flex-row h-20 w-full px-2 items-center justify-between gap-4 text-lg font-bold border border-red-500 data-[state=open]:hidden">
                     <p>{shift.launch_point.name}</p>
-                    <div className="flex flex-col">
-                        <Image src={"/Ambulance icon.svg"} alt="ambulance" width={20} height={20} />
-                        <p>{shift.ambulance?.number}</p>
+                    <div className="flex flex-row items-center gap-4 justify-between">
+                        <div className="flex flex-col">
+                            <Image src={"/ambulance.svg"} alt="ambulance" width={20} height={20} />
+                            <p>{shift.ambulance?.number}</p>
+                        </div>
+                        {shift.driver ?
+                            (<Image src={"/avatar_driver_dafault.svg"} alt="driver" width={20} height={20} />)
+                            : (<Image src={"/driver.svg"} alt="driver" width={20} height={20} />)}
                     </div>
-                    {shift.driver ?
-                        (<Image src={"/icon_avatar-driver dafault (no assignment).svg"} alt="driver" width={20} height={20} />)
-                        : (<Image src={"/Driver icon.svg"} alt="driver" width={20} height={20} />)}
-
-                    {shift.confirmed_slots.map((slot, index) => (
-                        slot ? (
-                            <div key={slot.id}>{slotVolunteerName(slot)}</div>
-                        ) : (
-                            <Image key={`empty-${index}`} src="/Icon.svg" alt="slot" width={20} height={20} />
-                        )
-                    ))}
+                    <div className="flex flex-row items-center gap-10">
+                        {paddedConfirmedSlots.map((slot, index) => (
+                            slot ? (
+                                <UserRoleIcon key={slot.id} user={slot.user} tags={tags} />
+                            ) : (
+                                <Image key={`empty-${index}`} src="/picker_empty.svg" alt="slot" width={20} height={20} />
+                            )
+                        ))}
+                    </div>
                 </AccordionTrigger>
+
                 <AccordionContent className="flex flex-col w-full px-4 py-6 text-lg font-bold border border-red-500">
 
                     <div className="flex flex-col gap-4" onClick={() => setOpen([])}>
                         <div className="flex flex-row justify-center items-center gap-4">
                             <p>{shift.launch_point.name}</p>
                             <div className="flex flex-col items-center">
-                                <Image src={"/Ambulance icon.svg"} alt="ambulance" width={20} height={20} />
+                                <Image src={"/ambulance.svg"} alt="ambulance" width={20} height={20} />
                                 <p>{shift.ambulance?.number}</p>
                             </div>
 
@@ -73,7 +75,7 @@ export default function PickerCell({ shift, tags }: { shift: DisplayShift, tags:
                     {shift.driver ?
                         <div className="flex flex-col items-center justify-center">
                             <div className="flex flex-row items-center gap-4">
-                                <Image src={"/icon_avatar-driver dafault (no assignment).svg"} alt="driver" width={20} height={20} />
+                                <Image src={"/avatar_driver_dafault.svg"} alt="driver" width={20} height={20} />
                                 <p>{shift.driver?.first_name} {shift.driver?.last_name}</p>
                             </div>
                             {tags.some((tag) => tag.name === "רכז שיבוצים") ?
@@ -81,23 +83,26 @@ export default function PickerCell({ shift, tags }: { shift: DisplayShift, tags:
                                 : null
                             }
                         </div>
-                        : (<Image src={"/Driver icon.svg"} alt="driver" width={20} height={20} />)
+                        : (<Image src={"/driver.svg"} alt="driver" width={20} height={20} />)
                     }
                     {shift.ambulance_type === "atan" ? (
-                        <Image src={"/Paramedic Icon.svg"} alt="paramedic" width={20} height={20} />
+                        <Image src={"/paramedic.svg"} alt="paramedic" width={20} height={20} />
                     ) : null}
 
-                    <div className="flex flex-col gap-4">
-                        {shift.confirmed_slots.map((slot, index) => (
+                    <div className="flex flex-col gap-4 pt-5">
+                        {paddedConfirmedSlots.map((slot, index) => (
                             slot ? (
                                 <div key={slot.id}>
-                                    <div key={slot.id}>{slotVolunteerName(slot)}</div>
+                                    <div className="flex flex-row items-center gap-4">
+                                        <UserRoleIcon key={slot.id} user={slot.user} tags={tags} />
+                                        <p>{slot.user.first_name} {slot.user.last_name}</p>
+                                    </div>
                                     {tags.some((tag) => tag.name === "רכז שיבוצים") ? (
                                         <button onClick={() => denyShiftSlot(slot.id)} className="border-3 border-red-500 px-4 text-red-500 py-2 rounded-md">ביטול שיבוץ</button>
                                     ) : null}
                                 </div>
                             ) : (
-                                <Image key={`empty-${index}`} src="/Icon.svg" alt="slot" width={40} height={40} />
+                                <Image key={`empty-${index}`} src="/picker_empty.svg" alt="slot" width={40} height={40} />
                             )
                         ))}
                         <p>מתנה:</p>
@@ -105,20 +110,20 @@ export default function PickerCell({ shift, tags }: { shift: DisplayShift, tags:
                             shift.pending_slots.map((slot, index) => (
                                 slot ? (
                                     <div key={slot.id}>
-                                        <div key={slot.id}>{slotVolunteerName(slot)}</div>
+                                        <UserRoleIcon key={slot.id} user={slot.user} tags={tags} />
                                         <ButtonGroup dir="ltr">
                                             <Button variant="destructive" className="bg-red-500 text-white" onClick={() => approveShiftSlot(slot.id)}>אישור</Button>
                                             <Button variant="outline" className=" bg-transparent" onClick={() => denyShiftSlot(slot.id)}>ביטול</Button>
                                         </ButtonGroup>
                                     </div>
                                 ) : (
-                                    <Image key={`empty-${index}`} src="/Icon.svg" alt="slot" width={40} height={40} />
+                                    <Image key={`empty-${index}`} src="/picker_empty.svg" alt="slot" width={40} height={40} />
                                 )
                             )) : null}
                     </div>
 
                     <div className="flex flex-row justify-center items-center">
-                        <RegisterButton shift={shift} tags={tags} />
+                        <RegisterButton userId={userId} shift={shift} tags={tags} />
                     </div>
                 </AccordionContent>
             </AccordionItem>

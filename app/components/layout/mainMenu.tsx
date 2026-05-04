@@ -24,7 +24,7 @@ export default async function MainMenu() {
     <Drawer direction="left">
       <DrawerTrigger>
         <Image
-          src="/icon_menu.svg"
+          src="/menu.svg"
           alt="Menu"
           width={24}
           height={24}
@@ -34,7 +34,7 @@ export default async function MainMenu() {
       <DrawerContent className="flex flex-col items-center gap-4 pt-5 bg-red-inActive">
         <DrawerClose>
           <Image
-            src="/icon_close.svg"
+            src="/close.svg"
             alt="Close"
             width={24}
             height={24}

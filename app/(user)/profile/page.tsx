@@ -47,7 +47,7 @@ export default async function Profile() {
       </div>
 
       {/* Profile Picture Section */}
-    <ProfileInfo user={user} areaName={areaName || ""} displayTags={displayTags} />
+    <ProfileInfo user={user} areaName={areaName || ""} tags={tags} displayTags={displayTags} />
 
       {/* Contact Information Section */}
       <ContactInfo

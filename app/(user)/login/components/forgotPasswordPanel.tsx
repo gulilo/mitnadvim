@@ -34,7 +34,7 @@ export default function ForgotPasswordPanel() {
       <AlertDialogContent className="w-full max-w-md flex flex-col items-center justify-center">
         <AlertDialogHeader>
           <AlertDialogCancel className="absolute top-2 left-2 bg-[#FFFAA8] border-0 outline-none">
-            <Image src="/icon_close.svg" alt="close" width={20} height={20} />
+            <Image src="/close.svg" alt="close" width={20} height={20} />
           </AlertDialogCancel>
         </AlertDialogHeader>
         <AlertDialogDescription>

@@ -44,7 +44,7 @@ export default function LaunchPointCell({
         aria-label="גרור לסידור"
         {...listeners}
       >
-        <Image src="/Sort Icon.svg" alt="drag" width={20} height={20} />
+        <Image src="/sort.svg" alt="drag" width={20} height={20} />
       </button>
     </div>
   );

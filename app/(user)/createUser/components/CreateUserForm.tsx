@@ -163,7 +163,7 @@ export default function CreateUserForm({ areas, displayTags }: { areas: Area[], 
           />
           <div className="flex flex-row items-center gap-2 mt-2">
 
-            <Image src="/icon_pin-MDA.svg" alt="" width={10} height={15} />
+            <Image src="/pin-MDA.svg" alt="" width={10} height={15} />
             <h4 className="text-sm font-medium text-black">תחנת אם:</h4>
 
             <input type="hidden" name="home_station" value={homeStation} />
@@ -293,7 +293,7 @@ export default function CreateUserForm({ areas, displayTags }: { areas: Area[], 
       {/* Emergency Contact */}
       <div className="py-4 space-y-0">
         <div className="flex flex-row items-center gap-2 pb-3">
-          <Image src="/icon_sos.svg" alt="" width={24} height={24} />
+          <Image src="/sos.svg" alt="" width={24} height={24} />
           <h5 className="text-base font-bold text-black">
             פרטי איש קשר בחרום
           </h5>

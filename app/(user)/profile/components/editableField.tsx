@@ -75,7 +75,7 @@ export default function EditableField({
         disabled={isPending}
       >
         <Image
-          src={isEditing ? "/icon_save.svg" : "/icon_edit.svg"}
+          src={isEditing ? "/save.svg" : "/edit.svg"}
           alt={isEditing ? "Save" : "Edit"}
           width={20}
           height={20}

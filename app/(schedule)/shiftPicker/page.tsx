@@ -2,7 +2,7 @@ import { HEBREW_MONTHS, parseHebrewDate } from "@/app/lib/date-utils";
 import { getShiftsForPickerDay } from "../data/shift";
 import ShiftPickerContent from "./components/ShiftPickerContent";
 import CalendarComponent from "../shiftMenegment/components/Calendar-component";
-import { getUserTags } from "@/app/(user)/data/user";
+import { getUserByAccountId, getUserTags } from "@/app/(user)/data/user";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 
@@ -22,6 +22,7 @@ export default async function ShiftPickerPage({
     if (!session?.user) {
         redirect("/login");
     }
+    const userid = (await getUserByAccountId(session.user.id))?.id ?? "";
 
     const tags = await getUserTags(session.user.id);
 
@@ -44,7 +45,7 @@ export default async function ShiftPickerPage({
                 {/* TODO: Add Hebrew date (Heb Cal API) and holiday when available */}
             </p>
 
-            <ShiftPickerContent shiftsData={shiftsData} tags={tags} />
+            <ShiftPickerContent userId={userid} shiftsData={shiftsData} tags={tags} />
         </div>
     );
 }

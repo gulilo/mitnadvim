@@ -3,7 +3,7 @@ export default function HomeStation({ areaName }: { areaName: string }) {
     return (
         <div className="flex flex-row mb-2">
         <Image
-          src="/icon_pin-MDA.svg"
+          src="/pin_MDA.svg"
           alt="Home Station"
           width={18}
           height={26}
